@@ -167,6 +167,44 @@
     errorEl.style.display = 'block';
   }
 
+  function getLocationWithWebAPI() {
+    if (!navigator.geolocation) {
+      alert('Geolocation tidak didukung oleh browser ini.');
+      return;
+    }
+
+    navigator.geolocation.getCurrentPosition(
+    (position) => {
+    // Berhasil
+    const lat = position.coords.latitude;
+    const lon = position.coords.longitude;
+    alert(lat,lon);
+    //fetchPrayerTimes(lat, lon);
+    },
+    (error) => {
+    // Gagal
+    let msg = '';
+    switch(error.code) {
+    case error.PERMISSION_DENIED:
+    msg = 'Izin lokasi ditolak. Silakan izinkan di pengaturan.';
+    break;
+    case error.POSITION_UNAVAILABLE:
+    msg = 'Informasi lokasi tidak tersedia.';
+    break;
+    case error.TIMEOUT:
+    msg = 'Waktu permintaan lokasi habis.';
+    break;
+    }
+    alert(msg);
+    },
+    {
+    enableHighAccuracy: true,
+    timeout: 10000,
+    maximumAge: 0 // Penting: ini memastikan Anda mendapat lokasi terbaru, bukan dari cache [citation:4]
+    }
+    );
+  }
+
   // Fungsi utama untuk meminta lokasi
   function requestLocation() {
     try {
@@ -190,6 +228,11 @@
       // Catatan: Method yang benar adalah requestLocation, bukan getLocation.
       // Method ini akan memicu prompt izin jika perlu.
       alert("Memint akses lokasi");
+      if (!Telegram.LocationManager.getLocation) {
+        alert("menggunakan geo location web api");
+        return getLocationWithWebAPI();
+      }
+
       Telegram.LocationManager.getLocation(function(location) {
       alert("Hasilnya: "+ location);
       if (!location) {
