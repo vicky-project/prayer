@@ -70,14 +70,6 @@
     const Telegram = window.Telegram.WebApp;
 
     try {
-      Telegram.requestWriteAccess(function(allowed) {
-      if(!allowed) {
-      alert("Access aborted.");
-      return;
-      }
-
-      alert(allowed);
-
       Telegram.LocationManager.init();
       Telegram.LocationManager.getLocation((location) => {
       alert(location);
@@ -93,7 +85,7 @@
       errorDiv.style.display = 'block';
       }
       });
-      });
+
     } catch(error) {
       alert(error.message || "Gagal meminta akses telegram");
     }
