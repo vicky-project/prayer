@@ -64,14 +64,17 @@
   }
 
   function requestLocation() {
+    alert("Meminta akses lokasi");
     const Telegram = window.Telegram.WebApp;
     Telegram.LocationManager.init(function() {
+    alert("Location manager inited");
     if(!Telegram.LocationManager.isAccessGranted) {
     alert("Tidak mendapatkan izin akses.");
     return;
     }
     if(!Telegram.LocationManager.isLocationAvailable){
     alert("Lokasi tidak tersedia.");
+    return;
     }
 
     Telegram.LocationManager.getLocation((location) => {
@@ -131,7 +134,6 @@
   }
 
   document.addEventListener("DOMContentLoaded", function() {
-
   // Minta lokasi saat halaman dimuat
   requestLocation();
   });
