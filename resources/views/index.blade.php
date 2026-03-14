@@ -36,33 +36,11 @@
 
 @push('scripts')
 <script>
-  const Telegram = window.Telegram.WebApp;
-  Telegram.ready();
-
-  // Minta lokasi saat halaman dimuat
-  requestLocation();
-
-  function requestLocation() {
-    Telegram.LocationManager.init();
-    Telegram.LocationManager.getLocation((location) => {
-    if (location && location.latitude && location.longitude) {
-    document.getElementById('location-status').innerHTML = `
-    <i class="bi bi-check-circle-fill me-2 text-success"></i> Lokasi diperoleh, mengambil data jadwal...
-    `;
-    fetchPrayerTimes(location.latitude, location.longitude);
-    } else {
-    document.getElementById('location-status').style.display = 'none';
-    const errorDiv = document.getElementById('error-message');
-    errorDiv.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-2"></i> Tidak dapat mengakses lokasi. Pastikan Anda memberikan izin lokasi.';
-    errorDiv.style.display = 'block';
-    }
-    });
-  }
-
   function fetchPrayerTimes(lat, lon) {
     fetch('{{ secure_url(config("app.url")) }}/api/prayer/times', {
       method: 'POST',
       headers: {
+        'Accept': 'application/json',
         'Content-Type': 'application/json',
         'X-CSRF-TOKEN': '{{ csrf_token() }}'
       },
@@ -82,6 +60,24 @@
     const errorDiv = document.getElementById('error-message');
     errorDiv.innerHTML = `<i class="bi bi-exclamation-triangle-fill me-2"></i> ${error.message}`;
     errorDiv.style.display = 'block';
+    });
+  }
+
+  function requestLocation() {
+    Telegram.LocationManager.init(function() {
+    Telegram.LocationManager.getLocation((location) => {
+    if (location && location.latitude && location.longitude) {
+    document.getElementById('location-status').innerHTML = `
+    <i class="bi bi-check-circle-fill me-2 text-success"></i> Lokasi diperoleh, mengambil data jadwal...
+    `;
+    fetchPrayerTimes(location.latitude, location.longitude);
+    } else {
+    document.getElementById('location-status').style.display = 'none';
+    const errorDiv = document.getElementById('error-message');
+    errorDiv.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-2"></i> Tidak dapat mengakses lokasi. Pastikan Anda memberikan izin lokasi.';
+    errorDiv.style.display = 'block';
+    }
+    });
     });
   }
 
@@ -124,6 +120,13 @@
     document.getElementById('location-status').style.display = 'none';
     document.getElementById('prayer-times').style.display = 'block';
   }
+
+  document.addEventListener("DOMContentLoaded", function() {
+  const Telegram = window.Telegram.WebApp;
+
+  // Minta lokasi saat halaman dimuat
+  requestLocation();
+  });
 </script>
 @endpush
 
