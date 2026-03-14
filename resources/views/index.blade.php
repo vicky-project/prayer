@@ -35,8 +35,6 @@
 @endsection
 
 @push('scripts')
-{{-- Penting: Pastikan untuk memuat library Telegram Web App --}}
-<script src="https://telegram.org/js/telegram-web-app.js"></script>
 <script>
   // Inisialisasi Telegram Web App
   const Telegram = window.Telegram.WebApp;
