@@ -36,6 +36,8 @@
 
 @push('scripts')
 <script>
+  const initData = window.Telegram?.WebApp?.initData || @json(request()->get("initData", ""));
+
   function fetchPrayerTimes(lat, lon) {
     alert("Meminta data salat. lat:"+ lat + " lon: "+ lon);
     fetch('{{ secure_url(config("app.url")) }}/api/prayer/times', {
@@ -45,7 +47,7 @@
         'Content-Type': 'application/json',
         'X-CSRF-TOKEN': '{{ csrf_token() }}',
       },
-      body: JSON.stringify({ latitude: lat, longitude: lon })
+      body: JSON.stringify({ latitude: lat, longitude: lon, initData })
     })
     .then(response => response.json())
     .then(data => {
@@ -73,8 +75,9 @@
     return;
     }
 
-    Telegram.LocationManager.init();
+    alert(allowed);
 
+    Telegram.LocationManager.init();
     Telegram.LocationManager.getLocation((location) => {
     if (location && location.latitude && location.longitude) {
     document.getElementById('location-status').innerHTML = `
