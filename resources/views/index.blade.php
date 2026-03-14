@@ -205,7 +205,6 @@
   } catch (error) {
   alert(error.message || "Gagal akses lokasi");
   }
-
   });
 
 </script>
