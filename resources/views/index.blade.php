@@ -70,7 +70,6 @@
     const Telegram = window.Telegram.WebApp;
 
     try {
-      Telegram.LocationManager.init();
       if (!Telegram.LocationManager.isInited) {
         alert("Gagal initialisasi location manager");
         return;
