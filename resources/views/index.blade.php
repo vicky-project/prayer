@@ -36,9 +36,14 @@
 
 @push('scripts')
 <script>
+  function locationRequested(location) {
+    alert("Location requested: lat: "+ Location.latitude + " lon: " + Location.longitude);
+  }
   // Inisialisasi Telegram Web App
-  const Telegram = window.Telegram.WebApp;
-  Telegram.ready();
+  const tg = window.Telegram.WebApp;
+  tg.onEvent("locationRequested", locationRequested);
+  tg.LocationManager.getLocation();
+  tg.ready();
 
   // Fungsi untuk membuka pengaturan lokasi Telegram
   function openLocationSettings() {
@@ -66,7 +71,8 @@
     .then(response => response.json())
     .then(data => {
     if (data.success) {
-    displayPrayerTimes(data.timings, data.date);
+    alert(data.data);
+    //displayPrayerTimes(data.timings, data.date);
     } else {
     throw new Error(data.message || 'Gagal memuat data');
     }
@@ -194,7 +200,7 @@
 
   // Mulai proses request lokasi saat halaman dimuat
   document.addEventListener('DOMContentLoaded', function() {
-  requestLocation();
+
   });
 
 </script>
