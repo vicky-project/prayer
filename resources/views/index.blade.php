@@ -42,57 +42,6 @@
   const Telegram = window.Telegram.WebApp;
   Telegram.ready();
 
-  // Fungsi utama untuk meminta lokasi
-  function requestLocation() {
-    const statusEl = document.getElementById('location-status');
-    const errorEl = document.getElementById('error-message');
-    const timesEl = document.getElementById('prayer-times');
-
-    // Tampilkan status memuat
-    statusEl.style.display = 'block';
-    statusEl.innerHTML = `<i class="bi bi-geo-alt-fill me-2"></i> Meminta izin lokasi...`;
-    errorEl.style.display = 'none';
-    timesEl.style.display = 'none';
-
-    // Cek apakah Location Manager tersedia
-    if (!Telegram.LocationManager) {
-      showManualError('Fitur lokasi tidak didukung di versi Telegram ini. Silakan perbarui aplikasi Telegram Anda.');
-      return;
-    }
-
-    try {
-      // *** LANGSUNG MINTA LOKASI ***
-      // Catatan: Method yang benar adalah requestLocation, bukan getLocation.
-      // Method ini akan memicu prompt izin jika perlu.
-      Telegram.LocationManager.getLocation((location) => {
-      if (!location) {
-      // Tangani error, termasuk izin ditolak
-      alert("location error");
-      // Pesan default
-      let errorMessage = 'Tidak dapat mengakses lokasi.';
-      // Tambahkan tombol untuk membuka pengaturan, gunakan HTML yang akan dimasukkan ke errorEl
-      const settingsButtonHtml = `
-      <div class="mt-3 d-grid gap-2">
-      <button id="open-settings-btn" class="btn btn-outline-primary" onclick="openLocationSettings()">
-      <i class="bi bi-gear-fill me-2"></i>Buka Pengaturan Lokasi
-      </button>
-      <button class="btn btn-light" onclick="requestLocation()">
-      <i class="bi bi-arrow-repeat me-2"></i>Coba Lagi
-      </button>
-      </div>
-      `;
-      errorEl.innerHTML = errorMessage + settingsButtonHtml;
-      handleLocationError("Error mendapatkan lokasi");
-      } else if (location) {
-      // Lokasi berhasil didapatkan
-      statusEl.innerHTML = `<i class="bi bi-check-circle-fill me-2 text-success"></i> Lokasi diperoleh, mengambil data jadwal...`;
-      //fetchPrayerTimes(location.latitude, location.longitude);
-      }
-      });
-    } catch(error) {
-      alert(error.message || "Gagal meminta lokasi");
-    }
-  }
 
   // Fungsi untuk menangani berbagai skenario error lokasi
   function handleLocationError(error) {
@@ -218,6 +167,58 @@
     statusEl.style.display = 'none';
     errorEl.innerHTML = `<i class="bi bi-exclamation-triangle-fill me-2"></i> ${message}`;
     errorEl.style.display = 'block';
+  }
+
+  // Fungsi utama untuk meminta lokasi
+  function requestLocation() {
+    const statusEl = document.getElementById('location-status');
+    const errorEl = document.getElementById('error-message');
+    const timesEl = document.getElementById('prayer-times');
+
+    // Tampilkan status memuat
+    statusEl.style.display = 'block';
+    statusEl.innerHTML = `<i class="bi bi-geo-alt-fill me-2"></i> Meminta izin lokasi...`;
+    errorEl.style.display = 'none';
+    timesEl.style.display = 'none';
+
+    // Cek apakah Location Manager tersedia
+    if (!Telegram.LocationManager) {
+      showManualError('Fitur lokasi tidak didukung di versi Telegram ini. Silakan perbarui aplikasi Telegram Anda.');
+      return;
+    }
+
+    try {
+      // *** LANGSUNG MINTA LOKASI ***
+      // Catatan: Method yang benar adalah requestLocation, bukan getLocation.
+      // Method ini akan memicu prompt izin jika perlu.
+      Telegram.LocationManager.getLocation((location) => {
+      if (!location) {
+      // Tangani error, termasuk izin ditolak
+      alert("location error");
+      // Pesan default
+      let errorMessage = 'Tidak dapat mengakses lokasi.';
+      // Tambahkan tombol untuk membuka pengaturan, gunakan HTML yang akan dimasukkan ke errorEl
+      const settingsButtonHtml = `
+      <div class="mt-3 d-grid gap-2">
+      <button id="open-settings-btn" class="btn btn-outline-primary" onclick="openLocationSettings()">
+      <i class="bi bi-gear-fill me-2"></i>Buka Pengaturan Lokasi
+      </button>
+      <button class="btn btn-light" onclick="requestLocation()">
+      <i class="bi bi-arrow-repeat me-2"></i>Coba Lagi
+      </button>
+      </div>
+      `;
+      errorEl.innerHTML = errorMessage + settingsButtonHtml;
+      handleLocationError("Error mendapatkan lokasi");
+      } else if (location) {
+      // Lokasi berhasil didapatkan
+      statusEl.innerHTML = `<i class="bi bi-check-circle-fill me-2 text-success"></i> Lokasi diperoleh, mengambil data jadwal...`;
+      //fetchPrayerTimes(location.latitude, location.longitude);
+      }
+      });
+    } catch(error) {
+      alert(error.message || "Gagal meminta lokasi");
+    }
   }
 
   // Mulai proses request lokasi saat halaman dimuat
