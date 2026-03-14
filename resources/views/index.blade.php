@@ -74,7 +74,7 @@
         alert("Initialisasi location manager");
         Telegram.LocationManager.init();
       }
-      alert(Telegram.LocationManager);
+      alert(JSON.stringify(Telegram.LocationManager));
       Telegram.LocationManager.getLocation((location) => {
       alert(location);
       if (location && location.latitude && location.longitude) {
