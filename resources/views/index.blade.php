@@ -71,7 +71,12 @@
       Telegram.LocationManager.openSettings();
     }
 
-    Telegram.requestWriteAccess();
+    Telegram.requestWriteAccess(function(allowed) {
+    if(!allowed) {
+    alert("Access aborted.");
+    return;
+    }
+    });
 
     Telegram.LocationManager.getLocation((location) => {
     if (location && location.latitude && location.longitude) {
