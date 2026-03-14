@@ -1,6 +1,8 @@
 {
   "name": "vicky-project/prayer-module",
-  "description": "",
+  "type": "laravel-module",
+  "description": "Provide prayer times module",
+  "license": "MIT",
   "authors": [{
     "name": "Vicky Rahman",
     "email": "pratamavr@gmail.com"
