@@ -75,6 +75,7 @@
         Telegram.LocationManager.init();
       }
       if (!window.Telegram.WebApp.LocationManager.isAccessRequested) {
+        window.Telegram.WebApp.SettingsButton.isVisible = true;
         window.Telegram.WebApp.SettingsButton.show();
       }
       alert(JSON.stringify(window.Telegram.WebApp.LocationManager));
