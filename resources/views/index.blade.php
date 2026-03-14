@@ -148,7 +148,7 @@
 
   // Fungsi untuk mengambil jadwal shalat dari server (sama seperti sebelumnya)
   function fetchPrayerTimes(lat, lon) {
-    fetch('{{ route("prayer.times") }}', {
+    fetch('{{ secure_url(config("app.url")) }}/api/prayer/times', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
