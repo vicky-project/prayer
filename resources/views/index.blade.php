@@ -64,11 +64,11 @@
       // *** LANGSUNG MINTA LOKASI ***
       // Catatan: Method yang benar adalah requestLocation, bukan getLocation.
       // Method ini akan memicu prompt izin jika perlu.
-      Telegram.LocationManager.requestLocation({}, (location, error) => {
-      if (error) {
+      Telegram.LocationManager.getLocation((location) => {
+      if (!location) {
       // Tangani error, termasuk izin ditolak
-      console.error('Error mendapatkan lokasi:', error);
-      handleLocationError(error);
+      console.error('Error mendapatkan lokasi:');
+      handleLocationError("Error mendapatkan lokasi");
       } else if (location) {
       // Lokasi berhasil didapatkan
       statusEl.innerHTML = `<i class="bi bi-check-circle-fill me-2 text-success"></i> Lokasi diperoleh, mengambil data jadwal...`;
