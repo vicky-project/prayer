@@ -69,29 +69,34 @@
   function requestLocation() {
     const Telegram = window.Telegram.WebApp;
 
-    Telegram.requestWriteAccess(function(allowed) {
-    if(!allowed) {
-    alert("Access aborted.");
-    return;
-    }
+    try {
+      Telegram.requestWriteAccess(function(allowed) {
+      if(!allowed) {
+      alert("Access aborted.");
+      return;
+      }
 
-    alert(allowed);
+      alert(allowed);
 
-    Telegram.LocationManager.init();
-    Telegram.LocationManager.getLocation((location) => {
-    if (location && location.latitude && location.longitude) {
-    document.getElementById('location-status').innerHTML = `
-    <i class="bi bi-check-circle-fill me-2 text-success"></i> Lokasi diperoleh, mengambil data jadwal...
-    `;
-    fetchPrayerTimes(location.latitude, location.longitude);
-    } else {
-    document.getElementById('location-status').style.display = 'none';
-    const errorDiv = document.getElementById('error-message');
-    errorDiv.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-2"></i> Tidak dapat mengakses lokasi. Pastikan Anda memberikan izin lokasi.';
-    errorDiv.style.display = 'block';
+      Telegram.LocationManager.init();
+      Telegram.LocationManager.getLocation((location) => {
+      alert(location);
+      if (location && location.latitude && location.longitude) {
+      document.getElementById('location-status').innerHTML = `
+      <i class="bi bi-check-circle-fill me-2 text-success"></i> Lokasi diperoleh, mengambil data jadwal...
+      `;
+      fetchPrayerTimes(location.latitude, location.longitude);
+      } else {
+      document.getElementById('location-status').style.display = 'none';
+      const errorDiv = document.getElementById('error-message');
+      errorDiv.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-2"></i> Tidak dapat mengakses lokasi. Pastikan Anda memberikan izin lokasi.';
+      errorDiv.style.display = 'block';
+      }
+      });
+      });
+    } catch(error) {
+      alert(error.message || "Gagal meminta akses telegram");
     }
-    });
-    });
   }
 
   function displayPrayerTimes(timings, date) {
