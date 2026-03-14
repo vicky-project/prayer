@@ -36,15 +36,17 @@
 
 @push('scripts')
 <script>
+  const initData = window.Telegram?.WebApp?.initData || @json(request()->get("initData", ""));
+
   function fetchPrayerTimes(lat, lon) {
     fetch('{{ secure_url(config("app.url")) }}/api/prayer/times', {
       method: 'POST',
       headers: {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
-        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        'X-CSRF-TOKEN': '{{ csrf_token() }}',
       },
-      body: JSON.stringify({ latitude: lat, longitude: lon })
+      body: JSON.stringify({ latitude: lat, longitude: lon, initData })
     })
     .then(response => response.json())
     .then(data => {
