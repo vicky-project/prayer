@@ -1,0 +1,32 @@
+{
+  "name": "vicky-project/prayer-module",
+  "description": "",
+  "authors": [{
+    "name": "Vicky Rahman",
+    "email": "pratamavr@gmail.com"
+  }],
+  "require": {
+    "php": "^8.2",
+    "joshbrw/laravel-module-installer": "^1.0",
+    "vicky-project/users-module": "^1.0",
+    "vicky-project/telegram-module": "^1.0"
+  },
+  "extra": {
+    "laravel": {
+      "providers": [],
+      "aliases": {}
+    }
+  },
+  "autoload": {
+    "psr-4": {
+      "Modules\\Prayer\\": "app/",
+      "Modules\\Prayer\\Database\\Factories\\": "database/factories/",
+      "Modules\\Prayer\\Database\\Seeders\\": "database/seeders/"
+    }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Modules\\Prayer\\Tests\\": "tests/"
+    }
+  }
+}

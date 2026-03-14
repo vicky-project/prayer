@@ -1,0 +1,11 @@
+{
+    "name": "Prayer",
+    "alias": "prayer",
+    "description": "",
+    "keywords": [],
+    "priority": 0,
+    "providers": [
+        "Modules\\Prayer\\Providers\\PrayerServiceProvider"
+    ],
+    "files": []
+}
