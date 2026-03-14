@@ -196,9 +196,9 @@
   // Mulai proses request lokasi saat halaman dimuat
   document.addEventListener('DOMContentLoaded', function() {
   // Inisialisasi Telegram Web App
+  try {
   const tg = window.Telegram.WebApp;
   tg.onEvent("locationRequested", locationRequested);
-  try {
   tg.LocationManager.getLocation();
   } catch (error) {
   alert(error.message || "Gagal akses lokasi");
