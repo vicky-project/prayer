@@ -227,10 +227,9 @@
       // *** LANGSUNG MINTA LOKASI ***
       // Catatan: Method yang benar adalah requestLocation, bukan getLocation.
       // Method ini akan memicu prompt izin jika perlu.
-      alert("Memint akses lokasi");
+      return getLocationWithWebAPI();
       if (!Telegram.LocationManager.getLocation) {
         alert("menggunakan geo location web api");
-        return getLocationWithWebAPI();
       }
 
       Telegram.LocationManager.getLocation(function(location) {
