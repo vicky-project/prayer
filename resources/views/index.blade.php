@@ -42,7 +42,11 @@
   // Inisialisasi Telegram Web App
   const tg = window.Telegram.WebApp;
   tg.onEvent("locationRequested", locationRequested);
-  tg.LocationManager.getLocation();
+  try {
+    tg.LocationManager.getLocation();
+  } catch (error) {
+    alert(error.message || "Gagal akses lokasi");
+  }
   tg.ready();
 
   // Fungsi untuk membuka pengaturan lokasi Telegram
