@@ -86,12 +86,16 @@
 
   // Fungsi untuk membuka pengaturan lokasi Telegram
   function openLocationSettings() {
-    if (Telegram.LocationManager && Telegram.LocationManager.openSettings) {
-      // Catatan: openSettings harus dipanggil sebagai respons dari klik tombol
-      alert("open settings");
-      Telegram.LocationManager.openSettings();
-    } else {
-      alert('Fitur buka pengaturan tidak didukung. Silakan buka pengaturan Telegram secara manual.');
+    try {
+      if (Telegram.LocationManager && Telegram.LocationManager.openSettings) {
+        // Catatan: openSettings harus dipanggil sebagai respons dari klik tombol
+        alert("open settings");
+        Telegram.LocationManager.openSettings();
+      } else {
+        alert('Fitur buka pengaturan tidak didukung. Silakan buka pengaturan Telegram secara manual.');
+      }
+    }catch(error) {
+      alert(error.message || 'Gagal membuka pengaturan');
     }
   }
 
