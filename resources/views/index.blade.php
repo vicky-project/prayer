@@ -66,15 +66,16 @@
   function requestLocation() {
     alert("Meminta akses lokasi");
     const Telegram = window.Telegram.WebApp;
-    Telegram.LocationManager.init(function() {
+    Telegram.LocationManager.init();
+
     alert("Location manager inited");
-    if(!Telegram.LocationManager.isAccessGranted) {
-    alert("Tidak mendapatkan izin akses.");
-    return;
+    if (!Telegram.LocationManager.isAccessGranted) {
+      alert("Tidak mendapatkan izin akses.");
+      return;
     }
-    if(!Telegram.LocationManager.isLocationAvailable){
-    alert("Lokasi tidak tersedia.");
-    return;
+    if (!Telegram.LocationManager.isLocationAvailable) {
+      alert("Lokasi tidak tersedia.");
+      return;
     }
 
     Telegram.LocationManager.getLocation((location) => {
@@ -89,7 +90,6 @@
     errorDiv.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-2"></i> Tidak dapat mengakses lokasi. Pastikan Anda memberikan izin lokasi.';
     errorDiv.style.display = 'block';
     }
-    });
     });
   }
 
