@@ -66,6 +66,14 @@
   function requestLocation() {
     const Telegram = window.Telegram.WebApp;
     Telegram.LocationManager.init(function() {
+    if(!Telegram.LocationManager.isAccessGranted) {
+    alert("Tidak mendapatkan izin akses.");
+    return;
+    }
+    if(!Telegram.LocationManager.isLocationAvailable){
+    alert("Lokasi tidak tersedia.");
+    }
+
     Telegram.LocationManager.getLocation((location) => {
     if (location && location.latitude && location.longitude) {
     document.getElementById('location-status').innerHTML = `
