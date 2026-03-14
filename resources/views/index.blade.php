@@ -37,6 +37,7 @@
 @push('scripts')
 <script>
   function fetchPrayerTimes(lat, lon) {
+    alert("Meminta data salat. lat:"+ lat + " lon: "+ lon);
     fetch('{{ secure_url(config("app.url")) }}/api/prayer/times', {
       method: 'POST',
       headers: {
@@ -65,18 +66,14 @@
 
   function requestLocation() {
     const Telegram = window.Telegram.WebApp;
-    Telegram.LocationManager.init();
-
-    if (!Telegram.LocationManager.isAccessGranted) {
-      Telegram.LocationManager.openSettings();
-    }
 
     Telegram.requestWriteAccess(function(allowed) {
     if(!allowed) {
     alert("Access aborted.");
     return;
     }
-    });
+
+    Telegram.LocationManager.init();
 
     Telegram.LocationManager.getLocation((location) => {
     if (location && location.latitude && location.longitude) {
@@ -90,6 +87,7 @@
     errorDiv.innerHTML = '<i class="bi bi-exclamation-triangle-fill me-2"></i> Tidak dapat mengakses lokasi. Pastikan Anda memberikan izin lokasi.';
     errorDiv.style.display = 'block';
     }
+    });
     });
   }
 
