@@ -70,10 +70,8 @@
     if (!Telegram.LocationManager.isAccessGranted) {
       Telegram.LocationManager.openSettings();
     }
-    if (!Telegram.LocationManager.isLocationAvailable) {
-      alert("Lokasi tidak tersedia.");
-      return;
-    }
+
+    Telegram.requestWriteAccess();
 
     Telegram.LocationManager.getLocation((location) => {
     if (location && location.latitude && location.longitude) {
