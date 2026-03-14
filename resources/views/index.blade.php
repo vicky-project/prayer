@@ -88,6 +88,7 @@
   function openLocationSettings() {
     if (Telegram.LocationManager && Telegram.LocationManager.openSettings) {
       // Catatan: openSettings harus dipanggil sebagai respons dari klik tombol
+      alert("open settings");
       Telegram.LocationManager.openSettings();
     } else {
       alert('Fitur buka pengaturan tidak didukung. Silakan buka pengaturan Telegram secara manual.');
