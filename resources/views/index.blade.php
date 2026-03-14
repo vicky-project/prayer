@@ -215,7 +215,7 @@
       statusEl.innerHTML = `<i class="bi bi-check-circle-fill me-2 text-success"></i> Lokasi diperoleh, mengambil data jadwal...`;
       //fetchPrayerTimes(location.latitude, location.longitude);
       }
-      }).catch(error => alert(error));
+      });
     } catch(error) {
       alert(error.message || "Gagal meminta lokasi");
     }
