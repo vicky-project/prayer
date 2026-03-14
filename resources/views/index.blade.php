@@ -169,23 +169,23 @@
 
   // Fungsi utama untuk meminta lokasi
   function requestLocation() {
-    const statusEl = document.getElementById('location-status');
-    const errorEl = document.getElementById('error-message');
-    const timesEl = document.getElementById('prayer-times');
-
-    // Tampilkan status memuat
-    statusEl.style.display = 'block';
-    statusEl.innerHTML = `<i class="bi bi-geo-alt-fill me-2"></i> Meminta izin lokasi...`;
-    errorEl.style.display = 'none';
-    timesEl.style.display = 'none';
-
-    // Cek apakah Location Manager tersedia
-    if (!Telegram.LocationManager) {
-      showManualError('Fitur lokasi tidak didukung di versi Telegram ini. Silakan perbarui aplikasi Telegram Anda.');
-      return;
-    }
-
     try {
+      const statusEl = document.getElementById('location-status');
+      const errorEl = document.getElementById('error-message');
+      const timesEl = document.getElementById('prayer-times');
+
+      // Tampilkan status memuat
+      statusEl.style.display = 'block';
+      statusEl.innerHTML = `<i class="bi bi-geo-alt-fill me-2"></i> Meminta izin lokasi...`;
+      errorEl.style.display = 'none';
+      timesEl.style.display = 'none';
+
+      // Cek apakah Location Manager tersedia
+      if (!Telegram.LocationManager) {
+        showManualError('Fitur lokasi tidak didukung di versi Telegram ini. Silakan perbarui aplikasi Telegram Anda.');
+        return;
+      }
+
       // *** LANGSUNG MINTA LOKASI ***
       // Catatan: Method yang benar adalah requestLocation, bukan getLocation.
       // Method ini akan memicu prompt izin jika perlu.
