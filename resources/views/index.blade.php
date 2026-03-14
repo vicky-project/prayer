@@ -64,6 +64,7 @@
   }
 
   function requestLocation() {
+    const Telegram = window.Telegram.WebApp;
     Telegram.LocationManager.init(function() {
     Telegram.LocationManager.getLocation((location) => {
     if (location && location.latitude && location.longitude) {
@@ -122,7 +123,6 @@
   }
 
   document.addEventListener("DOMContentLoaded", function() {
-  const Telegram = window.Telegram.WebApp;
 
   // Minta lokasi saat halaman dimuat
   requestLocation();
