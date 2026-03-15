@@ -18,7 +18,7 @@ class FetchPrayerData extends Command
 
     try {
       // Download data dengan timeout panjang
-      $url = config("prayer.PRAYER_BASEAPI_URL");
+      $url = config("prayer.base_api_url");
       if (!$url) {
         $this->error("Api URL not found. Please provide Api URL in .env (PRAYER_BASEAPI_URL)");
         return 1;
