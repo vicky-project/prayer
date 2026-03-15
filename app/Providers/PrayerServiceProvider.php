@@ -34,6 +34,8 @@ class PrayerServiceProvider extends ServiceProvider
     ) {
       $this->registerHooks($class);
     }
+
+    $this->app["config"]->set("timezone", config('prayer.timezone'));
   }
 
   /**
