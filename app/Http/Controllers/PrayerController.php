@@ -38,7 +38,7 @@ class PrayerController extends Controller
       }
 
       $data = $res->json();
-      \Log::debug("Data prayer", $data):
+      \Log::debug("Data prayer", $data);
 
       return response()->json(["success" => true, "data" => $data]);
     } catch(\Exception $e) {
