@@ -116,7 +116,7 @@
       <div class="text-center py-4">
       <i class="bi bi-exclamation-circle-fill text-danger" style="font-size: 3rem;"></i>
       <h5 class="mt-3">Terjadi Kesalahan</h5>
-      <p class="text-muted">${errorMessage}</p>
+      <p style="color: var(--tg-theme-text-color);">${errorMessage}</p>
       <button class="btn btn-primary" onclick="requestLocation()">
       <i class="bi bi-arrow-repeat me-2"></i>Coba Lagi
       </button>
