@@ -176,9 +176,12 @@
     } else if (currentState === 'loaded') {
       html = `
       <div>
-      <div class="text-center mb-4">
+      <div class="text-center mb-2">
       <i class="bi bi-geo-alt-fill text-primary"></i>
       <span class="ms-2" id="locationDisplay">${locationName}</span>
+      </div>
+      <div class="text-center mb-4">
+      <span class="text-muted" id="dateDisplay"></span>
       </div>
       <table class="table table-hover">
       <tbody>
@@ -339,6 +342,7 @@
     buildUI();
 
     // Isi data ke tabel
+    document.getElementById('dateDisplay').innerText = data.data.date;
     document.getElementById('imsak').innerText = data.data.jadwal.imsak || '-';
     document.getElementById('subuh').innerText = data.data.jadwal.subuh || '-';
     document.getElementById('terbit').innerText = data.data.jadwal.terbit || '-';
