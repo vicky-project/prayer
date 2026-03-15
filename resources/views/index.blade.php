@@ -266,7 +266,7 @@
     currentState = 'loading';
     buildUI();
 
-    const initData = window.Telegram?.WebApp?.initData || @json(request->get("initData"));
+    const initData = window.Telegram?.WebApp?.initData || @json(request()->get("initData"));
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
     fetch('{{ secure_url(config("app.url")) }}/api/prayer/times', {
