@@ -39,6 +39,7 @@
   let currentState = 'loading'; // 'loading', 'denied', 'unavailable', 'manual', 'error', 'loaded'
   let errorMessage = '';
   let locationName = '';
+  let locationTimeout;
 
   const appElement = document.getElementById('prayerApp');
 
@@ -151,10 +152,26 @@
     appElement.innerHTML = html;
   }
 
+  function clearLocationTimeout() {
+    if (locationTimeout) {
+      clearTimeout(locationTimeout);
+      locationTimeout = null;
+    }
+  }
+
   // Meminta lokasi melalui Telegram Location Manager atau fallback browser
   window.requestLocation = function() {
     currentState = 'loading';
     buildUI();
+
+    clearLocationTimeout();
+    locationTimeout = setTimeout(() => {
+    if(currentState === 'loading') {
+    console.warn("Location request timeout - Switching to unavailable");
+    currentState = 'unavailable';
+    buildUI();
+    }
+    }, 10000)
 
     const tg = window.Telegram?.WebApp;
     if (!tg) {
@@ -163,8 +180,8 @@
       return;
     }
 
-    try {
-      if (tg.LocationManager) {
+    if (tg.LocationManager && typeof tg.LocationManager.getLocation === 'function') {
+      try {
         tg.LocationManager.getLocation((locationData) => {
         if (locationData) {
         // Izin diberikan
@@ -175,13 +192,13 @@
         buildUI();
         }
         });
-      } else {
-        // LocationManager tidak tersedia, fallback ke browser
+      } catch(error) {
+        console.error("Telegram LocationManager error:", error);
+        clearLocationTimeout();
         useBrowserGeolocation();
       }
-    } catch(error) {
-      currentState = "error";
-      buildUI();
+    } else {
+      // LocationManager tidak tersedia, fallback ke browser
       useBrowserGeolocation();
     }
   };
@@ -191,9 +208,11 @@
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
       (position) => {
+      clearLocationTimeout();
       sendLocationToBackend(position.coords.latitude, position.coords.longitude);
       },
       (error) => {
+      clearLocationTimeout();
       console.error('Geolocation error:', error);
       if (error.code === error.PERMISSION_DENIED) {
       currentState = 'denied';
@@ -202,9 +221,10 @@
       }
       buildUI();
       },
-      { enableHighAccuracy: true, timeout: 10000 }
+      { enableHighAccuracy: true, timeout: 8000 }
       );
     } else {
+      clearLocationTimeout();
       currentState = 'unavailable';
       buildUI();
     }
@@ -222,6 +242,7 @@
 
   // Tampilkan form input manual
   window.showManualInput = function() {
+    clearLocationTimeout();
     currentState = 'manual';
     buildUI();
   };
@@ -250,6 +271,9 @@
 
   // Geocoding sederhana menggunakan Nominatim (OpenStreetMap)
   function geocodeCity(city) {
+    currentState = 'loading';
+    buildUI();
+
     fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(city)}&format=json&limit=1`)
     .then(res => res.json())
     .then(data => {
@@ -259,11 +283,15 @@
     sendLocationToBackend(lat, lon, city);
     } else {
     alert('Kota tidak ditemukan. Silakan masukkan koordinat manual.');
+    currentState = 'manual';
+    buildUI();
     }
     })
     .catch(err => {
     console.error('Geocoding error:', err);
     alert('Gagal mendapatkan koordinat. Coba masukkan manual.');
+    currentState = 'manual';
+    buildUI();
     });
   }
 
