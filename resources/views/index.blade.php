@@ -130,7 +130,7 @@
       <span class="ms-2" id="locationDisplay">${locationName || 'Lokasi Anda'}</span>
       </div>
       <div class="text-center mb-2 small" style="color: var(--tg-theme-hint-color);" id="dateDisplay"></div>
-      <table class="table table-hover" style="background-color: var(--tg-theme-section-bg-color);">
+      <table class="table" style="background-color: var(--tg-theme-section-bg-color);">
       <tbody>
       <tr><th scope="row">Imsak</th><td class="text-end" id="imsak">-</td></tr>
       <tr><th scope="row">Subuh</th><td class="text-end" id="shubuh">-</td></tr>
@@ -207,6 +207,7 @@
       navigator.geolocation.getCurrentPosition(
       (position) => {
       clearLocationTimeout();
+      alert(JSON.stringify(position.coords));
       sendLocationToBackend(position.coords.latitude, position.coords.longitude);
       },
       (error) => {
