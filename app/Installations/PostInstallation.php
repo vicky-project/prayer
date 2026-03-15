@@ -14,6 +14,7 @@ class PostInstallation
         $module->enable();
       }
 
+      Artisan::call("migrate");
     } catch (\Exception $e) {
       logger()->error(
         "Failed to run post installation of object task module: " .
