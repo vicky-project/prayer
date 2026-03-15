@@ -4,6 +4,14 @@
 @section('content')
 <div class="container py-4">
   <div class="row justify-content-center">
+    <div class="col">
+      <a href="{{ route('telegram.index') }}" class="btn btn-outline-secondary">
+        <i class="bi bi-arrow-left me-2"></i>
+        Kembali
+      </a>
+    </div>
+  </div>
+  <div class="row justify-content-center">
     <div class="col-md-8 col-lg-6">
       <div class="card shadow">
         <div class="card-header bg-primary text-white">
