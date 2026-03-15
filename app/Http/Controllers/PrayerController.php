@@ -20,7 +20,7 @@ class PrayerController extends Controller
   */
   public function getTimes(Request $request) {
     $request->validate([
-      "latitide" => "required|numeric",
+      "latitude" => "required|numeric",
       "longitude" => "required|numeric"
     ]);
 
