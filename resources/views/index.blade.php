@@ -74,6 +74,9 @@
     margin-top: 1rem;
     font-size: 0.9rem;
   }
+  #dateDisplay, #coordDisplay {
+    font-size: 0.9rem;
+  }
 </style>
 @endpush
 
@@ -176,13 +179,12 @@
     } else if (currentState === 'loaded') {
       html = `
       <div>
-      <div class="text-center mb-2">
+      <div class="text-center mb-3">
       <i class="bi bi-geo-alt-fill text-primary"></i>
       <span class="ms-2" id="locationDisplay">${locationName}</span>
       </div>
-      <div class="text-center mb-4">
-      <span class="text-muted" id="dateDisplay"></span>
-      </div>
+      <div class="text-center mb-2 small text-muted" id="dateDisplay"></div>
+      <div class="text-center mb-3 small text-muted" id="coordDisplay"></div>
       <table class="table table-hover">
       <tbody>
       <tr><th scope="row">Imsak</th><td class="text-end" id="imsak">-</td></tr>
@@ -342,7 +344,6 @@
     buildUI();
 
     // Isi data ke tabel
-    document.getElementById('dateDisplay').innerText = data.data.date;
     document.getElementById('imsak').innerText = data.data.jadwal.imsak || '-';
     document.getElementById('subuh').innerText = data.data.jadwal.subuh || '-';
     document.getElementById('terbit').innerText = data.data.jadwal.terbit || '-';
@@ -351,6 +352,11 @@
     document.getElementById('ashar').innerText = data.data.jadwal.ashar || '-';
     document.getElementById('maghrib').innerText = data.data.jadwal.maghrib || '-';
     document.getElementById('isya').innerText = data.data.jadwal.isya || '-';
+
+    // Tampilkan tanggal dan koordinat dari respons server
+    document.getElementById('dateDisplay').innerText = `📅 ${data.data.date}`;
+    document.getElementById('coordDisplay').innerText = `📍 ${data.data.latitude.toFixed(4)}, ${data.data.longitude.toFixed(4)}`;
+
     if (cityName) document.getElementById('locationDisplay').innerText = cityName;
     } else {
     currentState = 'error';
