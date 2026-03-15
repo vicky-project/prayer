@@ -1,4 +1,4 @@
-@extends('layouts.app')
+@extends('coreui::layouts.app')
 @section('title', 'Jadwal Shalat')
 
 @section('content')
