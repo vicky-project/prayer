@@ -38,10 +38,7 @@ class PrayerController extends Controller
       ]);
 
       if (!$res->successful()) {
-        \Log::error("Failed to get data prayer.", [
-          "body" => $res->object()->error
-        ]);
-        return response()->json(["success" => false, "message" => "Gagal mengambil data shalat"]);
+        return response()->json(["success" => false, "message" => $res->object()->error]);
       }
 
       $data = $res->json();
