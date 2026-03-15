@@ -163,19 +163,25 @@
       return;
     }
 
-    if (tg.LocationManager) {
-      tg.LocationManager.getLocation((locationData) => {
-      if (locationData) {
-      // Izin diberikan
-      sendLocationToBackend(locationData.latitude, locationData.longitude);
+    try {
+      if (tg.LocationManager) {
+        tg.LocationManager.getLocation((locationData) => {
+        if (locationData) {
+        // Izin diberikan
+        sendLocationToBackend(locationData.latitude, locationData.longitude);
+        } else {
+        // Izin ditolak
+        currentState = 'denied';
+        buildUI();
+        }
+        });
       } else {
-      // Izin ditolak
-      currentState = 'denied';
-      buildUI();
+        // LocationManager tidak tersedia, fallback ke browser
+        useBrowserGeolocation();
       }
-      });
-    } else {
-      // LocationManager tidak tersedia, fallback ke browser
+    } catch(error) {
+      currentState = "error";
+      buildUI();
       useBrowserGeolocation();
     }
   };
