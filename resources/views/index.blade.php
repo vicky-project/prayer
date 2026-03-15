@@ -141,7 +141,7 @@
       <i class="bi bi-geo-alt-fill text-primary"></i>
       <span class="ms-2" id="locationDisplay">${locationName}</span>
       </div>
-      <table class="table table-hover" style="color: var(--tg-theme-section-bg-color);">
+      <table class="table table-hover">
       <tbody>
       <tr><th scope="row">Imsak</th><td class="text-end" id="imsak">-</td></tr>
       <tr><th scope="row">Subuh</th><td class="text-end" id="subuh">-</td></tr>
