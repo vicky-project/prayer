@@ -60,7 +60,7 @@
       <div class="text-center py-4">
       <i class="bi bi-geo-alt-fill text-danger" style="font-size: 3rem;"></i>
       <h5 class="mt-3">Akses Lokasi Ditolak</h5>
-      <p class="text-muted">Untuk menampilkan jadwal shalat yang akurat, kami memerlukan akses lokasi Anda.</p>
+      <p style="color: var(--tg-theme-hint-color);">Untuk menampilkan jadwal shalat yang akurat, kami memerlukan akses lokasi Anda.</p>
       <button class="btn btn-primary" onclick="openLocationSettings()">
       <i class="bi bi-gear me-2"></i>Buka Pengaturan
       </button>
@@ -68,7 +68,7 @@
       <i class="bi bi-arrow-repeat me-2"></i>Coba Lagi
       </button>
       <hr class="my-4">
-      <p class="text-muted">Atau masukkan lokasi manual:</p>
+      <p style="color: var(--tg-theme-hint-color);">Atau masukkan lokasi manual:</p>
       <button class="btn btn-outline-primary" onclick="showManualInput()">
       <i class="bi bi-pencil me-2"></i>Input Manual
       </button>
@@ -79,7 +79,7 @@
       <div class="text-center py-4">
       <i class="bi bi-exclamation-triangle-fill text-warning" style="font-size: 3rem;"></i>
       <h5 class="mt-3">Lokasi Tidak Tersedia</h5>
-      <p class="text-muted">Fitur lokasi tidak didukung di perangkat ini. Silakan masukkan lokasi secara manual.</p>
+      <p style="color: var(--tg-theme-hint-color);">Fitur lokasi tidak didukung di perangkat ini. Silakan masukkan lokasi secara manual.</p>
       <button class="btn btn-primary" onclick="showManualInput()">
       <i class="bi bi-pencil me-2"></i>Input Manual
       </button>
@@ -116,7 +116,7 @@
       <div class="text-center py-4">
       <i class="bi bi-exclamation-circle-fill text-danger" style="font-size: 3rem;"></i>
       <h5 class="mt-3">Terjadi Kesalahan</h5>
-      <p style="color: var(--tg-theme-text-color);">${errorMessage}</p>
+      <p style="color: var(--tg-theme-hint-color);">${errorMessage}</p>
       <button class="btn btn-primary" onclick="requestLocation()">
       <i class="bi bi-arrow-repeat me-2"></i>Coba Lagi
       </button>
@@ -140,7 +140,7 @@
       <tr><th scope="row">Isya</th><td class="text-end" id="isya">-</td></tr>
       </tbody>
       </table>
-      <div class="text-muted small text-center">
+      <div class="small text-center" style="color: var(--tg-theme-hint-color);">
       <i class="bi bi-info-circle me-1"></i>Waktu berdasarkan lokasi Anda
       </div>
       <button class="btn btn-outline-primary w-100 mt-3" onclick="requestLocation()">
