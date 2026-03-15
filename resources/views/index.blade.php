@@ -1,4 +1,4 @@
-@extends('coreui::layouts.app')
+@extends('coreui::layouts.mini-app')
 @section('title', 'Jadwal Shalat')
 
 @section('content')
