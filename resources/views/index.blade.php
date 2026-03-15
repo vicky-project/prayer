@@ -355,7 +355,7 @@
 
     // Tampilkan tanggal dan koordinat dari respons server
     document.getElementById('dateDisplay').innerText = `📅 ${data.data.date}`;
-    document.getElementById('coordDisplay').innerText = `📍 ${data.data.latitude.toFixed(4)}, ${data.data.longitude.toFixed(4)}`;
+    document.getElementById('coordDisplay').innerText = `📍 ${data.data.latitude.toFloat().toFixed(4)}, ${data.data.longitude.toFloat().toFixed(4)}`;
 
     if (cityName) document.getElementById('locationDisplay').innerText = cityName;
     } else {
