@@ -303,7 +303,7 @@
     document.getElementById('dhuhur').innerText = data.jadwal.dhuhur;
     document.getElementById('ashar').innerText = data.jadwal.ashar;
     document.getElementById('maghrib').innerText = data.jadwal.maghrib;
-    document.getElementById('isya').innerText = data.jadwal.isya;
+    document.getElementById('isya').innerText = data.jadwal["isya'"];
     if (cityName) document.getElementById('locationDisplay').innerText = cityName;
   }
 
