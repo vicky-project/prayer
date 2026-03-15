@@ -34,7 +34,7 @@ class PrayerController extends Controller
       ]);
 
       if (!$res->successful()) {
-        return response()->json(["success" => false, "error" => "Gagal mengambil data shalat"]);
+        return response()->json(["success" => false, "message" => "Gagal mengambil data shalat"]);
       }
 
       $data = $res->json();
@@ -47,7 +47,7 @@ class PrayerController extends Controller
         "trace" => $e->getTraceAsString()
       ]);
 
-      return response()->json(["success" => false, "error" => $e->getMessage()]);
+      return response()->json(["success" => false, "message" => $e->getMessage()]);
     }
   }
 
