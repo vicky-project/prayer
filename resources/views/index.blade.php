@@ -6,7 +6,7 @@
 <div class="container py-4">
   <div class="row justify-content-center">
     <div class="col-md-8 col-lg-6">
-      <div class="card shadow">
+      <div class="card shadow" style="background-color: var(--tg-theme-section-bg-color);">
         <div class="card-header bg-primary text-white">
           <h4 class="mb-0"><i class="bi bi-moon-stars me-2"></i>Jadwal Waktu Shalat</h4>
         </div>
