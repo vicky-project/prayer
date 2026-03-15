@@ -5,9 +5,13 @@ namespace Modules\Prayer\Http\Controllers;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Modules\Prayer\Services\PrayerTimeService;
+use Modules\Prayer\Http\Requests\LocationRequest;
 
 class PrayerController extends Controller
 {
+  public function __construct(protected PrayerTimeService $prayerService) {}
+
   /**
   * Display a listing of the resource.
   */
@@ -18,37 +22,18 @@ class PrayerController extends Controller
   /**
   * Get prayer times.
   */
-  public function getTimes(Request $request) {
-    $request->validate([
-      "lat" => "required|numeric",
-      "lon" => "required|numeric"
-    ]);
-
-    $lat = $request->lat;
-    $lon = $request->lon;
-
+  public function getTimes(LocationRequest $request) {
     try {
-      if (!config("prayer.base_api_url")) {
-        throw new \Exception("Please provide api url in env PRAYER_BASEAPI_URL");
-      }
+      $times = $this->prayerService->getPrayerTimes($request->lat, $request->lot, $request->city);
 
-      $res = Http::get(config("prayer.base_api_url"));
-
-      if (!$res->successful()) {
-        return response()->json(["success" => false, "message" => $res->object()->error]);
-      }
-
-      $data = $res->collect("provinces");
-      \Log::debug("Data prayer", $data);
-
-      return response()->json(["success" => true, "data" => $data]);
+      return response()->json(["success" => true, "data" => $times, "message" => "Jadwal shalat berhasil diambil"]);
     } catch(\Exception $e) {
       \Log::error("Failed to fetch prayer api", [
         "message" => $e->getMessage(),
         "trace" => $e->getTraceAsString()
       ]);
 
-      return response()->json(["success" => false, "message" => $e->getMessage()]);
+      return response()->json(["success" => false, "message" => $e->getMessage()], 500);
     }
   }
 

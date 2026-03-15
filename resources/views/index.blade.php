@@ -1,4 +1,5 @@
-@extends('coreui::layouts.app')
+@extends('coreui::layouts.mini-app')
+
 @section('title', 'Jadwal Shalat')
 
 @section('content')
@@ -10,7 +11,7 @@
           <h4 class="mb-0"><i class="bi bi-moon-stars me-2"></i>Jadwal Waktu Shalat</h4>
         </div>
         <div class="card-body" id="prayerApp">
-          {{-- Konten akan diisi oleh JavaScript --}}
+          {{-- Konten diisi JavaScript --}}
         </div>
       </div>
     </div>
@@ -30,6 +31,10 @@
   .btn:focus {
     box-shadow: none;
   }
+  .timeout-option {
+    margin-top: 1rem;
+    font-size: 0.9rem;
+  }
 </style>
 @endpush
 
@@ -43,7 +48,6 @@
 
   const appElement = document.getElementById('prayerApp');
 
-  // Fungsi untuk membangun UI berdasarkan state
   function buildUI() {
     let html = '';
     if (currentState === 'loading') {
@@ -53,6 +57,11 @@
       <span class="visually-hidden">Memuat...</span>
       </div>
       <p class="mt-3">Meminta akses lokasi...</p>
+      <div class="timeout-option">
+      <button class="btn btn-sm btn-outline-secondary" onclick="showManualInput()">
+      <i class="bi bi-pencil me-1"></i>Input Manual
+      </button>
+      </div>
       </div>
       `;
     } else if (currentState === 'denied') {
@@ -79,7 +88,7 @@
       <div class="text-center py-4">
       <i class="bi bi-exclamation-triangle-fill text-warning" style="font-size: 3rem;"></i>
       <h5 class="mt-3">Lokasi Tidak Tersedia</h5>
-      <p style="color: var(--tg-theme-hint-color);">Fitur lokasi tidak didukung di perangkat ini. Silakan masukkan lokasi secara manual.</p>
+      <p style="color: var(--tg-theme-hint-color);">Fitur lokasi tidak didukung atau waktu permintaan habis. Silakan masukkan lokasi secara manual.</p>
       <button class="btn btn-primary" onclick="showManualInput()">
       <i class="bi bi-pencil me-2"></i>Input Manual
       </button>
@@ -120,6 +129,9 @@
       <button class="btn btn-primary" onclick="requestLocation()">
       <i class="bi bi-arrow-repeat me-2"></i>Coba Lagi
       </button>
+      <button class="btn btn-outline-secondary mt-2" onclick="showManualInput()">
+      <i class="bi bi-pencil me-2"></i>Input Manual
+      </button>
       </div>
       `;
     } else if (currentState === 'loaded') {
@@ -127,20 +139,23 @@
       <div>
       <div class="text-center mb-4">
       <i class="bi bi-geo-alt-fill text-primary"></i>
-      <span class="ms-2" id="locationDisplay">${locationName || 'Lokasi Anda'}</span>
+      <span class="ms-2" id="locationDisplay">${locationName}</span>
       </div>
-      <div class="text-center mb-2 small" style="color: var(--tg-theme-hint-color);" id="dateDisplay"></div>
-      <table class="table" style="background-color: var(--tg-theme-section-bg-color);">
+      <table class="table table-hover" style="color: var(--tg-theme-section-bg-color);">
       <tbody>
       <tr><th scope="row">Imsak</th><td class="text-end" id="imsak">-</td></tr>
-      <tr><th scope="row">Subuh</th><td class="text-end" id="shubuh">-</td></tr>
-      <tr><th scope="row">Dhuhur</th><td class="text-end" id="dhuhur">-</td></tr>
+      <tr><th scope="row">Subuh</th><td class="text-end" id="subuh">-</td></tr>
+      <tr><th scope="row">Terbit</th><td class="text-end" id="terbit">-</td></tr>
+      <tr><th scope="row">Dhuha</th><td class="text-end" id="dhuha">-</td></tr>
+      <tr><th scope="row">Dzuhur</th><td class="text-end" id="dzuhur">-</td></tr>
       <tr><th scope="row">Ashar</th><td class="text-end" id="ashar">-</td></tr>
       <tr><th scope="row">Maghrib</th><td class="text-end" id="maghrib">-</td></tr>
       <tr><th scope="row">Isya</th><td class="text-end" id="isya">-</td></tr>
       </tbody>
       </table>
-      <div class="small text-center" style="color: var(--tg-theme-hint-color);" id="metodeDisplay"></div>
+      <div class="small text-center" style="color: var(--tg-theme-hint-color);">
+      <i class="bi bi-info-circle me-1"></i>Waktu berdasarkan lokasi terdekat
+      </div>
       <button class="btn btn-outline-primary w-100 mt-3" onclick="requestLocation()">
       <i class="bi bi-arrow-repeat me-2"></i>Perbarui Lokasi
       </button>
@@ -157,23 +172,20 @@
     }
   }
 
-  // Meminta lokasi melalui Telegram Location Manager atau fallback browser
   window.requestLocation = function() {
     currentState = 'loading';
     buildUI();
 
     clearLocationTimeout();
     locationTimeout = setTimeout(() => {
-    if(currentState === 'loading') {
-    console.warn("Location request timeout - Switching to unavailable");
+    if (currentState === 'loading') {
     currentState = 'unavailable';
     buildUI();
     }
-    }, 10000)
+    }, 10000);
 
     const tg = window.Telegram?.WebApp;
     if (!tg) {
-      // Fallback ke browser geolocation jika Telegram WebApp tidak tersedia
       useBrowserGeolocation();
       return;
     }
@@ -181,27 +193,24 @@
     if (tg.LocationManager && typeof tg.LocationManager.getLocation === 'function') {
       try {
         tg.LocationManager.getLocation((locationData) => {
+        clearLocationTimeout();
         if (locationData) {
-        // Izin diberikan
         sendLocationToBackend(locationData.latitude, locationData.longitude);
         } else {
-        // Izin ditolak
         currentState = 'denied';
         buildUI();
         }
         });
-      } catch(error) {
-        console.error("Telegram LocationManager error:", error);
+      } catch (e) {
+        console.error('Telegram LocationManager error:', e);
         clearLocationTimeout();
         useBrowserGeolocation();
       }
     } else {
-      // LocationManager tidak tersedia, fallback ke browser
       useBrowserGeolocation();
     }
   };
 
-  // Fallback geolocation browser
   function useBrowserGeolocation() {
     if (navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -212,11 +221,7 @@
       (error) => {
       clearLocationTimeout();
       console.error('Geolocation error:', error);
-      if (error.code === error.PERMISSION_DENIED) {
-      currentState = 'denied';
-      } else {
-      currentState = 'unavailable';
-      }
+      currentState = error.code === error.PERMISSION_DENIED ? 'denied' : 'unavailable';
       buildUI();
       },
       { enableHighAccuracy: true, timeout: 8000 }
@@ -228,57 +233,47 @@
     }
   }
 
-  // Buka pengaturan lokasi Telegram
   window.openLocationSettings = function() {
     const tg = window.Telegram?.WebApp;
     if (tg?.LocationManager) {
       tg.LocationManager.openSettings();
     } else {
-      alert('Silakan buka pengaturan Telegram dan izinkan akses lokasi untuk aplikasi ini.');
+      alert('Silakan buka pengaturan Telegram dan izinkan akses lokasi.');
     }
   };
 
-  // Tampilkan form input manual
   window.showManualInput = function() {
     clearLocationTimeout();
     currentState = 'manual';
     buildUI();
   };
 
-  // Kembali ke state awal (loading dan minta lokasi ulang)
   window.resetToInitial = function() {
-    currentState = 'loading';
-    buildUI();
     requestLocation();
   };
 
-  // Ambil lokasi dari input manual
   window.getManualLocation = function() {
     const lat = document.getElementById('latitude')?.value;
     const lon = document.getElementById('longitude')?.value;
     const city = document.getElementById('city')?.value;
 
     if (lat && lon) {
-      sendLocationToBackend(parseFloat(lat), parseFloat(lon), city || 'Manual');
+      sendLocationToBackend(parseFloat(lat), parseFloat(lon), city || '');
     } else if (city) {
-      geocodeCity(city);
+      sendLocationToBackend(null, null, city);
     } else {
       alert('Masukkan kota atau koordinat yang valid.');
     }
   };
 
-  // Geocoding sederhana menggunakan Nominatim (OpenStreetMap)
   function geocodeCity(city) {
     currentState = 'loading';
     buildUI();
-
     fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(city)}&format=json&limit=1`)
     .then(res => res.json())
     .then(data => {
     if (data.length > 0) {
-    const lat = parseFloat(data[0].lat);
-    const lon = parseFloat(data[0].lon);
-    sendLocationToBackend(lat, lon, city);
+    sendLocationToBackend(parseFloat(data[0].lat), parseFloat(data[0].lon), city);
     } else {
     alert('Kota tidak ditemukan. Silakan masukkan koordinat manual.');
     currentState = 'manual';
@@ -293,21 +288,6 @@
     });
   }
 
-  function renderPrayerTimes(data, lat, lon, cityName) {
-    currentState = 'loaded';
-    locationName = cityName || `Lat: ${lat.toFixed(4)}, Lon: ${lon.toFixed(4)}`;
-    buildUI(); // Render tabel kosong
-
-    // Isi data ke tabel
-    document.getElementById('shubuh').innerText = data.jadwal.shubuh;
-    document.getElementById('dhuhur').innerText = data.jadwal.dhuhur;
-    document.getElementById('ashar').innerText = data.jadwal.ashar;
-    document.getElementById('maghrib').innerText = data.jadwal.maghrib;
-    document.getElementById('isya').innerText = data.jadwal["isya'"];
-    if (cityName) document.getElementById('locationDisplay').innerText = cityName;
-  }
-
-  // Kirim koordinat ke backend
   function sendLocationToBackend(lat, lon, cityName = '') {
     currentState = 'loading';
     buildUI();
@@ -315,23 +295,43 @@
     const initData = window.Telegram?.WebApp?.initData || @json(request()->get("initData"));
     const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 
+    let body = {
+      initData
+    };
+    if (cityName && (lat === null || lon === null)) {
+      body.city = cityName;
+    } else {
+      body.lat = lat;
+      body.lon = lon;
+      if (cityName) body.city = cityName;
+    }
+
     fetch('{{ secure_url(config("app.url")) }}/api/prayer/times', {
-      // Sesuaikan endpoint
       method: 'POST',
       headers: {
+        'Accept': 'application/json',
         'Content-Type': 'application/json',
         'X-CSRF-TOKEN': csrfToken
       },
-      body: JSON.stringify({
-      lat,
-      lon,
-      initData
-      })
+      body: JSON.stringify(body)
     })
     .then(response => response.json())
     .then(data => {
     if (data.success) {
-    renderPrayerTimes(data.data, lat, lon, cityName);
+    currentState = 'loaded';
+    locationName = cityName || `Lat: ${data.data.latitude.toFixed(4)}, Lon: ${data.data.longitude.toFixed(4)}`;
+    buildUI();
+
+    // Isi data ke tabel
+    document.getElementById('imsak').innerText = data.data.jadwal.imsak || '-';
+    document.getElementById('subuh').innerText = data.data.jadwal.subuh || '-';
+    document.getElementById('terbit').innerText = data.data.jadwal.terbit || '-';
+    document.getElementById('dhuha').innerText = data.data.jadwal.dhuha || '-';
+    document.getElementById('dzuhur').innerText = data.data.jadwal.dzuhur || '-';
+    document.getElementById('ashar').innerText = data.data.jadwal.ashar || '-';
+    document.getElementById('maghrib').innerText = data.data.jadwal.maghrib || '-';
+    document.getElementById('isya').innerText = data.data.jadwal.isya || '-';
+    if (cityName) document.getElementById('locationDisplay').innerText = cityName;
     } else {
     currentState = 'error';
     errorMessage = data.message || 'Gagal memuat jadwal shalat.';
@@ -341,12 +341,11 @@
     .catch(err => {
     console.error('Fetch error:', err);
     currentState = 'error';
-    errorMessage = 'Koneksi ke server gagal. '+ err.message;
+    errorMessage = 'Koneksi ke server gagal.';
     buildUI();
     });
   }
 
-  // Inisialisasi saat halaman dimuat
   document.addEventListener('DOMContentLoaded', function() {
   requestLocation();
   });

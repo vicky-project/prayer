@@ -26,6 +26,7 @@ class PrayerServiceProvider extends ServiceProvider
     $this->registerTranslations();
     $this->registerConfig();
     $this->registerViews();
+    $this->loadMigrationsFrom(module_path($this->name, "database/migrations"));
 
     if (
       config($this->nameLower . ".hook.enabled", false) &&
@@ -57,7 +58,7 @@ class PrayerServiceProvider extends ServiceProvider
   */
   protected function registerCommands(): void
   {
-    // $this->commands([]);
+    $this->commands([\Modules\Prayer\Console\FetchPrayerData::class]);
   }
 
   /**
