@@ -28,16 +28,17 @@ class PrayerController extends Controller
     $lon = $request->lon;
 
     try {
-      $res = Http::get(config("prayer.base_api_url") . "/shalat", [
-        "latitude" => $lat,
-        "longtitude" => $lon
-      ]);
+      if (!config("prayer.base_api_url")) {
+        throw new \Exception("Please provide api url in env PRAYER_BASEAPI_URL");
+      }
+
+      $res = Http::get(config("prayer.base_api_url"));
 
       if (!$res->successful()) {
         return response()->json(["success" => false, "message" => $res->object()->error]);
       }
 
-      $data = $res->json();
+      $data = $res->collect("provinces");
       \Log::debug("Data prayer", $data);
 
       return response()->json(["success" => true, "data" => $data]);
