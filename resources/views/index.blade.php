@@ -367,7 +367,7 @@
     .catch(err => {
     console.error('Fetch error:', err);
     currentState = 'error';
-    errorMessage = 'Koneksi ke server gagal.';
+    errorMessage = 'Koneksi ke server gagal.' + err.message;
     buildUI();
     });
   }
