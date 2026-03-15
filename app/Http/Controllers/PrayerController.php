@@ -28,12 +28,19 @@ class PrayerController extends Controller
     $lon = $request->longitude;
 
     try {
+      \Log::debug("Using coordinate", [
+        "latitude" => $lat,
+        "longitude" => $lon
+      ]);
       $res = Http::get(config("prayer.base_api_url") . "/prayer", [
         "latitude" => $lat,
         "longitude" => $lon
       ]);
 
       if (!$res->successful()) {
+        \Log::error("Failed to get data prayer.", [
+          "body" => $res->body()
+        ]);
         return response()->json(["success" => false, "message" => "Gagal mengambil data shalat"]);
       }
 
