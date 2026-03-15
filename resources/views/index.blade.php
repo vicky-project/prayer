@@ -96,11 +96,11 @@
       <div class="row">
       <div class="col-md-6 mb-3">
       <label for="latitude" class="form-label">Latitude</label>
-      <input type="number" step="any" class="form-control" id="latitude" placeholder="-6.2088">
+      <input type="number" step="any" class="form-control" id="latitude" placeholder="Contoh: -6.2088">
       </div>
       <div class="col-md-6 mb-3">
       <label for="longitude" class="form-label">Longitude</label>
-      <input type="number" step="any" class="form-control" id="longitude" placeholder="106.8456">
+      <input type="number" step="any" class="form-control" id="longitude" placeholder="Contoh: 106.8456">
       </div>
       </div>
       <button class="btn btn-success w-100" onclick="getManualLocation()">
@@ -129,20 +129,18 @@
       <i class="bi bi-geo-alt-fill text-primary"></i>
       <span class="ms-2" id="locationDisplay">${locationName || 'Lokasi Anda'}</span>
       </div>
+      <div class="text-center mb-2 small" style="color: var(--tg-theme-hint-color);" id="dateDisplay"></div>
       <table class="table table-hover">
       <tbody>
       <tr><th scope="row">Imsak</th><td class="text-end" id="imsak">-</td></tr>
-      <tr><th scope="row">Subuh</th><td class="text-end" id="subuh">-</td></tr>
-      <tr><th scope="row">Syuruk</th><td class="text-end" id="syuruk">-</td></tr>
-      <tr><th scope="row">Zuhur</th><td class="text-end" id="zuhur">-</td></tr>
+      <tr><th scope="row">Subuh</th><td class="text-end" id="shubuh">-</td></tr>
+      <tr><th scope="row">Dhuhur</th><td class="text-end" id="dhuhur">-</td></tr>
       <tr><th scope="row">Ashar</th><td class="text-end" id="ashar">-</td></tr>
       <tr><th scope="row">Maghrib</th><td class="text-end" id="maghrib">-</td></tr>
       <tr><th scope="row">Isya</th><td class="text-end" id="isya">-</td></tr>
       </tbody>
       </table>
-      <div class="small text-center" style="color: var(--tg-theme-hint-color);">
-      <i class="bi bi-info-circle me-1"></i>Waktu berdasarkan lokasi Anda
-      </div>
+      <div class="small text-center" style="color: var(--tg-theme-hint-color);" id="metodeDisplay"></div>
       <button class="btn btn-outline-primary w-100 mt-3" onclick="requestLocation()">
       <i class="bi bi-arrow-repeat me-2"></i>Perbarui Lokasi
       </button>
@@ -295,6 +293,20 @@
     });
   }
 
+  function renderPrayerTimes(data, lat, lon, cityName) {
+    currentState = 'loaded';
+    locationName = cityName || `Lat: ${lat.toFixed(4)}, Lon: ${lon.toFixed(4)}`;
+    buildUI(); // Render tabel kosong
+
+    // Isi data ke tabel
+    document.getElementById('shubuh').innerText = data.jadwal.shubuh;
+    document.getElementById('dhuhur').innerText = data.jadwal.dhuhur;
+    document.getElementById('ashar').innerText = data.jadwal.ashar;
+    document.getElementById('maghrib').innerText = data.jadwal.maghrib;
+    document.getElementById('isya').innerText = data.jadwal.isya;
+    if (cityName) document.getElementById('locationDisplay').innerText = cityName;
+  }
+
   // Kirim koordinat ke backend
   function sendLocationToBackend(lat, lon, cityName = '') {
     currentState = 'loading';
@@ -319,19 +331,7 @@
     .then(response => response.json())
     .then(data => {
     if (data.success) {
-    currentState = 'loaded';
-    locationName = cityName || `Lat: ${lat.toFixed(4)}, Lon: ${lon.toFixed(4)}`;
-    buildUI(); // Render tabel kosong
-
-    // Isi data ke tabel
-    document.getElementById('imsak').innerText = data.data.imsak;
-    document.getElementById('subuh').innerText = data.data.subuh;
-    document.getElementById('syuruk').innerText = data.data.syuruk;
-    document.getElementById('zuhur').innerText = data.data.zuhur;
-    document.getElementById('ashar').innerText = data.data.ashar;
-    document.getElementById('maghrib').innerText = data.data.maghrib;
-    document.getElementById('isya').innerText = data.data.isya;
-    if (cityName) document.getElementById('locationDisplay').innerText = cityName;
+    renderPrayerTimes(data.data, lat, lon, cityName);
     } else {
     currentState = 'error';
     errorMessage = data.message || 'Gagal memuat jadwal shalat.';

@@ -30,7 +30,7 @@ class PrayerController extends Controller
     try {
       \Log::debug("Using coordinate", [
         "latitude" => $lat,
-        "longitude" => $lon
+        "longtitude" => $lon
       ]);
       $res = Http::get(config("prayer.base_api_url") . "/shalat", [
         "latitude" => $lat,
