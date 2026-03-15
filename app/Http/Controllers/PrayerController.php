@@ -20,12 +20,12 @@ class PrayerController extends Controller
   */
   public function getTimes(Request $request) {
     $request->validate([
-      "latitude" => "required|numeric",
-      "longitude" => "required|numeric"
+      "lat" => "required|numeric",
+      "lon" => "required|numeric"
     ]);
 
-    $lat = $request->latitude;
-    $lon = $request->longitude;
+    $lat = $request->lat;
+    $lon = $request->lon;
 
     try {
       $res = Http::get(config("prayer.base_api_url") . "/shalat", [

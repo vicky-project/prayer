@@ -275,7 +275,6 @@
     fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(city)}&format=json&limit=1`)
     .then(res => res.json())
     .then(data => {
-    alert(JSON.stringify(data));
     if (data.length > 0) {
     const lat = parseFloat(data[0].lat);
     const lon = parseFloat(data[0].lon);
@@ -324,9 +323,9 @@
         'X-CSRF-TOKEN': csrfToken
       },
       body: JSON.stringify({
-      latitude: lat,
-      longitude: lon,
-      initData: initData
+      lat,
+      lon,
+      initData
       })
     })
     .then(response => response.json())
