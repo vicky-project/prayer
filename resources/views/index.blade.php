@@ -5,7 +5,7 @@
 <div class="container py-4">
   <div class="row justify-content-center">
     <div class="col">
-      <a href="{{ route('telegram.index') }}" class="btn btn-outline-secondary">
+      <a href="{{ route('telegram.home') }}" class="btn btn-outline-secondary">
         <i class="bi bi-arrow-left me-2"></i>
         Kembali
       </a>
