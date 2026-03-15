@@ -14,16 +14,16 @@ class FetchPrayerData extends Command
   protected $description = 'Fetch prayer times data from JSON and update database';
 
   public function handle() {
-    $this->info('Starting prayer data fetch...');
+    $url = config("prayer.base_api_url");
+    if (!$url) {
+      $this->error("Api URL not found. Please provide Api URL in .env (PRAYER_BASEAPI_URL)");
+      return 1;
+    }
+
+    $this->info('Starting prayer data fetch using url: '.$url);
 
     try {
       // Download data dengan timeout panjang
-      $url = config("prayer.base_api_url");
-      if (!$url) {
-        $this->error("Api URL not found. Please provide Api URL in .env (PRAYER_BASEAPI_URL)");
-        return 1;
-      }
-
       $response = Http::timeout(120)->get($url);
 
       if (!$response->successful()) {
