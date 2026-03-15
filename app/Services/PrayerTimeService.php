@@ -31,6 +31,7 @@ class PrayerTimeService
 
     // 3. Ambil jadwal untuk hari ini
     $today = Carbon::today()->toDateString();
+    $today->tz = config("prayer.timezone");
     $prayer = Prayer::where('city_id', $cityModel->id)
     ->where('date', $today)
     ->first();
