@@ -24,7 +24,7 @@ class FetchPrayerData extends Command
 
     try {
       // Download data dengan timeout panjang
-      $response = Http::timeout(120)->get($url);
+      $response = Http::timeout(3600)->get($url);
 
       if (!$response->successful()) {
         $this->error('Failed to fetch data. HTTP status: ' . $response->status());
