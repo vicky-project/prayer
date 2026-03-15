@@ -3,7 +3,7 @@
 
 @section('content')
 <div class="container py-4">
-  <div class="row justify-content-center">
+  <div class="row justify-content-center mb-3">
     <div class="col">
       <a href="{{ route('telegram.home') }}" class="btn btn-outline-secondary">
         <i class="bi bi-arrow-left me-2"></i>
@@ -11,7 +11,7 @@
       </a>
     </div>
   </div>
-  <div class="row justify-content-center">
+  <div class="row justify-content-center mt-3">
     <div class="col-md-8 col-lg-6">
       <div class="card shadow">
         <div class="card-header bg-primary text-white">
