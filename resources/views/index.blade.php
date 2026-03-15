@@ -207,7 +207,6 @@
       navigator.geolocation.getCurrentPosition(
       (position) => {
       clearLocationTimeout();
-      alert(JSON.stringify(position.coords));
       sendLocationToBackend(position.coords.latitude, position.coords.longitude);
       },
       (error) => {
@@ -276,6 +275,7 @@
     fetch(`https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(city)}&format=json&limit=1`)
     .then(res => res.json())
     .then(data => {
+    alert(JSON.stringify(dsta));
     if (data.length > 0) {
     const lat = parseFloat(data[0].lat);
     const lon = parseFloat(data[0].lon);
