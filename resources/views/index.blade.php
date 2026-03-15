@@ -331,6 +331,7 @@
     fetch('{{ secure_url(config("app.url")) }}/api/prayer/times', {
       method: 'POST',
       headers: {
+        'Accept': 'application/json',
         'Content-Type': 'application/json',
         'X-CSRF-TOKEN': csrfToken
       },
