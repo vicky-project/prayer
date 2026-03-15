@@ -2,7 +2,7 @@
 @section('title', 'Jadwal Shalat')
 
 @section('content')
-<div class="container py-4">
+<div class="container py-3">
   <div class="row justify-content-center mb-3">
     <div class="col">
       <a href="{{ route('telegram.home') }}" class="btn btn-outline-secondary">
