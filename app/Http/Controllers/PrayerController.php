@@ -32,7 +32,7 @@ class PrayerController extends Controller
         "latitude" => $lat,
         "longitude" => $lon
       ]);
-      $res = Http::get(config("prayer.base_api_url") . "/prayer", [
+      $res = Http::get(config("prayer.base_api_url") . "/shalat", [
         "latitude" => $lat,
         "longitude" => $lon
       ]);
