@@ -67,7 +67,8 @@ class PrayerTimeService
   /**
   * Cari kota berdasarkan nama (case insensitive)
   */
-  protected function findCityByName($name) {
+  protected function findCityByName($name): City
+  {
     // Coba exact match
     $city = City::whereRaw('LOWER(name) = ?', [strtolower(trim($name))])->first();
 
@@ -110,5 +111,18 @@ class PrayerTimeService
     $a = sin($dLat/2) * sin($dLat/2) + cos(deg2rad($lat1)) * cos(deg2rad($lat2)) * sin($dLon/2) * sin($dLon/2);
     $c = 2 * atan2(sqrt($a), sqrt(1-$a));
     return $earthRadius * $c;
+  }
+
+  /**
+  * Mendapatkan daftar semua provinsi yang tersedia
+  * @return array
+  */
+  public function getProvinces(): array
+  {
+    return City::whereNotNull('province_name')
+    ->distinct()
+    ->orderBy('province_name')
+    ->pluck('province_name')
+    ->toArray();
   }
 }

@@ -7,6 +7,10 @@ use Illuminate\Support\ServiceProvider;
 use Nwidart\Modules\Traits\PathNamespace;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
+use Modules\Prayer\Services\PrayerTimeService;
+use Modules\Prayer\Telegram\PrayerCommand;
+use Modules\Telegram\Services\Handlers\CommandDispatcher;
+use Modules\Telegram\Services\Support\TelegramApi;
 
 class PrayerServiceProvider extends ServiceProvider
 {
@@ -27,6 +31,16 @@ class PrayerServiceProvider extends ServiceProvider
     $this->registerConfig();
     $this->registerViews();
     $this->loadMigrationsFrom(module_path($this->name, "database/migrations"));
+
+    if ($this->app->bound(CommandDispatcher::class)) {
+      $dispatcher = $this->app->make(CommandDispatcher::class);
+
+      $this->registerTelegramCommands($dispatcher);
+    } else {
+      \Log::warning(
+        "Telegram CommandDispatcher not bound. Skipping command registration.",
+      );
+    }
 
     if (
       config($this->nameLower . ".hook.enabled", false) &&
@@ -50,6 +64,17 @@ class PrayerServiceProvider extends ServiceProvider
     $hookService::registerHook(
       config($this->nameLower . ".hook.name"),
       $this->nameLower."::hooks.app"
+    );
+  }
+
+  protected function registerTelegramCommands(
+    CommandDispatcher $dispatcher,
+  ): void {
+    $dispatcher->registerCommand(
+      new PrayerCommand(
+        $this->app->make(TelegramApi::class),
+        $this->app->make(PrayerTimeService::class)
+      ),
     );
   }
 
