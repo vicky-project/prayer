@@ -74,21 +74,11 @@ class PrayerCommand extends BaseCommandHandler
     return $this->inlineKeyboard->replyKeyboardGrid(
       [
         [
-          "text" => "All provinces",
-          "callback_data" =>
-          [
-            "value" => "provinces",
-            "action" => "provinces"
-          ]
+          "text" => "Provinces",
         ],
         [
-          "text" => "ShareLocation",
-          "callback_data" =>
-          [
-            "value" => "location",
-            "action" => "location"
-          ]
+          "text" => "Location",
         ]
-      ], 2);
+      ], 2, true);
   }
 }
