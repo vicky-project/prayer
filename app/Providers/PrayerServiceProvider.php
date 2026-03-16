@@ -10,6 +10,7 @@ use RecursiveIteratorIterator;
 use Modules\Prayer\Services\PrayerTimeService;
 use Modules\Prayer\Telegram\PrayerCommand;
 use Modules\Telegram\Services\Handlers\CommandDispatcher;
+use Modules\Telegram\Services\Support\InlineKeyboardBuilder;
 use Modules\Telegram\Services\Support\TelegramApi;
 
 class PrayerServiceProvider extends ServiceProvider
@@ -73,7 +74,8 @@ class PrayerServiceProvider extends ServiceProvider
     $dispatcher->registerCommand(
       new PrayerCommand(
         $this->app->make(TelegramApi::class),
-        $this->app->make(PrayerTimeService::class)
+        $this->app->make(PrayerTimeService::class),
+        $this->app->make(InlineKeyboardBuilder::class)
       ),
     );
   }
