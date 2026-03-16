@@ -50,8 +50,7 @@ class PrayerCommand extends BaseCommandHandler
         "send_message" => [
           "text" => "Pilih lokasi atau bagikan lokasi anda",
           "parse_mode" => "MarkdownV2",
-          "reply_markup" =>
-          ["inline_keyboard" => $keyboard]
+          "reply_markup" => $keyboard
         ]
       ];
     } catch(\Exception $e) {
@@ -70,22 +69,25 @@ class PrayerCommand extends BaseCommandHandler
 
   private function prepareKeyboard(): array
   {
-    $this->inlineKeyboard->setModule("prayer");
-    $this->inlineKeyboard->setEntity("prayer");
+    $this->inlineKeyboard->setModule("prayer")->setEntity("prayer");
 
-    return $this->inlineKeyboard->grid(
+    return $this->inlineKeyboard->replyKeyboardGrid(
       [
         [
           "text" => "All provinces",
           "callback_data" =>
           [
             "value" => "provinces",
-            "action" => "content"
+            "action" => "provinces"
           ]
         ],
         [
-          "text" => "Location",
-          "request_location" => true
+          "text" => "ShareLocation",
+          "callback_data" =>
+          [
+            "value" => "location",
+            "action" => "location"
+          ]
         ]
       ], 2);
   }

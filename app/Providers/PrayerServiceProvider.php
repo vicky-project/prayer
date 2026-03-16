@@ -9,6 +9,8 @@ use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use Modules\Prayer\Services\PrayerTimeService;
 use Modules\Prayer\Telegram\PrayerCommand;
+use Modules\Prayer\Telegram\PrayerCallback;
+use Modules\Telegram\Services\Handlers\CallbackHandler as TelegramCallbackHandler;
 use Modules\Telegram\Services\Handlers\CommandDispatcher;
 use Modules\Telegram\Services\Support\InlineKeyboardBuilder;
 use Modules\Telegram\Services\Support\TelegramApi;
@@ -41,6 +43,11 @@ class PrayerServiceProvider extends ServiceProvider
       \Log::warning(
         "Telegram CommandDispatcher not bound. Skipping command registration.",
       );
+    }
+
+    if ($this->app->bound(TelegramCallbackHandler::class)) {
+      $callback = $this->app->make(TelegramCallbackHandler::class);
+      $this->registerCallbackHandlers($callback);
     }
 
     if (
@@ -76,6 +83,16 @@ class PrayerServiceProvider extends ServiceProvider
         $this->app->make(TelegramApi::class),
         $this->app->make(PrayerTimeService::class),
         $this->app->make(InlineKeyboardBuilder::class)
+      ),
+    );
+  }
+
+  protected function registerCallbackHandlers(
+    TelegramCallbackHandler $callback,
+  ): void {
+    $callback->registerHandler(
+      new PrayerCallback(
+        $this->app->make(TelegramApi::class)
       ),
     );
   }
