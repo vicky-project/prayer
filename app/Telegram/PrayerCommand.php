@@ -47,10 +47,11 @@ class PrayerCommand extends BaseCommandHandler
       $keyboard = $this->prepareKeyboard();
       return [
         "status" => "prayertimes_sent",
-        "send_message_with_keyboard" => [
+        "send_message" => [
           "text" => "Pilih lokasi atau bagikan lokasi anda",
           "parse_mode" => "MarkdownV2",
-          "inline_keyboard" => $keyboard
+          "reply_markup" =>
+          ["inline_keyboard" => $keyboard]
         ]
       ];
     } catch(\Exception $e) {
