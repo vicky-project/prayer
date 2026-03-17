@@ -80,12 +80,18 @@ class PrayerCallback extends BaseCallbackHandler
         case "location":
           CacheReplyStateManager::expectReply($chatId, $messageId, "global:prayer:location", $context);
           return [
+            "status" => "location requested",
             "send_message" => [
               "text" => "Share your location",
               "reply_markup" => $this->inlineKeyboard->replyKeyboardGrid([
                 ["text" => "Location", "request_location" => true]
               ])
             ]
+          ];
+        default:
+          Log::warn("No action found ij prayer callback");
+          return [
+            "status" => "No action found."
           ];
       }
     } catch(\Exception $e) {
