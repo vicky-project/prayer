@@ -2,23 +2,19 @@
 namespace Modules\Prayer\Telegram;
 
 use Illuminate\Support\Facades\Log;
-use Modules\Prayer\Services\PrayerTimeService;
 use Modules\Telegram\Services\Handlers\Commands\BaseCommandHandler;
 use Modules\Telegram\Services\Support\InlineKeyboardBuilder;
 use Modules\Telegram\Services\Support\TelegramApi;
 
 class PrayerCommand extends BaseCommandHandler
 {
-  protected PrayerTimeService $prayerService;
   protected InlineKeyboardBuilder $inlineKeyboard;
 
   public function __construct(
     TelegramApi $telegram,
-    PrayerTimeService $prayerService,
     InlineKeyboardBuilder $inlineKeyboard,
   ) {
     parent::__construct($telegram);
-    $this->prayerService = $prayerService;
     $this->inlineKeyboard = $inlineKeyboard;
   }
 
@@ -42,8 +38,6 @@ class PrayerCommand extends BaseCommandHandler
     array $params = [],
   ): array {
     try {
-      $provinces = $this->prayerService->getProvinces();
-      Log::debug("All provinces", $provinces);
       $keyboard = $this->prepareKeyboard();
       return [
         "status" => "prayertimes_sent",

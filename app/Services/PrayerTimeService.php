@@ -122,7 +122,7 @@ class PrayerTimeService
     return City::whereNotNull('province_name')
     ->distinct()
     ->orderBy('province_name')
-    ->pluck('province_name')
+    ->only(['id', 'province_name'])
     ->toArray();
   }
 }

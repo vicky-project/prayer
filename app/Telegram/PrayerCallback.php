@@ -2,15 +2,20 @@
 namespace Modules\Prayer\Telegram;
 
 use Illuminate\Support\Facades\Log;
+use Modules\Prayer\Services\PrayerTimeService;
 use Modules\Telegram\Services\Support\TelegramApi;
 use Modules\Telegram\Services\Handlers\Callbacks\BaseCallbackHandler;
 
 class PrayerCallback extends BaseCallbackHandler
 {
+  protected PrayerTimeService $prayerService;
+
   public function __construct(
     TelegramApi $telegramApi,
+    PrayerTimeService $prayerService,
   ) {
     parent::__construct($telegramApi);
+    $this->prayerService = $prayerService;
   }
 
   public function getModuleName(): string
@@ -48,15 +53,20 @@ class PrayerCallback extends BaseCallbackHandler
 
       switch ($action) {
         case "provinces":
-          \Log::debug("province callback", ["data" => $data, "context" => $context]);
+          $this->getAllProvince();
           return [];
 
         case "location":
-          \Log::debug("location", ["data" => $data, "context" => $context]);
+          Log::debug("location", ["data" => $data, "context" => $context]);
           return [];
       }
     } catch(\Exception $e) {
       throw $e;
     }
+  }
+
+  private function getAllProvince() {
+    $provinces = $this->prayerService->getProvinces();
+    Log::debug("All provinces", $provinces);
   }
 }
