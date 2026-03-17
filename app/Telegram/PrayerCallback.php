@@ -59,7 +59,12 @@ class PrayerCallback extends BaseCallbackHandler
 
         case "location":
           Log::debug("location", ["data" => $data, "context" => $context]);
-          return [];
+          return [
+            "send_message" => [
+              "text" => "Share your location",
+              "reply_markup" => []
+            ]
+          ];
       }
     } catch(\Exception $e) {
       throw $e;
