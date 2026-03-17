@@ -8,11 +8,12 @@ use Nwidart\Modules\Traits\PathNamespace;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
 use Modules\Prayer\Services\PrayerTimeService;
+use Modules\Prayer\Telegram\LocationHandler;
 use Modules\Prayer\Telegram\PrayerCommand;
 use Modules\Prayer\Telegram\PrayerCallback;
-use Modules\Prayer\Telegram\ReplyLocation;
 use Modules\Telegram\Services\Handlers\CallbackHandler as TelegramCallbackHandler;
 use Modules\Telegram\Services\Handlers\CommandDispatcher;
+use Modules\Telegram\Services\Handlers\LocationDispatcher;
 use Modules\Telegram\Services\Handlers\ReplyDispatcher;
 use Modules\Telegram\Services\Support\InlineKeyboardBuilder;
 use Modules\Telegram\Services\Support\TelegramApi;
@@ -55,6 +56,11 @@ class PrayerServiceProvider extends ServiceProvider
     if ($this->app->bound(ReplyDispatcher::class)) {
       $replyDispatcher = $this->app->make(ReplyDispatcher::class);
       $this->registerReplyHandlers($replyDispatcher);
+    }
+
+    if ($this->app->bond(LocationDispatcher::class)) {
+      $dispatcher = $this->app->make(LocationDispatcher::class);
+      $dispatcher->registerHandler($dispatcher->app->make(LocationHandler::class));
     }
 
     if (
@@ -109,9 +115,7 @@ class PrayerServiceProvider extends ServiceProvider
   protected function registerReplyHandlers(
     ReplyDispatcher $replyDispatcher,
   ): void {
-    $replyDispatcher->registerHandler(
-      new ReplyLocation($this->app->make(TelegramApi::class))
-    );
+    // $replyDispatcher->registerHandler();
   }
 
   /**

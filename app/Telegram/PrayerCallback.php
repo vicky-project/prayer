@@ -4,10 +4,10 @@ namespace Modules\Prayer\Telegram;
 use Telegram\Bot\Keyboard\Keyboard;
 use Illuminate\Support\Facades\Log;
 use Modules\Prayer\Services\PrayerTimeService;
+use Modules\Telegram\Services\Handlers\Callbacks\BaseCallbackHandler;
 use Modules\Telegram\Services\Support\InlineKeyboardBuilder;
 use Modules\Telegram\Services\Support\TelegramApi;
-use Modules\Telegram\Services\Handlers\Callbacks\BaseCallbackHandler;
-use Modules\Telegram\Services\Support\CacheReplyStateManager;
+use Modules\Telegram\Services\Support\Cache\LocationStateManager;
 
 class PrayerCallback extends BaseCallbackHandler
 {
@@ -57,7 +57,6 @@ class PrayerCallback extends BaseCallbackHandler
       $entity = $data["entity"];
       $action = $data["action"];
       $id = $data["id"] ?? null;
-      $messageId = $context["callback_query"]["message"]["message_id"];
       $chatId = $context["callback_query"]["message"]["chat"]["id"];
 
       switch ($action) {
@@ -78,9 +77,9 @@ class PrayerCallback extends BaseCallbackHandler
           return $this->getPrayerByCityId($id);
 
         case "location":
-          CacheReplyStateManager::expectReply($chatId, $messageId, "global:prayer:prayer:location", $context);
+          LocationStateManager::expectLocation($chatId, "prayer_location", ["chat_id" => $chatId]);
           return [
-            "status" => "location requested",
+            "status" => "waiting_location",
             "send_message" => [
               "text" => "Share your location",
               "reply_markup" => $this->inlineKeyboard->replyKeyboardGrid([
@@ -89,9 +88,9 @@ class PrayerCallback extends BaseCallbackHandler
             ]
           ];
         default:
-          Log::warn("No action found ij prayer callback");
+          Log::warn("No action found in prayer callback");
           return [
-            "status" => "No action found."
+            "status" => "no_action"
           ];
       }
     } catch(\Exception $e) {
