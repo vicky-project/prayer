@@ -56,7 +56,7 @@ class PrayerCallback extends BaseCallbackHandler
       $entity = $data["entity"];
       $action = $data["action"];
       $id = $data["id"] ?? null;
-      Log::debug("context", ["message" => $context["callback_query"]["message"], "chat" => $context["callback_query"]["chat"]]);
+      Log::debug("context", ["message_id" => $context["callback_query"]["message"]["message_id"], "chat_id" => $context["callback_query"]["message"]["chat"]["id"]]);
 
       switch ($action) {
         case "provinces":
