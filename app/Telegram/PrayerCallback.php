@@ -69,7 +69,11 @@ class PrayerCallback extends BaseCallbackHandler
           return $this->getCitiesByProvinceId($id);
 
         case "prayer":
-          Log::debug("Get city", ["id" => $id,"data" =>$data,"context"=>$context]);
+          if (!$id) {
+            throw new \Exception("ID not provided in callback query");
+          }
+          $this->getPrayerByCityId($id);
+
           return [];
 
         case "location":
@@ -112,7 +116,8 @@ class PrayerCallback extends BaseCallbackHandler
     ];
   }
 
-  private function getCitiesByProvinceId(int $id) {
+  private function getCitiesByProvinceId(int $id): array
+  {
     $cities = $this->prayerService->getCitiesByProvinceId($id);
     $buttons = $cities->map(function($city) {
       return [
@@ -136,5 +141,12 @@ class PrayerCallback extends BaseCallbackHandler
         "parse_mode" => "MarkdownV2",
         "reply_markup" => ["inline_keyboard" => $keyboard]]
     ];
+  }
+
+  private function getPrayerByCityId(int $id) {
+    $city = $this->prayerService->getCityById($id);
+    $prayer = $this->prayerService->getPrayerTimes($city->latitude, $city->longitude, $city->name);
+
+    Log::debug("Found prayer.", $prayer);
   }
 }

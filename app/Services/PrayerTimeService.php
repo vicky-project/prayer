@@ -12,7 +12,8 @@ class PrayerTimeService
   /**
   * Mendapatkan jadwal shalat berdasarkan kota atau koordinat
   */
-  public function getPrayerTimes($latitude = null, $longitude = null, $city = null) {
+  public function getPrayerTimes($latitude = null, $longitude = null, $city = null): array
+  {
     $cityModel = null;
 
     // 1. Cari berdasarkan nama kota jika ada
@@ -129,12 +130,17 @@ class PrayerTimeService
 
   public function getCitiesByProvinceId(int $id): Collection
   {
-    $province = City::findOrFail($id);
+    $cities = $this->getCityById($id);
 
-    return City::where("province_id", $province
+    return City::where("province_id", $cities
       ->province_id)
     ->distinct()
     ->orderBy("name")
     ->get();
+  }
+
+  public function getCityById(int $id):City
+  {
+    return City::findOrFail($id);
   }
 }
