@@ -3,7 +3,7 @@ namespace Modules\Prayer\Telegram;
 
 use Illuminate\Support\Facades\Log;
 use Modules\Telegram\Services\Handlers\BaseLocationHandler;
-use Modules\Telegram\Services\Support\CacheReplyStateManager;
+use Modules\Telegram\Services\Support\Cache\CacheReplyStateManager;
 use Modules\Telegram\Services\Support\TelegramApi;
 
 class LocationHandler extends BaseLocationHandler
