@@ -97,7 +97,11 @@ class PrayerCallback extends BaseCallbackHandler
   return [
     "status" => "provinces_sent",
     "edit_message" => [
-      "text" => "All Provinces",
+      "text" => "All provinces",
+      "parse_mode" => "MarkdownV2"
+    ],
+    "send_message" => [
+      "text" => "List of Provinces",
       "parse_mode" => "MarkdownV2",
       "reply_markup" => ["inline_keyboard" => $keyboard]]
   ];
