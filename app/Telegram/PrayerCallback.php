@@ -66,7 +66,10 @@ class PrayerCallback extends BaseCallbackHandler
             throw new \Exception("ID not provided in callback query");
           }
 
-          $this->getCitiesByProvinceId($id);
+          return $this->getCitiesByProvinceId($id);
+
+        case "prayer":
+          Log::debug("Get city", ["id" => $id,"data" =>$data,"context"=>$context]);
           return [];
 
         case "location":
@@ -103,10 +106,6 @@ class PrayerCallback extends BaseCallbackHandler
     return [
       "status" => "provinces_sent",
       "edit_message" => [
-        "text" => "All provinces",
-        "parse_mode" => "MarkdownV2"
-      ],
-      "send_message" => [
         "text" => "List of Provinces",
         "parse_mode" => "MarkdownV2",
         "reply_markup" => ["inline_keyboard" => $keyboard]]
@@ -115,6 +114,27 @@ class PrayerCallback extends BaseCallbackHandler
 
   private function getCitiesByProvinceId(int $id) {
     $cities = $this->prayerService->getCitiesByProvinceId($id);
-    Log::debug("cities", ["cities" => $cities]);
+    $buttons = $cities->map(function($city) {
+      return [
+        "text" => $city->name,
+        "callback_data" => [
+          "action" => "prayer",
+          "value" => $city->id
+        ]
+      ];
+    })->toArray();
+
+    $keyboard = $this->inlineKeyboard
+    ->setModule("prayer")
+    ->setEntity("prayer")
+    ->grid($buttons, 2);
+
+    return [
+      "status" => "cities_sent",
+      "edit_message" => [
+        "text" => "List of Cities",
+        "parse_mode" => "MarkdownV2",
+        "reply_markup" => ["inline_keyboard" => $keyboard]]
+    ];
   }
 }
