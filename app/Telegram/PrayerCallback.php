@@ -89,7 +89,7 @@ class PrayerCallback extends BaseCallbackHandler
         "text" => $province->province_name,
         "callback_data" => [
           "action" => "cities",
-          "value" => $province->city_id
+          "value" => $province->id
         ]
       ];
   })->toArray(), 3);
