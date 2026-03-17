@@ -122,6 +122,7 @@ class PrayerTimeService
   {
     return City::whereNotNull('province_name')
     ->distinct()
+    ->unique("province_name")
     ->orderBy('province_name')
     ->get();
   }
