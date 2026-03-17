@@ -126,4 +126,15 @@ class PrayerTimeService
     ->get()
     ->unique("province_name");
   }
+
+  public function getCitiesByProvinceId(int $id): array
+  {
+    $province = City::findOrFail($id);
+
+    return City::where("province_id", $province
+      ->province_id)
+    ->distinct()
+    ->orderBy("name")
+    ->toArray();
+  }
 }

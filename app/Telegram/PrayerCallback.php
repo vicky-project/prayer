@@ -55,13 +55,18 @@ class PrayerCallback extends BaseCallbackHandler
     try {
       $entity = $data["entity"];
       $action = $data["action"];
+      $id = $data["id"] ?? null;
 
       switch ($action) {
         case "provinces":
           return $this->getAllProvince();
 
         case "cities":
-          Log::debug("Cities", ["context" => $context, "data" => $data]);
+          if (!$id) {
+            throw new \Exception("ID not provided in callback query");
+          }
+
+          $this->getCitiesByProvinceId($id);
           return [];
 
         case "location":
@@ -80,11 +85,7 @@ class PrayerCallback extends BaseCallbackHandler
   private function getAllProvince(): array
   {
     $provinces = $this->prayerService->getProvinces();
-
-    $keyboard = $this->inlineKeyboard
-    ->setModule("prayer")
-    ->setEntity("prayer")
-    ->grid($provinces->map(function($province) {
+    $buttons = $provinces->map(function($province) {
       return [
         "text" => $province->province_name,
         "callback_data" => [
@@ -92,18 +93,28 @@ class PrayerCallback extends BaseCallbackHandler
           "value" => $province->id
         ]
       ];
-  })->toArray(), 2);
+    })->toArray();
 
-  return [
-    "status" => "provinces_sent",
-    "edit_message" => [
-      "text" => "All provinces",
-      "parse_mode" => "MarkdownV2"
-    ],
-    "send_message" => [
-      "text" => "List of Provinces",
-      "parse_mode" => "MarkdownV2",
-      "reply_markup" => ["inline_keyboard" => $keyboard]]
-  ];
-}
+    $keyboard = $this->inlineKeyboard
+    ->setModule("prayer")
+    ->setEntity("prayer")
+    ->grid($buttons, 2);
+
+    return [
+      "status" => "provinces_sent",
+      "edit_message" => [
+        "text" => "All provinces",
+        "parse_mode" => "MarkdownV2"
+      ],
+      "send_message" => [
+        "text" => "List of Provinces",
+        "parse_mode" => "MarkdownV2",
+        "reply_markup" => ["inline_keyboard" => $keyboard]]
+    ];
+  }
+
+  private function getCitiesByProvinceId(int $id) {
+    $cities = $this->prayerService->getCitiesByProvinceId($id);
+    Log::debug("cities", $cities);
+  }
 }
