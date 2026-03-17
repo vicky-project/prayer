@@ -72,15 +72,13 @@ class PrayerCallback extends BaseCallbackHandler
           if (!$id) {
             throw new \Exception("ID not provided in callback query");
           }
-          $this->getPrayerByCityId($id);
-
-          return [];
+          return $this->getPrayerByCityId($id);
 
         case "location":
           return [
             "send_message" => [
               "text" => "Share your location",
-              "reply_markup" => Keyboard::make()->setOneTimeKeyboard(true)->row([Keyboard::button()->setRequestLocation(true)])
+              "reply_markup" => [Keyboard::make()->setOneTimeKeyboard(true)->row([Keyboard::button()->setRequestLocation(true)])]
             ]
           ];
       }
@@ -143,10 +141,28 @@ class PrayerCallback extends BaseCallbackHandler
     ];
   }
 
-  private function getPrayerByCityId(int $id) {
+  private function getPrayerByCityId(int $id): array
+  {
     $city = $this->prayerService->getCityById($id);
     $prayer = $this->prayerService->getPrayerTimes($city->latitude, $city->longitude, $city->name);
+    $message = "📆 {$prayer['date']}\n".
+    "📍 {$prayer['latitude']},{$prayer['longitude']}\n\n".
+    "*Jadwal*\n".
+    "● Imsak\t".$prayer["jadwal"]["imsak"] ."\n";
+    "● Shubuh\t".$prayer["jadwal"]["subuh"] ."\n";
+    "● Terbit\t".$prayer["jadwal"]["terbit"] ."\n";
+    "● Dhuha\t".$prayer["jadwal"]["dhuha"] ."\n";
+    "● Dzuhur\t".$prayer["jadwal"]["dzuhur"] ."\n";
+    "● Ashar\t".$prayer["jadwal"]["ashar"] ."\n";
+    "● Maghrib\t".$prayer["jadwal"]["maghrib"] ."\n";
+    "● Isya\t".$prayer["jadwal"]["isya"] ."\n";
 
-    Log::debug("Found prayer.", $prayer);
+    return [
+      "status" => "prayer_sent",
+      "edit_message" => [
+        "text" => $message,
+        "parse_mode" => "MarkdownV2"
+      ]
+    ];
   }
 }
