@@ -145,18 +145,40 @@ class PrayerCallback extends BaseCallbackHandler
   {
     $city = $this->prayerService->getCityById($id);
     $prayer = $this->prayerService->getPrayerTimes($city->latitude, $city->longitude, $city->name);
-    $message = "*{$prayer['city']}*\n".
-    "📆 {$prayer['date']}\n".
-    "📍 {$prayer['latitude']},{$prayer['longitude']}\n\n".
-    "*Jadwal*\n".
-    "● Imsak\t\t".$prayer["jadwal"]["imsak"] ."\n".
-    "● Shubuh\t\t".$prayer["jadwal"]["subuh"] ."\n".
-    "● Terbit\t\t".$prayer["jadwal"]["terbit"] ."\n".
-    "● Dhuha\t\t".$prayer["jadwal"]["dhuha"] ."\n".
-    "● Dzuhur\t\t".$prayer["jadwal"]["dzuhur"] ."\n".
-    "● Ashar\t\t".$prayer["jadwal"]["ashar"] ."\n".
-    "● Maghrib\t\t".$prayer["jadwal"]["maghrib"] ."\n".
-    "● Isya\t\t".$prayer["jadwal"]["isya"] ."\n";
+
+    // Bangun header
+    $message = "*{$prayer['city']}*\n";
+    $message .= "📆 {$prayer['date']}\n";
+    $message .= "📍 {$prayer['latitude']},{$prayer['longitude']}\n\n";
+
+    // Buat tabel dengan lebar kolom tetap (10 karakter untuk nama waktu, 5 untuk jam)
+    $table = "";
+    $table .= "```\n"; // Mulai code block
+    $table .= "+----------+-------+\n";
+    $table .= "| Waktu    | Jam   |\n";
+    $table .= "+----------+-------+\n";
+
+    // Daftar waktu shalat sesuai urutan
+    $rows = [
+      'Imsak' => $prayer["jadwal"]["imsak"],
+      'Subuh' => $prayer["jadwal"]["subuh"],
+      'Terbit' => $prayer["jadwal"]["terbit"],
+      'Dhuha' => $prayer["jadwal"]["dhuha"],
+      'Dzuhur' => $prayer["jadwal"]["dzuhur"],
+      'Ashar' => $prayer["jadwal"]["ashar"],
+      'Maghrib' => $prayer["jadwal"]["maghrib"],
+      'Isya' => $prayer["jadwal"]["isya"],
+    ];
+
+    foreach ($rows as $waktu => $jam) {
+      // Format: | Nama      | jam   |
+      $table .= sprintf("| %-8s | %-5s |\n", $waktu, $jam);
+    }
+
+    $table .= "+----------+-------+\n";
+    $table .= "```"; // Tutup code block
+
+    $message .= $table;
 
     return [
       "status" => "prayer_sent",
