@@ -7,6 +7,7 @@ use Modules\Prayer\Services\PrayerTimeService;
 use Modules\Telegram\Services\Support\InlineKeyboardBuilder;
 use Modules\Telegram\Services\Support\TelegramApi;
 use Modules\Telegram\Services\Handlers\Callbacks\BaseCallbackHandler;
+use Modules\Telegram\Services\Support\CacheReplyStateManager;
 
 class PrayerCallback extends BaseCallbackHandler
 {
@@ -56,7 +57,8 @@ class PrayerCallback extends BaseCallbackHandler
       $entity = $data["entity"];
       $action = $data["action"];
       $id = $data["id"] ?? null;
-      Log::debug("context", ["message_id" => $context["callback_query"]["message"]["message_id"], "chat_id" => $context["callback_query"]["message"]["chat"]["id"]]);
+      $messageId = $context["callback_query"]["message"]["message_id"];
+      $chatId = $context["callback_query"]["message"]["chat"]["id"];
 
       switch ($action) {
         case "provinces":
@@ -76,6 +78,7 @@ class PrayerCallback extends BaseCallbackHandler
           return $this->getPrayerByCityId($id);
 
         case "location":
+          CacheReplyStateManager::expectReply($chatId, $messageId, "global:prayer:location", $context);
           return [
             "send_message" => [
               "text" => "Share your location",
