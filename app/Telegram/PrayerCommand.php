@@ -71,13 +71,19 @@ class PrayerCommand extends BaseCommandHandler
   {
     $this->inlineKeyboard->setModule("prayer")->setEntity("prayer");
 
-    return $this->inlineKeyboard->replyKeyboardGrid(
+    return $this->inlineKeyboard->grid(
       [
         [
           "text" => "Provinces",
+          "callback_data" => [
+            "action" => "provinces"
+          ]
         ],
         [
           "text" => "Location",
+          "callback_data" => [
+            "action" => "location"
+          ]
         ]
       ], 2, true);
   }
