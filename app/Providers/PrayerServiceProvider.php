@@ -10,8 +10,10 @@ use RecursiveIteratorIterator;
 use Modules\Prayer\Services\PrayerTimeService;
 use Modules\Prayer\Telegram\PrayerCommand;
 use Modules\Prayer\Telegram\PrayerCallback;
+use Modules\Prayer\Telegram\ReplyLocation;
 use Modules\Telegram\Services\Handlers\CallbackHandler as TelegramCallbackHandler;
 use Modules\Telegram\Services\Handlers\CommandDispatcher;
+use Modules\Telegram\Services\Handlers\ReplyDispatcher;
 use Modules\Telegram\Services\Support\InlineKeyboardBuilder;
 use Modules\Telegram\Services\Support\TelegramApi;
 
@@ -48,6 +50,11 @@ class PrayerServiceProvider extends ServiceProvider
     if ($this->app->bound(TelegramCallbackHandler::class)) {
       $callback = $this->app->make(TelegramCallbackHandler::class);
       $this->registerCallbackHandlers($callback);
+    }
+
+    if ($this->app->bound(ReplyDispatcher::class)) {
+      $replyDispatcher = $this->app->make(ReplyDispatcher::class);
+      $this->registerReplyHandlers($replyDispatcher);
     }
 
     if (
@@ -95,6 +102,15 @@ class PrayerServiceProvider extends ServiceProvider
         $this->app->make(PrayerTimeService::class),
         $this->app->make(InlineKeyboardBuilder::class)
       ),
+      ["callback-throttle"]
+    );
+  }
+
+  protected function registerReplyHandlers(
+    ReplyDispatcher $replyDispatcher,
+  ): void {
+    $replyDispatcher->registerHandler(
+      new ReplyLocation($this->app->make(TelegramApi::class))
     );
   }
 
