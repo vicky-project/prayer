@@ -146,19 +146,12 @@ class PrayerCallback extends BaseCallbackHandler
     $city = $this->prayerService->getCityById($id);
     $prayer = $this->prayerService->getPrayerTimes($city->latitude, $city->longitude, $city->name);
 
-    // Bangun header
+    // Informasi kota dan tanggal
     $message = "*{$prayer['city']}*\n";
     $message .= "📆 {$prayer['date']}\n";
     $message .= "📍 {$prayer['latitude']},{$prayer['longitude']}\n\n";
 
-    // Buat tabel dengan lebar kolom tetap (10 karakter untuk nama waktu, 5 untuk jam)
-    $table = "";
-    $table .= "```\n"; // Mulai code block
-    $table .= "+----------+-------+\n";
-    $table .= "| Waktu    | Jam   |\n";
-    $table .= "+----------+-------+\n";
-
-    // Daftar waktu shalat sesuai urutan
+    // Data waktu shalat
     $rows = [
       'Imsak' => $prayer["jadwal"]["imsak"],
       'Subuh' => $prayer["jadwal"]["subuh"],
@@ -170,13 +163,19 @@ class PrayerCallback extends BaseCallbackHandler
       'Isya' => $prayer["jadwal"]["isya"],
     ];
 
+    // Bangun tabel dengan box‑drawing characters (dalam code block)
+    $table = "```\n"; // mulai code block
+    $table .= "┌──────────┬───────┐\n";
+    $table .= "│ Waktu    │ Jam   │\n";
+    $table .= "├──────────┼───────┤\n";
+
     foreach ($rows as $waktu => $jam) {
-      // Format: | Nama      | jam   |
-      $table .= sprintf("| %-8s | %-5s |\n", $waktu, $jam);
+      // lebar kolom pertama 8 karakter, kedua 5 karakter
+      $table .= sprintf("│ %-8s │ %-5s │\n", $waktu, $jam);
     }
 
-    $table .= "+----------+-------+\n";
-    $table .= "```"; // Tutup code block
+    $table .= "└──────────┴───────┘\n";
+    $table .= "```"; // tutup code block
 
     $message .= $table;
 
