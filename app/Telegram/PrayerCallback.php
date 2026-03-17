@@ -92,7 +92,8 @@ class PrayerCallback extends BaseCallbackHandler
           "value" => $province->city_id
         ]
       ];
-  })->toArray(), 2);
+  })->toArray(), 3);
+  Log::debug("Keyboard inline", ["count" => count($keyboard), "keyboard" => $keyboard]);
 
   return [
     "status" => "provinces_sent",
