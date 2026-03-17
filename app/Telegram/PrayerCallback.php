@@ -49,10 +49,11 @@ class PrayerCallback extends BaseCallbackHandler
       switch ($action) {
         case "provinces":
           \Log::debug("province callback", ["data" => $data, "context" => $context]);
-          break;
+          return [];
+
         case "location":
           \Log::debug("location", ["data" => $data, "context" => $context]);
-          break;
+          return [];
       }
     } catch(\Exception $e) {
       throw $e;
