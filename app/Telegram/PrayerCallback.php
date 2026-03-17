@@ -62,7 +62,7 @@ class PrayerCallback extends BaseCallbackHandler
           return [
             "send_message" => [
               "text" => "Share your location",
-              "reply_markup" => []
+              "reply_markup" => Keyboard::make()->setOneTimeKeyboard(true)->row([Keyboard::button()->setRequestLocation(true)])
             ]
           ];
       }
