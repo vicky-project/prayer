@@ -1,6 +1,7 @@
 <?php
 namespace Modules\Prayer\Telegram;
 
+use Telegram\Bot\Keyboard\Keyboard;
 use Illuminate\Support\Facades\Log;
 use Modules\Prayer\Services\PrayerTimeService;
 use Modules\Telegram\Services\Support\TelegramApi;
