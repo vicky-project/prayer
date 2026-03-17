@@ -60,7 +60,7 @@ class PrayerServiceProvider extends ServiceProvider
 
     if ($this->app->bound(LocationDispatcher::class)) {
       $dispatcher = $this->app->make(LocationDispatcher::class);
-      $dispatcher->registerHandler($dispatcher->app->make(LocationHandler::class));
+      $dispatcher->registerHandler($this->app->make(LocationHandler::class));
     }
 
     if (
