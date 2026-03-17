@@ -123,6 +123,7 @@ class PrayerTimeService
     ->distinct()
     ->orderBy('province_name')
     ->get()
+    ->only(["id", "province_name"])
     ->toArray();
   }
 }
