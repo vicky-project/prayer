@@ -17,7 +17,7 @@ class LocationHandler extends BaseLocationHandler
     return "prayer_location";
   }
 
-  protected function handleLocation(
+  protected function processLocation(
     int $chatId,
     float $latitude,
     float $longitude,
