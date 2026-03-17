@@ -76,7 +76,7 @@ class PrayerCallback extends BaseCallbackHandler
 
         case "location":
           return [
-            "edit_message" => [
+            "send_message" => [
               "text" => "Share your location",
               "reply_markup" => $this->inlineKeyboard->replyKeyboardGrid(["text" => "Location", "request_location" => true])
             ]
