@@ -56,6 +56,7 @@ class PrayerCallback extends BaseCallbackHandler
       $entity = $data["entity"];
       $action = $data["action"];
       $id = $data["id"] ?? null;
+      Log::debug("context", $context);
 
       switch ($action) {
         case "provinces":
@@ -80,7 +81,7 @@ class PrayerCallback extends BaseCallbackHandler
               "text" => "Share your location",
               "reply_markup" => $this->inlineKeyboard->replyKeyboardGrid([
                 ["text" => "Location", "request_location" => true]
-                ])
+              ])
             ]
           ];
       }
