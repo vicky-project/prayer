@@ -5,6 +5,7 @@ use Modules\Prayer\Models\City;
 use Modules\Prayer\Models\Prayer;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Collection;
 
 class PrayerTimeService
 {
@@ -117,13 +118,11 @@ class PrayerTimeService
   * Mendapatkan daftar semua provinsi yang tersedia
   * @return array
   */
-  public function getProvinces(): array
+  public function getProvinces(): Collection
   {
     return City::whereNotNull('province_name')
     ->distinct()
     ->orderBy('province_name')
-    ->get()
-    ->only(["id", "province_name"])
-    ->toArray();
+    ->get();
   }
 }

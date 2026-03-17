@@ -4,19 +4,23 @@ namespace Modules\Prayer\Telegram;
 use Telegram\Bot\Keyboard\Keyboard;
 use Illuminate\Support\Facades\Log;
 use Modules\Prayer\Services\PrayerTimeService;
+use Modules\Telegram\Services\Support\InlineKeyboardBuilder;
 use Modules\Telegram\Services\Support\TelegramApi;
 use Modules\Telegram\Services\Handlers\Callbacks\BaseCallbackHandler;
 
 class PrayerCallback extends BaseCallbackHandler
 {
   protected PrayerTimeService $prayerService;
+  protected InlineKeyboardBuilder $inlineKeyboard;
 
   public function __construct(
     TelegramApi $telegramApi,
     PrayerTimeService $prayerService,
+    InlineKeyboardBuilder $inlineKeyboard,
   ) {
     parent::__construct($telegramApi);
     $this->prayerService = $prayerService;
+    $this->inlineKeyboard = $inlineKeyboard;
   }
 
   public function getModuleName(): string
@@ -54,11 +58,13 @@ class PrayerCallback extends BaseCallbackHandler
 
       switch ($action) {
         case "provinces":
-          $this->getAllProvince();
+          return $this->getAllProvince();
+
+        case "cities":
+          Log::debug("Cities", ["context" => $context, "data" => $data]);
           return [];
 
         case "location":
-          Log::debug("location", ["data" => $data, "context" => $context]);
           return [
             "send_message" => [
               "text" => "Share your location",
@@ -71,8 +77,28 @@ class PrayerCallback extends BaseCallbackHandler
     }
   }
 
-  private function getAllProvince() {
+  private function getAllProvince(): array
+  {
     $provinces = $this->prayerService->getProvinces();
     Log::debug("All provinces", $provinces);
-  }
+
+    $keyboard = $this->inlineKeyboard
+    ->setModule("prayer")
+    ->setEntity("prayer")
+    ->grid($provinces->map(function($province) {
+      return [
+        "text" => $province->province_name,
+        "callback_data" => [
+          "action" => "cities",
+          "value" => $province->city_id
+        ]
+      ];
+  }));
+
+  return [
+    "send_message" => "All Provinces",
+    "parse_mode" => "MarkdownV2",
+    "reply_markup" => ["inline_keyboard" => $keyboard]
+  ];
+}
 }

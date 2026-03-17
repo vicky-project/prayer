@@ -92,7 +92,8 @@ class PrayerServiceProvider extends ServiceProvider
     $callback->registerHandler(
       new PrayerCallback(
         $this->app->make(TelegramApi::class),
-        $this->app->make(PrayerTimeService::class)
+        $this->app->make(PrayerTimeService::class),
+        $this->app->make(InlineKeyboardBuilder::class)
       ),
     );
   }
