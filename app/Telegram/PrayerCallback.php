@@ -78,7 +78,7 @@ class PrayerCallback extends BaseCallbackHandler
           return $this->getPrayerByCityId($id);
 
         case "location":
-          CacheReplyStateManager::expectReply($chatId, $messageId, "global:prayer:location", $context);
+          CacheReplyStateManager::expectReply($chatId, $messageId, "global:prayer:prayer:location", $context);
           return [
             "status" => "location requested",
             "send_message" => [
