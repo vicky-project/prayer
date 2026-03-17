@@ -95,9 +95,11 @@ class PrayerCallback extends BaseCallbackHandler
   })->toArray(), 2);
 
   return [
-    "send_message" => "All Provinces",
-    "parse_mode" => "MarkdownV2",
-    "reply_markup" => ["inline_keyboard" => $keyboard]
+    "status" => "provinces_sent",
+    "edit_message" => [
+      "text" => "All Provinces",
+      "parse_mode" => "MarkdownV2",
+      "reply_markup" => ["inline_keyboard" => $keyboard]]
   ];
 }
 }
