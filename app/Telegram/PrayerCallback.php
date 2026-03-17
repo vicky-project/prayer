@@ -80,7 +80,6 @@ class PrayerCallback extends BaseCallbackHandler
   private function getAllProvince(): array
   {
     $provinces = $this->prayerService->getProvinces();
-    Log::debug("All provinces", $provinces);
 
     $keyboard = $this->inlineKeyboard
     ->setModule("prayer")
