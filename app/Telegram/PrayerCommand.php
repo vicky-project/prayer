@@ -50,7 +50,7 @@ class PrayerCommand extends BaseCommandHandler
         "send_message" => [
           "text" => "Pilih lokasi atau bagikan lokasi anda",
           "parse_mode" => "MarkdownV2",
-          "reply_markup" => $keyboard
+          "reply_markup" => ["inline_keyboard" => $keyboard]
         ]
       ];
     } catch(\Exception $e) {
