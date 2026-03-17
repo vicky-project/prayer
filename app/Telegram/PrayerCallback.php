@@ -92,7 +92,7 @@ class PrayerCallback extends BaseCallbackHandler
           "value" => $province->city_id
         ]
       ];
-  }));
+  })->toArray(), 2);
 
   return [
     "send_message" => "All Provinces",
