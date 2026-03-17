@@ -146,6 +146,7 @@ class PrayerCallback extends BaseCallbackHandler
     $city = $this->prayerService->getCityById($id);
     $prayer = $this->prayerService->getPrayerTimes($city->latitude, $city->longitude, $city->name);
     $message = "📆 {$prayer['date']}\n".
+    "*{$prayer['city']}*\n".
     "📍 {$prayer['latitude']},{$prayer['longitude']}\n\n".
     "*Jadwal*\n".
     "● Imsak\t\t".$prayer["jadwal"]["imsak"] ."\n".

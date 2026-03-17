@@ -50,6 +50,7 @@ class PrayerTimeService
 
     return [
       'date' => $prayer->date->format("d-m-Y"),
+      'city' => $prayer->city->name,
       'latitude' => $cityModel->latitude,
       'longitude' => $cityModel->longitude,
       'jadwal' => [
