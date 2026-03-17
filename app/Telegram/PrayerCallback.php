@@ -115,6 +115,6 @@ class PrayerCallback extends BaseCallbackHandler
 
   private function getCitiesByProvinceId(int $id) {
     $cities = $this->prayerService->getCitiesByProvinceId($id);
-    Log::debug("cities", $cities);
+    Log::debug("cities", ["cities" => $cities]);
   }
 }
