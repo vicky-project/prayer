@@ -66,7 +66,7 @@ class LocationHandler extends BaseLocationHandler
       $table .= "```"; // tutup code block
 
       $message .= $table;
-      $this->sendMessage($chatId, $message, "MarkdownV2");
+      $this->sendMessage($chatId, $message, null, "MarkdownV2");
 
       return [
         "status" => "prayer_sent",
