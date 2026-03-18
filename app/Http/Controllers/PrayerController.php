@@ -17,6 +17,7 @@ class PrayerController extends Controller
   */
   public function index(Request $request) {
     $user = $request->user();
+    $hasTelegram = null;
     if ($user && $user->socialAccounts) {
       $hasTelegram = $user->socialAccounts()->byProvider("telegram")->first();
     }
