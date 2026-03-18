@@ -174,7 +174,7 @@
     });
   }
 
-  useLocationBtn.addEventListener("click", async () => {
+  useLocationBtn.addEventListener("click", async function() {
   useLocationBtn.disabled = true;
   useLocationBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Mendapatkan lokasi...';
 
