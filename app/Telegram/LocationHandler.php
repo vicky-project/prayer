@@ -66,13 +66,12 @@ class LocationHandler extends BaseLocationHandler
       $table .= "```"; // tutup code block
 
       $message .= $table;
+      $this->sendMessage($chatId, $message, "MarkdownV2");
 
       return [
         "status" => "prayer_sent",
-        "edit_message" => [
-          "text" => $message,
-          "parse_mode" => "MarkdownV2"
-        ]
+        "message" => "Prayer times sent",
+        "answer" => "Prayer times sent"
       ];
     } catch(\Exception $e) {
       Log::error("Failed to process location message.", [
