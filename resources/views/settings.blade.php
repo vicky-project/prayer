@@ -20,7 +20,6 @@
           <h4 class="mb-0"><i class="bi bi-gear-fill me-2"></i>Pengaturan Prayer</h4>
         </div>
         <div class="card-body">
-          <div id="alertContainer"></div>
 
           <form id="settingsForm">
             @csrf
@@ -50,6 +49,11 @@
                 value="{{ old('longitude', $telegramUser->data['default_location']['longitude'] ?? '') }}" placeholder="Contoh: 106.8456">
               </div>
             </div>
+
+            <button type="button" class="btn btn-outline-primary mb-3" id="useCurrentLocationBtn">
+              <i class="bi bi-crosshair me-2"></i>
+              Gunakan lokasi saat ini
+            </button>
 
             <hr>
             <h5>Notifikasi</h5>
@@ -134,7 +138,59 @@
 <script>
   const form = document.getElementById('settingsForm');
   const saveBtn = document.getElementById('saveBtn');
-  const alertContainer = document.getElementById('alertContainer');
+  const useLocationBtn = document.getElementById('useCurrentLocationBtn');
+
+  function requestCurrentLocation() {
+    return new Promise((resolve, reject) => {
+    const tg = window.Telegram?.WebApp;
+    if(!tg) {
+    reject("Telegram WebApp tidak tersedia.");
+    return;
+    }
+
+    if(tg.LocationManager && typeof tg.LocationManager.getLocation === 'function') {
+    tg.LocationManager.getLocation((locationData) => {
+    if(locationData) {
+    resolve(locationData);
+    } else {
+    reject("Izin lokasi ditolak.");
+    }
+    });
+    } else {
+    // Fallback ke browser geolocation
+    if(navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition((position) => {
+    resolve({
+    latitude: position.coords.latitude,
+    longitude: position.coords.longitude
+    });
+    }, (error) => {
+    reject("Gagal mendapatkan lokasi: "+ error.message);
+    }, { enableHighAccuracy: true, timeout: 10000 });
+    } else {
+    reject("Geolocation tidak didukung di browser anda.");
+    }
+    }
+    });
+  }
+
+  useLocationBtn.addEventListener("click", async () => {
+  useLocationBtn.disabled = true;
+  useLocationBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Mendapatkan lokasi...';
+
+  try {
+  const location = await requestCurrentLocation();
+  document.getElementById('city').value = "";
+  document.getElementById('latitude').value = location.latitude.toFixed(6);
+  document.getElementById('longitude').value = location.longitude.toFixed(6);
+  showToast("Lokasi berhasil didapatkan", 'success'):
+  } catch(error) {
+  showToast(error.message, 'danger');
+  } finally {
+  useLocationBtn.disabled = false;
+  useLocationBtn.innerHTML = '<i class="bi bi-crosshair me-2"></i>Gunakan lokasi saat ini';
+  }
+  });
 
   form.addEventListener('submit', async (e) => {
   e.preventDefault();

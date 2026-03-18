@@ -19,7 +19,9 @@ class PrayerController extends Controller
   * Display a listing of the resource.
   */
   public function index(Request $request) {
-    return view('prayer::index');
+    $telegramUser = $request->get("telegram_user");
+
+    return view('prayer::index', compact("telegramUser"));
   }
 
   /**
@@ -96,7 +98,6 @@ class PrayerController extends Controller
       $data['default_location'] = $defaultLocation;
       $data['notifications_enabled'] = $request->boolean('notifications_enabled');
 
-      \Log::debug("Data prayer to saved", ["data" => $data, "tg_user" => $telegramUser]);
       $telegram->data = $data;
       $telegram->save();
 
