@@ -5,7 +5,7 @@ namespace Modules\Prayer\Http\Controllers;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
-use Illuminate\Validation\Validator;
+use Illuminate\Support\Facades\Validator;
 use Modules\Prayer\Services\PrayerTimeService;
 use Modules\Prayer\Http\Requests\LocationRequest;
 use Modules\Telegram\Services\TelegramService;
@@ -76,8 +76,13 @@ class PrayerController extends Controller
       ], 422);
     }
 
-    $data = $telegramUser->data ?? [];
-    $defaultLocation = [];
+    try {
+      $data = $telegramUser->data ?? [];
+      $defaultLocation = [];
+      throw new \Exception("Testing");
+    } catch(\Exception $e) {
+      return response()->json(["success" => false, "message" => $e->getMessage()], 500);
+    }
   }
 
   /**
