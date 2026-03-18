@@ -78,7 +78,7 @@ class LocationHandler extends BaseLocationHandler
         "message" => $e->getMessage(),
         "trace" => $e->getTraceAsString(),
       ]);
-      $this->sendMessage($chatId, $e->getMessage(), null, "MarkdownV2")
+      $this->sendMessage($chatId, $e->getMessage(), null, "MarkdownV2");
 
       return [
         "status" => "locationprayer_fail",
