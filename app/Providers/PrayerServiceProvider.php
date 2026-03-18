@@ -3,10 +3,21 @@
 namespace Modules\Prayer\Providers;
 
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Schedule;
 use Illuminate\Support\ServiceProvider;
 use Nwidart\Modules\Traits\PathNamespace;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
+use Modules\Prayer\Services\PrayerTimeService;
+use Modules\Prayer\Telegram\LocationHandler;
+use Modules\Prayer\Telegram\PrayerCommand;
+use Modules\Prayer\Telegram\PrayerCallback;
+use Modules\Telegram\Services\Handlers\CallbackHandler as TelegramCallbackHandler;
+use Modules\Telegram\Services\Handlers\CommandDispatcher;
+use Modules\Telegram\Services\Handlers\LocationDispatcher;
+use Modules\Telegram\Services\Handlers\ReplyDispatcher;
+use Modules\Telegram\Services\Support\InlineKeyboardBuilder;
+use Modules\Telegram\Services\Support\TelegramApi;
 
 class PrayerServiceProvider extends ServiceProvider
 {
@@ -26,6 +37,32 @@ class PrayerServiceProvider extends ServiceProvider
     $this->registerTranslations();
     $this->registerConfig();
     $this->registerViews();
+    $this->loadMigrationsFrom(module_path($this->name, "database/migrations"));
+
+    if ($this->app->bound(CommandDispatcher::class)) {
+      $dispatcher = $this->app->make(CommandDispatcher::class);
+
+      $this->registerTelegramCommands($dispatcher);
+    } else {
+      \Log::warning(
+        "Telegram CommandDispatcher not bound. Skipping command registration.",
+      );
+    }
+
+    if ($this->app->bound(TelegramCallbackHandler::class)) {
+      $callback = $this->app->make(TelegramCallbackHandler::class);
+      $this->registerCallbackHandlers($callback);
+    }
+
+    if ($this->app->bound(ReplyDispatcher::class)) {
+      $replyDispatcher = $this->app->make(ReplyDispatcher::class);
+      $this->registerReplyHandlers($replyDispatcher);
+    }
+
+    if ($this->app->bound(LocationDispatcher::class)) {
+      $dispatcher = $this->app->make(LocationDispatcher::class);
+      $dispatcher->registerHandler($this->app->make(LocationHandler::class));
+    }
 
     if (
       config($this->nameLower . ".hook.enabled", false) &&
@@ -52,12 +89,45 @@ class PrayerServiceProvider extends ServiceProvider
     );
   }
 
+  protected function registerTelegramCommands(
+    CommandDispatcher $dispatcher,
+  ): void {
+    $dispatcher->registerCommand(
+      new PrayerCommand(
+        $this->app->make(TelegramApi::class),
+        $this->app->make(InlineKeyboardBuilder::class)
+      ),
+    );
+  }
+
+  protected function registerCallbackHandlers(
+    TelegramCallbackHandler $callback,
+  ): void {
+    $callback->registerHandler(
+      new PrayerCallback(
+        $this->app->make(TelegramApi::class),
+        $this->app->make(PrayerTimeService::class),
+        $this->app->make(InlineKeyboardBuilder::class)
+      )
+    );
+  }
+
+  protected function registerReplyHandlers(
+    ReplyDispatcher $replyDispatcher,
+  ): void {
+    // $replyDispatcher->registerHandler();
+  }
+
   /**
   * Register commands in the format of Command::class
   */
   protected function registerCommands(): void
   {
-    // $this->commands([]);
+    $this->commands([
+      \Modules\Prayer\Console\FetchPrayerData::class,
+      \Modules\Prayer\Console\ResetPrayerNotifications::class,
+      \Modules\Prayer\Console\SendPrayerNotifications::class
+    ]);
   }
 
   /**
@@ -65,10 +135,11 @@ class PrayerServiceProvider extends ServiceProvider
   */
   protected function registerCommandSchedules(): void
   {
-    // $this->app->booted(function () {
-    //     $schedule = $this->app->make(Schedule::class);
-    //     $schedule->command('inspire')->hourly();
-    // });
+    $this->app->booted(function () {
+      //     $schedule = $this->app->make(Schedule::class);
+      Schedule::command('app:prayer-sent')->everyMinute();
+      Schedule::command('app:prayer-reset')->dailyAt('00:01');
+    });
   }
 
   /**
