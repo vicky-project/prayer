@@ -25,7 +25,6 @@ class PrayerController extends Controller
   public function getTimes(LocationRequest $request) {
     try {
       $times = $this->prayerService->getPrayerTimes($request->lat, $request->lot, $request->city);
-      \Log::debug("Result times:", $times);
 
       return response()->json(["success" => true, "data" => $times, "message" => "Jadwal shalat berhasil diambil"]);
     } catch(\Exception $e) {

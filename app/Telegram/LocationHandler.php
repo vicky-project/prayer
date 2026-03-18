@@ -13,7 +13,7 @@ class LocationHandler extends BaseLocationHandler
 
   public function __construct(
     TelegramApi $telegram,
-    PrayerTimeService $service
+    PrayerTimeService $prayerService
   ) {
     parent::__construct($telegram);
     $this->prayerService = $prayerService;
