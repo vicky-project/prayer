@@ -106,6 +106,8 @@
   const hasDefaultLocation = @json($telegramUser && isset($telegramUser->data["default_location"]) && !empty($telegramUser->data["default_location"]))
   const defaultLocation = @json($telegramUser->data["default_location"] ?? null)
 
+  alert(hasDefaultLocation, defaultLocation);
+
   const appElement = document.getElementById('prayerApp');
 
   function buildUI() {
