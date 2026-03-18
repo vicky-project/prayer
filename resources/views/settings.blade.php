@@ -194,6 +194,8 @@
 
   form.addEventListener('submit', async function(e) {
   e.preventDefault();
+  e.stopPropagation();
+  alert("Form submitted");
 
   // Tampilkan loading
   saveBtn.disabled = true;
