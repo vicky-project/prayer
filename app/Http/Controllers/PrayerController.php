@@ -90,7 +90,7 @@ class PrayerController extends Controller
       $data['default_location'] = $defaultLocation;
       $data['notifications_enabled'] = $request->boolean('notifications_enabled');
 
-      \Log::debug("Data prayer to saved", $data);
+      \Log::debug("Data prayer to saved", ["data" => $data, "tg_user" => $telegramUser]);
       $telegramUser->data = $data;
       $telegramUser->save();
 
@@ -102,9 +102,4 @@ class PrayerController extends Controller
       return response()->json(["success" => false, "message" => $e->getMessage()], 500);
     }
   }
-
-  /**
-  * Remove the specified resource from storage.
-  */
-  public function destroy($id) {}
 }
