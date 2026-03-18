@@ -4,11 +4,18 @@
 @section('content')
 <div class="container py-3">
   <div class="row justify-content-center mb-3">
-    <div class="col">
-      <a href="{{ route('telegram.home') }}" class="btn btn-outline-secondary">
-        <i class="bi bi-arrow-left me-2"></i>
-        Kembali
-      </a>
+    <div class="col-md-12">
+      <div class="d-flex justify-content-between align-items-center">
+        <a href="{{ route('telegram.home') }}" class="btn btn-outline-secondary">
+          <i class="bi bi-arrow-left me-2"></i>
+          Kembali
+        </a>
+        @if($hasTelegram)
+        <a href="{{ route('apps.prayer.settings') }}" class="btn btn-outline-secondary">
+          <i class="bi bi-gear-fill fs-5"></i>
+        </a>
+        @endif
+      </div>
     </div>
   </div>
   <div class="row justify-content-center mt-3">

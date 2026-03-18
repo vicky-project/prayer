@@ -16,7 +16,11 @@ class PrayerController extends Controller
   * Display a listing of the resource.
   */
   public function index() {
-    return view('prayer::index');
+    $user = $request->user();
+    if ($user && $user->socialAccounts) {
+      $hasTelegram = $user->socialAccounts()->byProvider("telegram")->first();
+    }
+    return view('prayer::index', compact("hasTelegram"));
   }
 
   /**
