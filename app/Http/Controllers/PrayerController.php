@@ -16,11 +16,11 @@ class PrayerController extends Controller
   * Display a listing of the resource.
   */
   public function index(Request $request) {
-    $user = $request->user();
+    $initData = $request->get('initData');
     $hasTelegram = null;
-    if ($user && $user->socialAccounts) {
-      $hasTelegram = $user->socialAccounts()->byProvider("telegram")->first();
-      \Log::debug("Has Telegram", ["has" => $hasTelegram]);
+    if ($initData) {
+      //$hasTelegram = $user->socialAccounts()->byProvider("telegram")->first();
+      \Log::debug("Has initData", ["has" => $initData]);
     }
 
     $view = view('prayer::index', compact('hasTelegram'));
