@@ -21,7 +21,8 @@ class PrayerController extends Controller
     $user = null;
     if ($initData) {
       parse_str($initData, $data);
-      $tgId = $data["user"]["id"];
+      $userData = json_decode($data["user"] ?? '{}', true);
+      $tgId = $userData["id"];
 
       $user = $tgService->getUserByTelegramId($tgId);
     }
