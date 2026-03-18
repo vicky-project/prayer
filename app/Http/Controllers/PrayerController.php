@@ -5,6 +5,7 @@ namespace Modules\Prayer\Http\Controllers;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Validation\Validator;
 use Modules\Prayer\Services\PrayerTimeService;
 use Modules\Prayer\Http\Requests\LocationRequest;
 use Modules\Telegram\Services\TelegramService;
@@ -17,7 +18,6 @@ class PrayerController extends Controller
   * Display a listing of the resource.
   */
   public function index(Request $request) {
-
     return view('prayer::index');
   }
 
@@ -57,12 +57,27 @@ class PrayerController extends Controller
   * Update the specified resource in storage.
   */
   public function update(Request $request) {
-    $request->validate([
+    $telegramUser = $request->get("telegram_user");
+    if (!$telegramUser) {
+      return response()->json(["success" => false, "message" => "Telegram user tidak ditemukan"], 404);
+    }
+
+    $validator = Validator::make($request->all(), [
       "city" => "nullable|string|max:255",
       "latitude" => "nullable|numeric|between:-90,90",
       "longitude" => "nullable|between:-180,180",
       "notifications_enabled" => "boolean"
     ]);
+
+    if ($validator->fails()) {
+      return response()->json([
+        "success" => false,
+        "erros" => $validator->errors()
+      ], 422);
+    }
+
+    $data = $telegramUser->data ?? [];
+    $defaultLocation = [];
   }
 
   /**

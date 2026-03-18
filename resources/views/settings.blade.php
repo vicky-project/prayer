@@ -10,13 +10,9 @@
           <h4 class="mb-0"><i class="bi bi-gear-fill me-2"></i>Pengaturan Prayer</h4>
         </div>
         <div class="card-body">
-          @if(session('success'))
-          <div class="alert alert-success">
-            {{ session('success') }}
-          </div>
-          @endif
+          <div id="alertContainer"></div>
 
-          <form method="POST" action="{{ route('apps.prayer.settings') }}">
+          <form id="settingsForm">
             @csrf
             <h5>Lokasi Default</h5>
             <p class="text-muted small">
@@ -49,11 +45,11 @@
             <h5>Notifikasi</h5>
             <div class="form-check form-switch mb-3">
               <input class="form-check-input" type="checkbox" id="notifications_enabled" name="notifications_enabled"
-              {{ old('notifications_enabled', $telegramUser->data['notifications_enabled'] ?? false) ? 'checked' : '' }} value="1">
+              {{ old('notifications_enabled', $telegramUser->data['notifications_enabled'] ?? false) ? 'checked' : '' }}>
               <label class="form-check-label" for="notifications_enabled">Aktifkan notifikasi waktu shalat</label>
             </div>
 
-            <button type="submit" class="btn btn-primary w-100">Simpan Pengaturan</button>
+            <button type="submit" class="btn btn-primary w-100" id="saveBtn">Simpan Pengaturan</button>
           </form>
         </div>
       </div>
@@ -122,4 +118,66 @@
     font-size: 0.9rem;
   }
 </style>
+@endpush
+
+@push('scripts')
+<script>
+  const form = document.getElementById('settingsForm');
+  const saveBtn = document.getElementById('saveBtn');
+  const alertContainer = document.getElementById('alertContainer');
+
+  form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  // Tampilkan loading
+  saveBtn.disabled = true;
+  saveBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Menyimpan...';
+
+  // Kumpulkan data
+  const city = document.getElementById('city').value;
+  const latitude = document.getElementById('latitude').value;
+  const longitude = document.getElementById('longitude').value;
+  const notificationsEnabled = document.getElementById('notifications_enabled').checked;
+
+  const formData = {
+  city: city || undefined,
+  latitude: latitude ? parseFloat(latitude) : undefined,
+  longitude: longitude ? parseFloat(longitude) : undefined,
+  notifications_enabled: notificationsEnabled
+  };
+
+  // Hapus field kosong
+  Object.keys(formData).forEach(key => formData[key] === undefined && delete formData[key]);
+
+  try {
+  const response = await fetch('{{ secure_url(config("app.url")) }}/api/prayer/settings', {
+  method: 'POST',
+  headers: {
+  'Accept': 'application/json',
+  'Content-Type': 'application/json',
+  'X-Telegram-Init-Data': window.Telegram?.WebApp?.initData || @json(request()->get('initData', '')) // dikirim via header atau body
+  },
+  body: JSON.stringify(formData)
+  });
+
+  const result = await response.json();
+
+  if (result.success) {
+  showToast(result.message, 'success');
+  } else {
+  let errorMsg = result.message || 'Terjadi kesalahan.';
+  if (result.errors) {
+  errorMsg = Object.values(result.errors).flat().join('<br>');
+  }
+  showToast(errorMsg, 'danger');
+  }
+  } catch (error) {
+  console.error('Error:', error);
+  showToast('Gagal terhubung ke server.', 'danger');
+  } finally {
+  saveBtn.disabled = false;
+  saveBtn.innerHTML = 'Simpan Pengaturan';
+  }
+  });
+</script>
 @endpush
