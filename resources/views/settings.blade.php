@@ -55,6 +55,7 @@
                 <i class="bi bi-geo-alt me-2"></i>
                 Ambil lokasi saat ini
               </button>
+              <br>
               <small class="text-muted ms-2" id="locationStatus"></small>
             </div>
 
