@@ -32,6 +32,8 @@ class LocationHandler extends BaseLocationHandler
     array $context = []
   ): array {
     try {
+      $times = $this->prayerService->getPrayerTimes($latitude, $longitude);
+      Log::debug("Prayer times", $times);
       return [];
     } catch(\Exception $e) {
       Log::error("Failed to process location message.", [
