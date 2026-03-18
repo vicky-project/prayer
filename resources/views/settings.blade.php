@@ -137,41 +137,68 @@
     autoLocationBtn.disabled = true;
 
     const tg = window.Telegram?.WebApp;
+
+    // Fungsi fallback ke browser geolocation
+    const useBrowserGeolocation = () => {
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+        (position) => {
+        document.getElementById('latitude').value = position.coords.latitude;
+        document.getElementById('longitude').value = position.coords.longitude;
+        document.getElementById('city').value = "";
+        locationStatus.innerText = "Lokasi berhasil didapatkan dari browser.";
+        autoLocationBtn.disabled = false;
+        },
+        (error) => {
+        locationStatus.innerText = "Gagal mendapatkan lokasi: " + error.message;
+        autoLocationBtn.disabled = false;
+        },
+        { enableHighAccuracy: true, timeout: 10000 }
+        );
+      } else {
+        locationStatus.innerText = "Geolocation tidak didukung di browser ini.";
+        autoLocationBtn.disabled = false;
+      }
+    };
+
+    // Jika tidak ada Telegram WebApp, langsung fallback
     if (!tg) {
-      locationStatus.innerText = 'Telegram WebApp tidak tersedia.';
-      autoLocationBtn.disabled = false;
+      useBrowserGeolocation();
       return;
     }
 
-    if (!tg.LocationManager || tg.LocationManager.getLocation !== 'function') {
-      locationStatus.innerText = "Fitur lokasi tidak didukung";
-      autoLocationBtn.disabled = false;
+    // Cek apakah LocationManager tersedia
+    if (!tg.LocationManager || typeof tg.LocationManager.getLocation !== 'function') {
+      useBrowserGeolocation();
       return;
     }
 
+    // Set timeout untuk Telegram
     const timeout = setTimeout(() => {
-    locationStatus.innerText = "Waktu permintaan habis, silakan input lokasi manual.";
-    autoLocationBtn.disabled = false;
+    locationStatus.innerText = "Waktu permintaan Telegram habis, mencoba browser geolocation...";
+    useBrowserGeolocation();
     }, 10000);
 
     try {
       tg.LocationManager.getLocation((locationData) => {
       clearTimeout(timeout);
-      if(locationData) {
+      if (locationData) {
       document.getElementById('latitude').value = locationData.latitude;
       document.getElementById('longitude').value = locationData.longitude;
       document.getElementById('city').value = "";
-      } else {
-      locationStatus.innerText = 'Akses lokasi ditolak';
-      }
-
+      locationStatus.innerText = "Lokasi berhasil didapatkan dari Telegram.";
       autoLocationBtn.disabled = false;
+      } else {
+      // Izin ditolak, coba fallback
+      locationStatus.innerText = "Akses lokasi ditolak di Telegram, mencoba browser...";
+      useBrowserGeolocation();
+      }
       });
-    } catch(e) {
+    } catch (e) {
       clearTimeout(timeout);
       console.error("Location Manager error: ", e);
-      locationStatus.innerText = "Gagal mengambil lokasi.";
-      autoLocationBtn.disabled = false;
+      locationStatus.innerText = "Error di Telegram, mencoba browser...";
+      useBrowserGeolocation();
     }
   }
 
