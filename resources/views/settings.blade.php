@@ -61,3 +61,65 @@
   </div>
 </div>
 @endsection
+
+@push('styles')
+<style>
+  /* Menggunakan tema Telegram */
+  body {
+    background-color: var(--tg-theme-bg-color);
+    color: var(--tg-theme-text-color);
+  }
+  .card {
+    background-color: var(--tg-theme-secondary-bg-color);
+    border: none;
+  }
+  .card-header {
+    background-color: var(--tg-theme-button-color);
+    color: var(--tg-theme-button-text-color);
+    border-bottom: none;
+  }
+  .btn-primary {
+    background-color: var(--tg-theme-button-color);
+    border-color: var(--tg-theme-button-color);
+    color: var(--tg-theme-button-text-color);
+  }
+  .btn-outline-primary {
+    color: var(--tg-theme-button-color);
+    border-color: var(--tg-theme-button-color);
+  }
+  .btn-outline-primary:hover {
+    background-color: var(--tg-theme-button-color);
+    color: var(--tg-theme-button-text-color);
+  }
+  .btn-outline-secondary {
+    color: var(--tg-theme-hint-color);
+    border-color: var(--tg-theme-hint-color);
+  }
+  .btn-outline-secondary:hover {
+    background-color: var(--tg-theme-hint-color);
+    color: var(--tg-theme-button-text-color);
+  }
+  .text-muted {
+    color: var(--tg-theme-hint-color) !important;
+  }
+  .table {
+    color: var(--tg-theme-text-color);
+  }
+  .table-hover tbody tr:hover {
+    background-color: var(--tg-theme-section-separator-color);
+  }
+  .table td, .table th {
+    border-color: var(--tg-theme-section-separator-color);
+  }
+  .spinner-border {
+    color: var(--tg-theme-button-color) !important;
+  }
+  .timeout-option {
+    margin-top: 1rem;
+    font-size: 0.9rem;
+  }
+  #dateDisplay, #coordDisplay {
+    font-size: 0.9rem;
+  }
+</style>
+@endpush
