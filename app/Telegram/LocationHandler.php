@@ -32,9 +32,48 @@ class LocationHandler extends BaseLocationHandler
     array $context = []
   ): array {
     try {
-      $times = $this->prayerService->getPrayerTimes($latitude, $longitude);
-      Log::debug("Prayer times", $times);
-      return [];
+      $prayer = $this->prayerService->getPrayerTimes($latitude, $longitude);
+
+      // Informasi kota dan tanggal
+      $message = "*{$prayer['city']}*\n";
+      $message .= "📆 {$prayer['date']}\n";
+      $message .= "📍 {$prayer['latitude']},{$prayer['longitude']}\n\n";
+
+      // Data waktu shalat
+      $rows = [
+        'Imsak' => $prayer["jadwal"]["imsak"],
+        'Subuh' => $prayer["jadwal"]["subuh"],
+        'Terbit' => $prayer["jadwal"]["terbit"],
+        'Dhuha' => $prayer["jadwal"]["dhuha"],
+        'Dzuhur' => $prayer["jadwal"]["dzuhur"],
+        'Ashar' => $prayer["jadwal"]["ashar"],
+        'Maghrib' => $prayer["jadwal"]["maghrib"],
+        'Isya' => $prayer["jadwal"]["isya"],
+      ];
+
+      // Bangun tabel dengan box‑drawing characters (dalam code block)
+      $table = "```\n"; // mulai code block
+      $table .= "┌──────────┬───────┐\n";
+      $table .= "│ Waktu    │ Jam   │\n";
+      $table .= "├──────────┼───────┤\n";
+
+      foreach ($rows as $waktu => $jam) {
+        // lebar kolom pertama 8 karakter, kedua 5 karakter
+        $table .= sprintf("│ %-8s │ %-5s │\n", $waktu, $jam);
+      }
+
+      $table .= "└──────────┴───────┘\n";
+      $table .= "```"; // tutup code block
+
+      $message .= $table;
+
+      return [
+        "status" => "prayer_sent",
+        "edit_message" => [
+          "text" => $message,
+          "parse_mode" => "MarkdownV2"
+        ]
+      ];
     } catch(\Exception $e) {
       Log::error("Failed to process location message.", [
         "message" => $e->getMessage(),
