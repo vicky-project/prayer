@@ -52,7 +52,9 @@ class PrayerController extends Controller
   * Store a newly created resource in storage.
   */
   public function settings(Request $request) {
-    $telegramUser = $request->get("telegram_user");
+    $tgUser = $request->get("telegram_user");
+    $telegramUser = TelegramUser::find($tgUser["id"]);
+
     return view("prayer::settings", compact("telegramUser"));
   }
 
