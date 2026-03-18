@@ -19,7 +19,8 @@ class PrayerController extends Controller
   * Display a listing of the resource.
   */
   public function index(Request $request) {
-    $telegramUser = $request->get("telegram_user");
+    $tgUser = $request->get("telegram_user");
+    $telegramUser = TelegramUser::find($tgUser["id"]);
 
     return view('prayer::index', compact("telegramUser"));
   }
