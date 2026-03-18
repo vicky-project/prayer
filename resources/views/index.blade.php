@@ -162,11 +162,11 @@
       <div class="row">
       <div class="col-md-6 mb-3">
       <label for="latitude" class="form-label">Latitude</label>
-      <input type="number" step="any" class="form-control" id="latitude" placeholder="-6.2088">
+      <input type="number" step="any" class="form-control" id="latitude" placeholder="Contoh: -6.2088">
       </div>
       <div class="col-md-6 mb-3">
       <label for="longitude" class="form-label">Longitude</label>
-      <input type="number" step="any" class="form-control" id="longitude" placeholder="106.8456">
+      <input type="number" step="any" class="form-control" id="longitude" placeholder="Contoh: 106.8456">
       </div>
       </div>
       <button class="btn btn-success w-100" onclick="getManualLocation()">

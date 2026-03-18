@@ -32,7 +32,7 @@
             <div class="mb-3">
               <label for="city" class="form-label">Nama Kota</label>
               <input type="text" class="form-control" id="city" name="city"
-              value="{{ old('city', $telegramUser->data['default_location']['city'] ?? '') }}">
+              value="{{ old('city', $telegramUser->data['default_location']['city'] ?? '') }}" placeholder="Nama Kota/kabupaten">
               <div class="form-text">
                 Atau isi koordinat di bawah jika ingin lebih spesifik.
               </div>
@@ -42,12 +42,12 @@
               <div class="col-md-6 mb-3">
                 <label for="latitude" class="form-label">Latitude</label>
                 <input type="number" step="any" class="form-control" id="latitude" name="latitude"
-                value="{{ old('latitude', $telegramUser->data['default_location']['latitude'] ?? '') }}">
+                value="{{ old('latitude', $telegramUser->data['default_location']['latitude'] ?? '') }}" placeholder="Contoh: -6.2088">
               </div>
               <div class="col-md-6 mb-3">
                 <label for="longitude" class="form-label">Longitude</label>
                 <input type="number" step="any" class="form-control" id="longitude" name="longitude"
-                value="{{ old('longitude', $telegramUser->data['default_location']['longitude'] ?? '') }}">
+                value="{{ old('longitude', $telegramUser->data['default_location']['longitude'] ?? '') }}" placeholder="Contoh: 106.8456">
               </div>
             </div>
 

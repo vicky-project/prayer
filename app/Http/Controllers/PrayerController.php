@@ -77,6 +77,7 @@ class PrayerController extends Controller
     }
 
     try {
+      \Log::debug("id telegram", ['id' => $telegramUser->id]);
       $data = $telegramUser->data ?? [];
       $defaultLocation = [];
 
