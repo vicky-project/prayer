@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Modules\Prayer\Services\PrayerTimeService;
 use Modules\Prayer\Http\Requests\LocationRequest;
-use Modules\Telegram\Service\TelegramService;
+use Modules\Telegram\Services\TelegramService;
 
 class PrayerController extends Controller
 {
