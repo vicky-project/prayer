@@ -50,10 +50,13 @@
               </div>
             </div>
 
-            <button type="button" class="btn btn-outline-primary mb-3" id="useCurrentLocationBtn">
-              <i class="bi bi-crosshair me-2"></i>
-              Gunakan lokasi saat ini
-            </button>
+            <div class="mb-3">
+              <button type="button" class="btn btn-outline-primary mb-3" id="autoLocationBtn">
+                <i class="bi bi-geo-alt me-2"></i>
+                Ambil lokasi saat ini
+              </button>
+              <small class="text-muted ms-2" id="locationStatus"></small>
+            </div>
 
             <hr>
             <h5>Notifikasi</h5>
@@ -112,23 +115,11 @@
   .text-muted {
     color: var(--tg-theme-hint-color) !important;
   }
-  .table {
-    color: var(--tg-theme-text-color);
-  }
-  .table-hover tbody tr:hover {
-    background-color: var(--tg-theme-section-separator-color);
-  }
-  .table td, .table th {
-    border-color: var(--tg-theme-section-separator-color);
-  }
   .spinner-border {
     color: var(--tg-theme-button-color) !important;
   }
   .timeout-option {
     margin-top: 1rem;
-    font-size: 0.9rem;
-  }
-  #dateDisplay, #coordDisplay {
     font-size: 0.9rem;
   }
 </style>
@@ -138,59 +129,53 @@
 <script>
   const form = document.getElementById('settingsForm');
   const saveBtn = document.getElementById('saveBtn');
-  const useLocationBtn = document.getElementById('useCurrentLocationBtn');
+  const autoLocationBtn = document.getElementById('autoLocationBtn');
+  const locationStatus = document.getElementById('locationStatus');
 
   function requestCurrentLocation() {
-    return new Promise((resolve, reject) => {
+    locationStatus.innerText = "Meminta lokasi...";
+    autoLocationBtn.disabled = true;
+
     const tg = window.Telegram?.WebApp;
-    if(!tg) {
-    reject("Telegram WebApp tidak tersedia.");
-    return;
+    if (!tg) {
+      locationStatus.innerText = 'Telegram WebApp tidak tersedia.';
+      autoLocationBtn.disabled = false;
+      return;
     }
 
-    if(tg.LocationManager && typeof tg.LocationManager.getLocation === 'function') {
-    tg.LocationManager.getLocation((locationData) => {
-    if(locationData) {
-    resolve(locationData);
-    } else {
-    reject("Izin lokasi ditolak.");
+    if (!tg.LocationManager || tg.LocationManager.getLocation !== 'function') {
+      locationStatus.innerText = "Fitur lokasi tidak didukung";
+      autoLocationBtn.disabled = false;
+      return;
     }
-    });
-    } else {
-    // Fallback ke browser geolocation
-    if(navigator.geolocation) {
-    navigator.geolocation.getCurrentPosition((position) => {
-    resolve({
-    latitude: position.coords.latitude,
-    longitude: position.coords.longitude
-    });
-    }, (error) => {
-    reject("Gagal mendapatkan lokasi: "+ error.message);
-    }, { enableHighAccuracy: true, timeout: 10000 });
-    } else {
-    reject("Geolocation tidak didukung di browser anda.");
+
+    const timeout = setTimeout(() => {
+    locationStatus.innerText = "Waktu permintaan habis, silakan input lokasi manual.";
+    autoLocationBtn.disabled = false;
+    }, 10000);
+
+    try {
+      tg.LocationManager.getLocation((locationData) => {
+      clearTimeout(timeout);
+      if(locationData) {
+      document.getElementById('latitude').value = locationData.latitude;
+      document.getElementById('longitude').value = locationData.longitude;
+      document.getElementById('city').value = "";
+      } else {
+      locationStatus.innerText = 'Akses lokasi ditolak';
+      }
+
+      autoLocationBtn.disabled = false;
+      });
+    } catch(e) {
+      clearTimeout(timeout);
+      console.error("Location Manager error: ", e);
+      locationStatus.innerText = "Gagal mengambil lokasi.";
+      autoLocationBtn.disabled = false;
     }
-    }
-    });
   }
 
-  useLocationBtn.addEventListener("click", async function() {
-  useLocationBtn.disabled = true;
-  useLocationBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Mendapatkan lokasi...';
-
-  try {
-  const location = await requestCurrentLocation();
-  document.getElementById('city').value = "";
-  document.getElementById('latitude').value = location.latitude.toFixed(6);
-  document.getElementById('longitude').value = location.longitude.toFixed(6);
-  showToast("Lokasi berhasil didapatkan", 'success');
-  } catch(error) {
-  showToast(error.message, 'danger');
-  } finally {
-  useLocationBtn.disabled = false;
-  useLocationBtn.innerHTML = '<i class="bi bi-crosshair me-2"></i>Gunakan lokasi saat ini';
-  }
-  });
+  autoLocationBtn.addEventListener("click", requestCurrentLocation);
 
   form.addEventListener('submit', async function(e) {
   e.preventDefault();
