@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Validator;
 use Modules\Prayer\Services\PrayerTimeService;
 use Modules\Prayer\Http\Requests\LocationRequest;
 use Modules\Telegram\Services\TelegramService;
+use Modules\Telegram\Models\TelegramUser;
 
 class PrayerController extends Controller
 {
@@ -77,8 +78,12 @@ class PrayerController extends Controller
     }
 
     try {
-      \Log::debug("id telegram", ['id' => $telegramUser->id]);
-      $data = $telegramUser->data ?? [];
+      $telegram = TelegramUser::find($telegramUser["id"]);
+      if (!$telegram) {
+        return response()->json(["success" => false, "message" => "Telegram ID not found."], 500);
+      }
+
+      $data = $telegram->data ?? [];
       $defaultLocation = [];
 
       if ($request->filled('city')) {
@@ -92,8 +97,8 @@ class PrayerController extends Controller
       $data['notifications_enabled'] = $request->boolean('notifications_enabled');
 
       \Log::debug("Data prayer to saved", ["data" => $data, "tg_user" => $telegramUser]);
-      $telegramUser->data = $data;
-      $telegramUser->save();
+      $telegram->data = $data;
+      $telegram->save();
 
       return response()->json([
         'success' => true,
