@@ -103,10 +103,10 @@
   let locationName = '';
   let locationTimeout;
 
-  const hasDefaultLocation = @json($telegramUser && isset($telegramUser->data["default_location"]) && !empty($telegramUser->data["default_location"]))
+  alert("Starting..");
+  const hasDefaultLocation = @json($telegramUser && isset($telegramUser->data["default_location"]) && !empty($telegramUser->data["default_location"]));
   alert(hasDefaultLocation);
-  const defaultLocation = @json($telegramUser->data["default_location"] ?? null)
-
+  const defaultLocation = @json($telegramUser->data["default_location"] ?? null);
   alert(defaultLocation);
 
   const appElement = document.getElementById('prayerApp');
