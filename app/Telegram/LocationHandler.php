@@ -2,14 +2,21 @@
 namespace Modules\Prayer\Telegram;
 
 use Illuminate\Support\Facades\Log;
+use Modules\Prayer\Services\PrayerTimeService;
 use Modules\Telegram\Services\Handlers\BaseLocationHandler;
 use Modules\Telegram\Services\Support\Cache\CacheReplyStateManager;
 use Modules\Telegram\Services\Support\TelegramApi;
 
 class LocationHandler extends BaseLocationHandler
 {
-  public function __construct(TelegramApi $telegram) {
+  protected PrayerTimeService $prayerService;
+
+  public function __construct(
+    TelegramApi $telegram,
+    PrayerTimeService $service
+  ) {
     parent::__construct($telegram);
+    $this->prayerService = $prayerService;
   }
 
   public function getName(): string
