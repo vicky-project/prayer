@@ -104,9 +104,10 @@
   let locationTimeout;
 
   const hasDefaultLocation = @json($telegramUser && isset($telegramUser->data["default_location"]) && !empty($telegramUser->data["default_location"]))
+  alert(hasDefaultLocation);
   const defaultLocation = @json($telegramUser->data["default_location"] ?? null)
 
-  alert(hasDefaultLocation, defaultLocation);
+  alert(defaultLocation);
 
   const appElement = document.getElementById('prayerApp');
 
