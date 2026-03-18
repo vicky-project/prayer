@@ -8,4 +8,5 @@ Route::prefix("apps")
 ->group(function () {
   Route::get("prayer", [PrayerController::class, "index"])->name("prayer");
   Route::get("prayer/settings", [PrayerController::class, "settings"])->name("prayer.settings");
+  Route::post("prayer/settings", [PrayerController::class, "update"]);
 });

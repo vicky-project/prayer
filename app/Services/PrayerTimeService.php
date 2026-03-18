@@ -12,8 +12,27 @@ class PrayerTimeService
   /**
   * Mendapatkan jadwal shalat berdasarkan kota atau koordinat
   */
-  public function getPrayerTimes($latitude = null, $longitude = null, $city = null): array
+  public function getPrayerTimes(
+    $latitude = null,
+    $longitude = null,
+    $city = null,
+    $telegramUser = null
+  ): array
   {
+    // Jika ada telegramUser dan memiliki default location, gunakan itu
+    if ($telegramUser && isset($telegramUser->data['default_location'])) {
+      $default = $telegramUser->data['default_location'];
+      if (isset($default['city']) && !empty($default['city'])) {
+        $city = $default['city'];
+        $latitude = null;
+        $longitude = null;
+      } elseif (isset($default['latitude'], $default['longitude'])) {
+        $latitude = $default['latitude'];
+        $longitude = $default['longitude'];
+        $city = null;
+      }
+    }
+
     $cityModel = null;
 
     // 1. Cari berdasarkan nama kota jika ada

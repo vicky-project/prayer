@@ -16,20 +16,9 @@ class PrayerController extends Controller
   /**
   * Display a listing of the resource.
   */
-  public function index(Request $request, TelegramService $tgService) {
-    $initData = $request->get('initData');
-    $user = null;
-    if ($initData) {
-      parse_str($initData, $data);
-      $userData = json_decode($data["user"] ?? '{}', true);
-      $tgId = $userData["id"];
+  public function index(Request $request) {
 
-      $user = $tgService->getUserByTelegramId($tgId);
-    }
-
-    $view = view('prayer::index', compact('user'));
-
-    return $user ? $view : $view->with('warning', 'Connect to akun for many feature');
+    return view('prayer::index');
   }
 
   /**
@@ -37,7 +26,13 @@ class PrayerController extends Controller
   */
   public function getTimes(LocationRequest $request) {
     try {
-      $times = $this->prayerService->getPrayerTimes($request->lat, $request->lot, $request->city);
+      $telegramUser = $request->get('telegram_user');
+      $times = $this->prayerService->getPrayerTimes(
+        $request->lat,
+        $request->lot,
+        $request->city,
+        $telegramUser
+      );
 
       return response()->json(["success" => true, "data" => $times, "message" => "Jadwal shalat berhasil diambil"]);
     } catch(\Exception $e) {
@@ -53,26 +48,22 @@ class PrayerController extends Controller
   /**
   * Store a newly created resource in storage.
   */
-  public function store(Request $request) {}
-
-  /**
-  * Show the specified resource.
-  */
-  public function show($id) {
-    return view('prayer::show');
-  }
-
-  /**
-  * Show the form for editing the specified resource.
-  */
-  public function edit($id) {
-    return view('prayer::edit');
+  public function settings(Request $request) {
+    $telegramUser = $request->get("telegram_user");
+    return view("prayer::settings", compact("telegramUser"));
   }
 
   /**
   * Update the specified resource in storage.
   */
-  public function update(Request $request, $id) {}
+  public function update(Request $request) {
+    $request->validate([
+      "city" => "nullable|string|max:255",
+      "latitude" => "nullable|numeric|between:-90,90",
+      "longitude" => "nullable|between:-180,180",
+      "notifications_enabled" => "boolean"
+    ]);
+  }
 
   /**
   * Remove the specified resource from storage.
