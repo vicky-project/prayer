@@ -104,6 +104,8 @@
   let locationTimeout;
 
   const hasDefaultLocation = @json($telegramUser && isset($telegramUser->data["default_location"]) && !empty($telegramUser->data["default_location"]));
+  let usingDefault = hasDefaultLocation;
+
   const defaultLocation = @json($telegramUser->data["default_location"] ?? null);
 
   const appElement = document.getElementById('prayerApp');
@@ -195,6 +197,11 @@
       </div>
       `;
     } else if (currentState === 'loaded') {
+      let extraButton = '';
+      if (hasDefaultLocation && !usingDefault) {
+        extraButton = `<button type="button" class="btn btn-outline-secondary w-100 mt-2" onclick="useDefaultLocation();"><i class="bi bi-arrow-repeat me-2"></i>Kembali ke Lokasi Default</button>`;
+      }
+
       html = `
       <div>
       <div class="text-center mb-3">
@@ -218,9 +225,10 @@
       <div class="text-muted small text-center">
       <i class="bi bi-info-circle me-1"></i>Waktu berdasarkan lokasi terdekat
       </div>
-      <button class="btn btn-outline-primary w-100 mt-3" onclick="requestLocation()">
+      <button class="btn btn-outline-primary w-100 mt-3" onclick="requestLocation(true)">
       <i class="bi bi-arrow-repeat me-2"></i>Perbarui Lokasi
       </button>
+      ${extraButton}
       </div>
       `;
     }
@@ -234,8 +242,11 @@
     }
   }
 
-  window.requestLocation = function() {
-    if (hasDefaultLocation && defaultLocation) {
+  window.requestLocation = function(forceNoDefault = false) {
+    if (!forceNoDefault && hasDefaultLocation && defaultLocation) {
+      usingDefault = true;
+      currentState = 'loading';
+      buildUI();
       if (defaultLocation.city) {
         sendLocationToBackend(null, null, defaultLocation.city);
       } else if (defaultLocation.latitude && defaultLocation.longitude) {
@@ -244,9 +255,9 @@
       return;
     }
 
+    usingDefault = false;
     currentState = 'loading';
     buildUI();
-
     clearLocationTimeout();
     locationTimeout = setTimeout(() => {
     if (currentState === 'loading') {
@@ -323,7 +334,12 @@
     requestLocation();
   };
 
+  window.useDefaultLocation = function() {
+    requestLocation(false);
+  }
+
   window.getManualLocation = function() {
+    usingDefault = false;
     const lat = document.getElementById('latitude')?.value;
     const lon = document.getElementById('longitude')?.value;
     const city = document.getElementById('city')?.value;
