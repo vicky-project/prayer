@@ -192,7 +192,7 @@
   }
   });
 
-  form.addEventListener('submit', async (e) => {
+  form.addEventListener('submit', async function(e) {
   e.preventDefault();
 
   // Tampilkan loading
