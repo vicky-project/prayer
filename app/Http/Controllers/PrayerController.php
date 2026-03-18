@@ -20,8 +20,12 @@ class PrayerController extends Controller
     $hasTelegram = null;
     if ($user && $user->socialAccounts) {
       $hasTelegram = $user->socialAccounts()->byProvider("telegram")->first();
+      \Log::debug("Has Telegram", ["has" => $hasTelegram]);
     }
-    return view('prayer::index', compact("hasTelegram"));
+
+    $view = view('prayer::index', compact('hasTelegram'));
+
+    return $hasTelegram ? $view : $view->with('warning', 'Connect to akun for many feature');
   }
 
   /**
