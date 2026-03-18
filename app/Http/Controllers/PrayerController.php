@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Modules\Prayer\Services\PrayerTimeService;
 use Modules\Prayer\Http\Requests\LocationRequest;
+use Modules\Telegram\Service\TelegramService;
 
 class PrayerController extends Controller
 {
@@ -15,12 +16,13 @@ class PrayerController extends Controller
   /**
   * Display a listing of the resource.
   */
-  public function index(Request $request) {
+  public function index(Request $request, TelegramService $tgService) {
     $initData = $request->get('initData');
     $hasTelegram = null;
     if ($initData) {
+      parse_str($initData, $data);
       //$hasTelegram = $user->socialAccounts()->byProvider("telegram")->first();
-      \Log::debug("Has initData", ["has" => $initData]);
+      \Log::debug("Has initData", ["has" => $data]);
     }
 
     $view = view('prayer::index', compact('hasTelegram'));
