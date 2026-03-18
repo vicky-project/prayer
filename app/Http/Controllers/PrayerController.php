@@ -29,7 +29,7 @@ class PrayerController extends Controller
 
     $view = view('prayer::index', compact('user'));
 
-    return $hasTelegram ? $view : $view->with('warning', 'Connect to akun for many feature');
+    return $user ? $view : $view->with('warning', 'Connect to akun for many feature');
   }
 
   /**
