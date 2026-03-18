@@ -3,6 +3,7 @@
 namespace Modules\Prayer\Providers;
 
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Schedule;
 use Illuminate\Support\ServiceProvider;
 use Nwidart\Modules\Traits\PathNamespace;
 use RecursiveDirectoryIterator;
@@ -122,7 +123,11 @@ class PrayerServiceProvider extends ServiceProvider
   */
   protected function registerCommands(): void
   {
-    $this->commands([\Modules\Prayer\Console\FetchPrayerData::class]);
+    $this->commands([
+      \Modules\Prayer\Console\FetchPrayerData::class,
+      \Modules\Prayer\Console\ResetPrayerNotifications::class,
+      \Modules\Prayer\Console\SendPrayerNotifications::class
+    ]);
   }
 
   /**
@@ -130,10 +135,11 @@ class PrayerServiceProvider extends ServiceProvider
   */
   protected function registerCommandSchedules(): void
   {
-    // $this->app->booted(function () {
-    //     $schedule = $this->app->make(Schedule::class);
-    //     $schedule->command('inspire')->hourly();
-    // });
+    $this->app->booted(function () {
+      //     $schedule = $this->app->make(Schedule::class);
+      Schedule::command('app:prayer-sent')->everyMinute();
+      Schedule::command('app:prayer-reset')->dailyAt('00:01');
+    });
   }
 
   /**
