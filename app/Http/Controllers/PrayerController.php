@@ -79,7 +79,25 @@ class PrayerController extends Controller
     try {
       $data = $telegramUser->data ?? [];
       $defaultLocation = [];
-      throw new \Exception("Testing");
+
+      if ($request->filled('city')) {
+        $defaultLocation['city'] = $request->city;
+      } elseif ($request->filled('latitude') && $request->filled('longitude')) {
+        $defaultLocation['latitude'] = (float) $request->latitude;
+        $defaultLocation['longitude'] = (float) $request->longitude;
+      }
+
+      $data['default_location'] = $defaultLocation;
+      $data['notifications_enabled'] = $request->boolean('notifications_enabled');
+
+      \Log::debug("Data prayer to saved", $data);
+      $telegramUser->data = $data;
+      $telegramUser->save();
+
+      return response()->json([
+        'success' => true,
+        'message' => 'Pengaturan berhasil disimpan.'
+      ]);
     } catch(\Exception $e) {
       return response()->json(["success" => false, "message" => $e->getMessage()], 500);
     }

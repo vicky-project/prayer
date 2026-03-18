@@ -3,6 +3,16 @@
 
 @section('content')
 <div class="container py-4">
+  <div class="row justify-content-center mb-3">
+    <div class="col-md-12">
+      <div class="d-flex justify-content-between align-items-center">
+        <a href="{{ route('apps.prayer') }}" class="btn btn-outline-secondary">
+          <i class="bi bi-arrow-left me-2"></i>
+          Kembali
+        </a>
+      </div>
+    </div>
+  </div>
   <div class="row justify-content-center">
     <div class="col-md-8 col-lg-6">
       <div class="card shadow">
@@ -45,7 +55,7 @@
             <h5>Notifikasi</h5>
             <div class="form-check form-switch mb-3">
               <input class="form-check-input" type="checkbox" id="notifications_enabled" name="notifications_enabled"
-              {{ old('notifications_enabled', $telegramUser->data['notifications_enabled'] ?? false) ? 'checked' : '' }}>
+              {{ old('notifications_enabled', $telegramUser->data['notifications_enabled'] ?? false) ? 'checked' : '' }} value="1">
               <label class="form-check-label" for="notifications_enabled">Aktifkan notifikasi waktu shalat</label>
             </div>
 
