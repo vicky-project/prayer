@@ -107,8 +107,7 @@ class PrayerServiceProvider extends ServiceProvider
         $this->app->make(TelegramApi::class),
         $this->app->make(PrayerTimeService::class),
         $this->app->make(InlineKeyboardBuilder::class)
-      ),
-      ["callback-throttle"]
+      )
     );
   }
 
