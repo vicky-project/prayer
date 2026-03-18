@@ -183,7 +183,7 @@
   document.getElementById('city').value = "";
   document.getElementById('latitude').value = location.latitude.toFixed(6);
   document.getElementById('longitude').value = location.longitude.toFixed(6);
-  showToast("Lokasi berhasil didapatkan", 'success'):
+  showToast("Lokasi berhasil didapatkan", 'success');
   } catch(error) {
   showToast(error.message, 'danger');
   } finally {
@@ -195,7 +195,6 @@
   form.addEventListener('submit', async function(e) {
   e.preventDefault();
   e.stopPropagation();
-  alert("Form submitted");
 
   // Tampilkan loading
   saveBtn.disabled = true;
