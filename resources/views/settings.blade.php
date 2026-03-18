@@ -151,7 +151,16 @@
         autoLocationBtn.disabled = false;
         },
         (error) => {
+        if (error.code === error.PERMISSION_DENIED) {
+        // Bisa karena user menolak, ATAU karena insecure origin
+        if (window.location.protocol !== 'https:' && window.location.hostname !== 'localhost') {
+        locationStatus.innerText = 'Akses lokasi memerlukan koneksi HTTPS. Gunakan input manual.';
+        } else {
+        locationStatus.innerText = 'Izin lokasi ditolak. Gunakan input manual.';
+        }
+        } else {
         locationStatus.innerText = "Gagal mendapatkan lokasi: " + error.message;
+        }
         autoLocationBtn.disabled = false;
         },
         { enableHighAccuracy: true, timeout: 10000 }
