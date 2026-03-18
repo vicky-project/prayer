@@ -10,7 +10,7 @@
           <i class="bi bi-arrow-left me-2"></i>
           Kembali
         </a>
-        @if($hasTelegram)
+        @if($user)
         <a href="{{ route('apps.prayer.settings') }}" class="btn btn-outline-secondary">
           <i class="bi bi-gear-fill fs-5"></i>
         </a>

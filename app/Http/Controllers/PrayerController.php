@@ -18,14 +18,15 @@ class PrayerController extends Controller
   */
   public function index(Request $request, TelegramService $tgService) {
     $initData = $request->get('initData');
-    $hasTelegram = null;
+    $user = null;
     if ($initData) {
       parse_str($initData, $data);
-      //$hasTelegram = $user->socialAccounts()->byProvider("telegram")->first();
-      \Log::debug("Has initData", ["has" => $data]);
+      $tgId = $data["user"]["id"];
+
+      $user = $tgService->getUserByTelegramId($tgId);
     }
 
-    $view = view('prayer::index', compact('hasTelegram'));
+    $view = view('prayer::index', compact('user'));
 
     return $hasTelegram ? $view : $view->with('warning', 'Connect to akun for many feature');
   }
