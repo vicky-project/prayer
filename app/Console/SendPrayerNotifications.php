@@ -80,7 +80,7 @@ class SendPrayerNotifications extends Command
           $clearName = $this->translatePrayerName($name);
           $message = $this->formatNotificationMessage($prayerData["city_name"], $name, $time);
 
-          $sent = $this->telegramApi->sendMessage($user->telegram_id, TelegramMarkdownHelper::escapeMarkdownV2($message), "HTML");
+          $sent = $this->telegramApi->sendMessage($user->telegram_id, TelegramMarkdownHelper::safeText($message, "HTML"), "HTML");
           if ($sent) {
             // Catat pengiriman
             $sentToday[] = $name;
