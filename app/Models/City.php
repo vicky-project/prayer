@@ -12,7 +12,8 @@ class City extends Model
     'province_id',
     'province_name',
     'latitude',
-    'longitude'
+    'longitude',
+    'timezone'
   ];
 
   public function prayers() {

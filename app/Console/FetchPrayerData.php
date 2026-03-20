@@ -62,6 +62,13 @@ class FetchPrayerData extends Command
             ]
           );
 
+          // Jika latitude/longitude ada dan timezone belum diisi, ambil timezone
+          if ($city->latitude && $city->longitude && empty($city->timezone)) {
+            $timezone = $this->prayerService->getTimezoneFromCoordinates($city->latitude, $city->longitude);
+            $city->timezone = $timezone;
+            $city->save();
+          }
+
           // Hapus semua prayer kota ini untuk mengisi ulang (data bisa berubah)
           Prayer::where('city_id', $city->id)->delete();
 

@@ -79,6 +79,11 @@ class PrayerServiceProvider extends ServiceProvider
   {
     $this->app->register(EventServiceProvider::class);
     $this->app->register(RouteServiceProvider::class);
+
+    $this->app
+    ->make("config")
+    ->set("app.timezone",
+      config("prayer.timezone", 'Asia/Jakarta'));
   }
 
   protected function registerHooks($hookService): void
@@ -137,6 +142,7 @@ class PrayerServiceProvider extends ServiceProvider
   {
     $this->app->booted(function () {
       //     $schedule = $this->app->make(Schedule::class);
+      Schedule::command("app.prayer")->monthly();
       Schedule::command('app:prayer-sent')->everyMinute();
       Schedule::command('app:prayer-reset')->dailyAt('00:01');
     });

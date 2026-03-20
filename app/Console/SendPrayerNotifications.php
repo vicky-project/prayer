@@ -37,10 +37,8 @@ class SendPrayerNotifications extends Command
       return 0;
     }
 
-    $now = Carbon::now();
-    $now->tz = config("prayer.timezone");
-    $today = $now->toDateString(); // format Y-m-d
-    $currentTime = $now->format('H:i');
+    $nowGlobal = Carbon::now();
+    $sentCount = 0;
 
     foreach ($users as $user) {
       $data = $user->data ?? [];
@@ -60,6 +58,14 @@ class SendPrayerNotifications extends Command
       if (!isset($data['notifications_prayer_sent'])) {
         $data['notifications_prayer_sent'] = [];
       }
+
+      // Gunakan timezone kota untuk menentukan waktu sekarang
+      $timezone = $prayerData['timezone'] ?? 'Asia/Jakarta';
+      $now = Carbon::now($timezone);
+      $today = $now->toDateString();
+      $currentTime = $now->format('H:i');
+
+      // Inisialisasi notifikasi yang sudah dikirim hari ini
       $sentToday = $data['notifications_prayer_sent'][$today] ?? [];
 
       foreach ($prayerData['jadwal'] as $name => $time) {
@@ -71,10 +77,7 @@ class SendPrayerNotifications extends Command
         // Cek kecocokan waktu (dengan toleransi 1 menit)
         if ($time === $currentTime) {
           $clearName = $this->translatePrayerName($name);
-          $message = "🕌 <b>Waktu Shalat {$clearName}</b>\n";
-          $message .= "📍 {$prayerData['city_name']}\n";
-          $message .= "⏰ {$time} \n\n";
-          $message .= "Semoga ibadah kita diterima Allah SWT.";
+          $message = $this->formatNotificationMessage($prayerData["city_name"], $name, $time);
 
           $sent = $this->telegramApi->sendMessage($user->telegram_id, $message, null, "HTML");
           if ($sent) {
@@ -86,17 +89,18 @@ class SendPrayerNotifications extends Command
 
             $this->info("Notifikasi {$name} terkirim ke {$user->telegram_id}");
             \Log::info("Notification sent: ", ["name" => $name, "telegram_id" => $user->telegram_id]);
+            $sentCount++;
           }
         }
       }
     }
 
-    $this->info('Selesai.');
+    $this->info("Selesai. {$sentCount} notifikasi terkirim.");
     return 0;
   }
 
-  private function translatePrayerName($name) {
-    $map = [
+  protected function formatNotificationMessage($city, $prayerName, $time) {
+    $names = [
       'imsak' => 'Imsak',
       'subuh' => 'Subuh',
       'terbit' => 'Terbit',
@@ -106,6 +110,11 @@ class SendPrayerNotifications extends Command
       'maghrib' => 'Maghrib',
       'isya' => 'Isya',
     ];
-    return $map[$name] ?? $name;
+    $displayName = $names[$prayerName] ?? $prayerName;
+
+    return "🕌 *Waktu Shalat {$displayName}*\n" .
+    "📍 {$city}\n" .
+    "⏰ {$time} WIB\n\n" .
+    "Semoga ibadah kita diterima Allah SWT.";
   }
 }
