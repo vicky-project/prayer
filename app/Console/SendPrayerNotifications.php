@@ -29,7 +29,7 @@ class SendPrayerNotifications extends Command
 
     $users = TelegramUser::all()->filter(function ($user) {
       $data = $user->data ?? [];
-      return ($data['notifications_enabled'] ?? false) === true;
+      return ($data['notifications_prayer_enabled'] ?? false) === true;
     });
 
     if ($users->isEmpty()) {
@@ -57,10 +57,10 @@ class SendPrayerNotifications extends Command
       }
 
       // Inisialisasi array notifikasi yang sudah dikirim per tanggal
-      if (!isset($data['notifications_sent'])) {
-        $data['notifications_sent'] = [];
+      if (!isset($data['notifications_prayer_sent'])) {
+        $data['notifications_prayer_sent'] = [];
       }
-      $sentToday = $data['notifications_sent'][$today] ?? [];
+      $sentToday = $data['notifications_prayer_sent'][$today] ?? [];
 
       foreach ($prayerData['jadwal'] as $name => $time) {
         // Lewati jika sudah dikirim hari ini
@@ -80,7 +80,7 @@ class SendPrayerNotifications extends Command
           if ($sent) {
             // Catat pengiriman
             $sentToday[] = $name;
-            $data['notifications_sent'][$today] = $sentToday;
+            $data['notifications_prayer_sent'][$today] = $sentToday;
             $user->data = $data;
             $user->save();
 

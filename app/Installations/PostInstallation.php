@@ -17,7 +17,7 @@ class PostInstallation
       Artisan::call("migrate");
     } catch (\Exception $e) {
       logger()->error(
-        "Failed to run post installation of object task module: " .
+        "Failed to run post installation of prayer module: " .
         $e->getMessage(),
       );
 

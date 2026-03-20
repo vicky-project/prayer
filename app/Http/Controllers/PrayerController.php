@@ -99,7 +99,7 @@ class PrayerController extends Controller
       }
 
       $data['default_location'] = $defaultLocation;
-      $data['notifications_enabled'] = $request->boolean('notifications_enabled');
+      $data['notifications_prayer_enabled'] = $request->boolean('notifications_enabled');
 
       $telegram->data = $data;
       $telegram->save();
