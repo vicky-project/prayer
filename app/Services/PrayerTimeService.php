@@ -235,6 +235,7 @@ class PrayerTimeService
           }
         }
       } catch (\Exception $e) {
+        dd($e);
         Log::warning('IPGeolocation API error: ' . $e->getMessage());
       }
     }
