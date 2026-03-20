@@ -5,6 +5,7 @@ use Illuminate\Console\Command;
 use Modules\Telegram\Models\TelegramUser;
 use Modules\Prayer\Services\PrayerTimeService;
 use Modules\Telegram\Services\Support\TelegramApi;
+use Modules\Telegram\Services\Support\TelegramMarkdownHelper;
 use Carbon\Carbon;
 
 class SendPrayerNotifications extends Command
@@ -79,7 +80,7 @@ class SendPrayerNotifications extends Command
           $clearName = $this->translatePrayerName($name);
           $message = $this->formatNotificationMessage($prayerData["city_name"], $name, $time);
 
-          $sent = $this->telegramApi->sendMessage($user->telegram_id, $message, "HTML");
+          $sent = $this->telegramApi->sendMessage($user->telegram_id, TelegramMarkdownHelper::safeText($message, "HTML"), "HTML");
           if ($sent) {
             // Catat pengiriman
             $sentToday[] = $name;
