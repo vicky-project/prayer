@@ -73,6 +73,7 @@ class FetchPrayerData extends Command
           // Jika latitude/longitude ada dan timezone belum diisi, ambil timezone
           if ($city->latitude && $city->longitude && empty($city->timezone)) {
             $timezone = $this->prayerService->getTimezoneFromCoordinates($city->latitude, $city->longitude);
+            Log::debug("Get timezone",["lat" =>$city->latitude,"lon" =>$city->longitude,"timezone" =>$timezone]);
             $city->timezone = $timezone;
             $city->save();
           }
