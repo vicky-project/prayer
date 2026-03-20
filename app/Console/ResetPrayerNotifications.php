@@ -14,9 +14,7 @@ class ResetPrayerNotifications extends Command
     $this->info('Memulai reset notifikasi...');
 
     $users = TelegramUser::all();
-    $today = Carbon::today();
-    $today->tz = config("prayer.timezone");
-    $today = $today->toDateString();
+    $today = Carbon::today()->toDateString();
     $deletedCount = 0;
 
     foreach ($users as $user) {

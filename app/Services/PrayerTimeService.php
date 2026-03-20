@@ -4,6 +4,8 @@ namespace Modules\Prayer\Services;
 use Modules\Prayer\Models\City;
 use Modules\Prayer\Models\Prayer;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Collection;
 
@@ -51,9 +53,8 @@ class PrayerTimeService
     }
 
     // 3. Ambil jadwal untuk hari ini
-    $today = Carbon::today();
-    $today->tz = config("prayer.timezone");
-    $today = $today->toDateString();
+    $timezone = $cityModel->timezone ?? config("app.timezone");
+    $today = Carbon::now($timezone)->toDateString();
     $prayer = Prayer::where('city_id', $cityModel->id)
     ->where('date', $today)
     ->first();
@@ -87,6 +88,48 @@ class PrayerTimeService
   }
 
   /**
+  * Mendapatkan jadwal untuk hari ini berdasarkan lokasi default (digunakan oleh notifikasi)
+  */
+  public function getTodayPrayerByLocation($defaultLocation) {
+    $cityModel = null;
+    if (!empty($defaultLocation['city'])) {
+      $cityModel = $this->findCityByName($defaultLocation['city']);
+    } elseif (!empty($defaultLocation['latitude']) && !empty($defaultLocation['longitude'])) {
+      $cityModel = $this->findNearestCity($defaultLocation['latitude'], $defaultLocation['longitude']);
+    }
+
+    if (!$cityModel) {
+      return null;
+    }
+
+    $timezone = $cityModel->timezone ?? config('app.timezone');
+    $today = Carbon::now($timezone)->toDateString();
+
+    $prayer = Prayer::where('city_id', $cityModel->id)
+    ->where('date', $today)
+    ->first();
+
+    if (!$prayer) {
+      return null;
+    }
+
+    return [
+      'city_name' => $cityModel->name,
+      'timezone' => $timezone,
+      'jadwal' => [
+        'imsak' => $prayer->imsak,
+        'subuh' => $prayer->subuh,
+        'terbit' => $prayer->terbit,
+        'dhuha' => $prayer->dhuha,
+        'dzuhur' => $prayer->dzuhur,
+        'ashar' => $prayer->ashar,
+        'maghrib' => $prayer->maghrib,
+        'isya' => $prayer->isya,
+      ]
+    ];
+  }
+
+  /**
   * Cari kota berdasarkan nama (case insensitive)
   */
   protected function findCityByName($name): City
@@ -105,7 +148,8 @@ class PrayerTimeService
   /**
   * Cari kota terdekat berdasarkan koordinat (rumus haversine)
   */
-  protected function findNearestCity($lat, $lon) {
+  protected function findNearestCity($lat, $lon): ?City
+  {
     // Ambil semua kota yang memiliki koordinat
     $cities = City::whereNotNull('latitude')->whereNotNull('longitude')->get();
 
@@ -126,7 +170,12 @@ class PrayerTimeService
   /**
   * Rumus haversine (jarak dalam km)
   */
-  protected function haversine($lat1, $lon1, $lat2, $lon2) {
+  protected function haversine(
+    $lat1,
+    $lon1,
+    $lat2,
+    $lon2
+  ) {
     $earthRadius = 6371;
     $dLat = deg2rad($lat2 - $lat1);
     $dLon = deg2rad($lon2 - $lon1);
@@ -200,5 +249,41 @@ class PrayerTimeService
         'isya' => $prayer->isya,
       ]
     ];
+  }
+
+  protected function getTimezoneFromCoordinates($lat, $lon): ?string
+  {
+    // 1. Coba IPGeolocation API
+    $apiKey = config("prayer.ipgeolocation.api_key");
+    if ($apiKey) {
+      try {
+        $response = Http::timeout(5)->get('https://api.ipgeolocation.io/timezone', [
+          'lat' => $lat,
+          'lon' => $lon,
+          'apiKey' => config('prayer.ipgeolocation.api_key')
+        ]);
+
+        if ($response->successful()) {
+          $data = $response->json();
+          return $data['timezone'] ?? null;
+        }
+      } catch (\Exception $e) {
+        Log::warning('IPGeolocation API error: ' . $e->getMessage());
+      }
+    }
+
+    // 2. Fallback ke RTZ server
+    try {
+      $response = Http::timeout(5)->get("http://tz.twitchax.com/api/v1/ned/tz/{$lon}/{$lat}");
+      if ($response->successful()) {
+        $data = $response->json();
+        return $data['identifier'] ?? null;
+      }
+    } catch (\Exception $e) {
+      Log::warning('RTZ server error: ' . $e->getMessage());
+    }
+
+    // 3. Fallback ke timezone server (Asia/Jakarta)
+    return config("app.timezone", 'Asia/Jakarta');
   }
 }

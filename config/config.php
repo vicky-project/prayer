@@ -8,5 +8,8 @@ return [
     "enabled" => env("PRAYER_HOOK_ENABLED", true),
     "service" => \Modules\CoreUI\Services\UIService::class,
     "name" => "main-apps",
+  ],
+  "ipgeolocation" => [
+    "api_key" => env("IPGEOLOCATION_APIKEY")
   ]
 ];
