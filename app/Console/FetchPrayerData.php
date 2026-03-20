@@ -6,12 +6,20 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Modules\Prayer\Models\City;
 use Modules\Prayer\Models\Prayer;
+use Modules\Prayer\Services\PrayerTimeService;
 use Carbon\Carbon;
 
 class FetchPrayerData extends Command
 {
   protected $signature = 'app:prayer';
   protected $description = 'Fetch prayer times data from JSON and update database';
+
+  protected PrayerTimeService $prayerService;
+
+  public function __construct(PrayerTimeService $prayerService) {
+    parent::__construct();
+    $this->prayerService = $prayerService;
+  }
 
   public function handle() {
     $url = config("prayer.base_api_url");
