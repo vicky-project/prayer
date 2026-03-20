@@ -21,11 +21,11 @@ class ResetPrayerNotifications extends Command
 
     foreach ($users as $user) {
       $data = $user->data ?? [];
-      if (!isset($data['notifications_sent'])) {
+      if (!isset($data['notifications_prayer_sent'])) {
         continue;
       }
 
-      $notifications = $data['notifications_sent'];
+      $notifications = $data['notifications_prayer_sent'];
       $originalCount = count($notifications);
 
       // Hapus entri dengan tanggal sebelum hari ini
@@ -34,7 +34,7 @@ class ResetPrayerNotifications extends Command
       }, ARRAY_FILTER_USE_KEY);
 
       if (count($notifications) !== $originalCount) {
-        $data['notifications_sent'] = $notifications;
+        $data['notifications_prayer_sent'] = $notifications;
         $user->data = $data;
         $user->save();
         $deletedCount++;
