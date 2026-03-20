@@ -12,8 +12,8 @@ class SendPrayerNotifications extends Command
   protected $signature = 'app:prayer-sent';
   protected $description = 'Kirim notifikasi waktu shalat ke pengguna Telegram yang mengaktifkan';
 
-  protected $prayerService;
-  protected $telegramApi;
+  protected PrayerTimeService $prayerService;
+  protected TelegramApi $telegramApi;
 
   public function __construct(
     PrayerTimeService $prayerService,
