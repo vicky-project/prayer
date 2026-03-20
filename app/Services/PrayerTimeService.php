@@ -234,6 +234,7 @@ class PrayerTimeService
             return $data['timezone'];
           }
         }
+        dd($response->body());
       } catch (\Exception $e) {
         dd($e);
         Log::warning('IPGeolocation API error: ' . $e->getMessage());
