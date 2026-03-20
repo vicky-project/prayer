@@ -227,8 +227,11 @@ class PrayerTimeService
 
         if ($response->successful()) {
           $data = $response->json();
-          return $data['timezone'] ?? null;
+          if ($data["timezone"]) {
+            return $data['timezone'];
+          }
         }
+        Log::debug($response->object()->message);
       } catch (\Exception $e) {
         Log::warning('IPGeolocation API error: ' . $e->getMessage());
       }
@@ -239,7 +242,9 @@ class PrayerTimeService
       $response = Http::timeout(5)->get("http://tz.twitchax.com/api/v1/ned/tz/{$lon}/{$lat}");
       if ($response->successful()) {
         $data = $response->json();
-        return $data['identifier'] ?? null;
+        if (isset($data[0]["identifier"])) {
+          return $data[0]['identifier'];
+        }
       }
     } catch (\Exception $e) {
       Log::warning('RTZ server error: ' . $e->getMessage());
