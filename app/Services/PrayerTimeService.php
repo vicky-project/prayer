@@ -213,44 +213,6 @@ class PrayerTimeService
     return City::findOrFail($id);
   }
 
-  public function getTodayPrayerByLocation($defaultLocation) {
-    $cityModel = null;
-    if (!empty($defaultLocation['city'])) {
-      $cityModel = $this->findCityByName($defaultLocation['city']);
-    } elseif (!empty($defaultLocation['latitude']) && !empty($defaultLocation['longitude'])) {
-      $cityModel = $this->findNearestCity($defaultLocation['latitude'], $defaultLocation['longitude']);
-    }
-
-    if (!$cityModel) {
-      return null;
-    }
-
-    $today = Carbon::today();
-    $today->tz = config("prayer.timezone");
-    $today = $today->toDateString();
-    $prayer = Prayer::where('city_id', $cityModel->id)
-    ->where('date', $today)
-    ->first();
-
-    if (!$prayer) {
-      return null;
-    }
-
-    return [
-      'city_name' => $cityModel->name,
-      'jadwal' => [
-        'imsak' => $prayer->imsak,
-        'subuh' => $prayer->subuh,
-        'terbit' => $prayer->terbit,
-        'dhuha' => $prayer->dhuha,
-        'dzuhur' => $prayer->dzuhur,
-        'ashar' => $prayer->ashar,
-        'maghrib' => $prayer->maghrib,
-        'isya' => $prayer->isya,
-      ]
-    ];
-  }
-
   protected function getTimezoneFromCoordinates($lat, $lon): ?string
   {
     // 1. Coba IPGeolocation API
