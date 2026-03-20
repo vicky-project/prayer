@@ -213,7 +213,7 @@ class PrayerTimeService
     return City::findOrFail($id);
   }
 
-  protected function getTimezoneFromCoordinates($lat, $lon): ?string
+  public function getTimezoneFromCoordinates($lat, $lon): ?string
   {
     // 1. Coba IPGeolocation API
     $apiKey = config("prayer.ipgeolocation.api_key");
