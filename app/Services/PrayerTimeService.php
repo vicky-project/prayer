@@ -227,7 +227,10 @@ class PrayerTimeService
 
         if ($response->successful()) {
           $data = $response->json();
-          return $data['timezone'] ?? null;
+          if ($data["timezone"]) {
+            Log::debug("Using IPGeolocation");
+            return $data['timezone'];
+          }
         }
       } catch (\Exception $e) {
         Log::warning('IPGeolocation API error: ' . $e->getMessage());
@@ -239,13 +242,17 @@ class PrayerTimeService
       $response = Http::timeout(5)->get("http://tz.twitchax.com/api/v1/ned/tz/{$lon}/{$lat}");
       if ($response->successful()) {
         $data = $response->json();
-        return $data['identifier'] ?? null;
+        if ($data["identifier"]) {
+          Log::debug("Using RTZ");
+          return $data['identifier'];
+        }
       }
     } catch (\Exception $e) {
       Log::warning('RTZ server error: ' . $e->getMessage());
     }
 
     // 3. Fallback ke timezone server (Asia/Jakarta)
+    Log::debug("Using default timezone");
     return config("app.timezone", 'Asia/Jakarta');
   }
 }
