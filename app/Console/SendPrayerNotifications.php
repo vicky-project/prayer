@@ -1,4 +1,4 @@
-[<?php
+<?php
 namespace Modules\Prayer\Console;
 
 use Illuminate\Console\Command;
