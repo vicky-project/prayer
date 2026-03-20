@@ -227,16 +227,12 @@ class PrayerTimeService
 
         if ($response->successful()) {
           $data = $response->json();
-          dd($data);
-          Log::debug("IPGeolocation: ", ["data" => $data]);
           if ($data["timezone"]) {
-            Log::debug("Using IPGeolocation");
             return $data['timezone'];
           }
         }
-        dd($response->body());
+        Log::debug($response->object()->message);
       } catch (\Exception $e) {
-        dd($e);
         Log::warning('IPGeolocation API error: ' . $e->getMessage());
       }
     }
@@ -255,7 +251,6 @@ class PrayerTimeService
     }
 
     // 3. Fallback ke timezone server (Asia/Jakarta)
-    Log::debug("Using default timezone");
     return config("app.timezone", 'Asia/Jakarta');
   }
 }
