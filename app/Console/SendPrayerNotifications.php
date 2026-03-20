@@ -1,4 +1,4 @@
-<?php
+[<?php
 namespace Modules\Prayer\Console;
 
 use Illuminate\Console\Command;
@@ -79,7 +79,7 @@ class SendPrayerNotifications extends Command
           $clearName = $this->translatePrayerName($name);
           $message = $this->formatNotificationMessage($prayerData["city_name"], $name, $time);
 
-          $sent = $this->telegramApi->sendMessage($user->telegram_id, $message, null, "HTML");
+          $sent = $this->telegramApi->sendMessage($user->telegram_id, $message, "HTML");
           if ($sent) {
             // Catat pengiriman
             $sentToday[] = $name;
