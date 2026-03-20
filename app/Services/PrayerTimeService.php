@@ -227,6 +227,7 @@ class PrayerTimeService
 
         if ($response->successful()) {
           $data = $response->json();
+          Log::debug("IPGeolocation: ", ["data" => $data]);
           if ($data["timezone"]) {
             Log::debug("Using IPGeolocation");
             return $data['timezone'];
