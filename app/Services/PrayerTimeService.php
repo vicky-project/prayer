@@ -242,9 +242,9 @@ class PrayerTimeService
       $response = Http::timeout(5)->get("http://tz.twitchax.com/api/v1/ned/tz/{$lon}/{$lat}");
       if ($response->successful()) {
         $data = $response->json();
-        if ($data["identifier"]) {
+        if ($data[0]["identifier"]) {
           Log::debug("Using RTZ");
-          return $data['identifier'];
+          return $data[0]['identifier'];
         }
       }
     } catch (\Exception $e) {
