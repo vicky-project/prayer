@@ -227,6 +227,7 @@ class PrayerTimeService
 
         if ($response->successful()) {
           $data = $response->json();
+          dd($data);
           Log::debug("IPGeolocation: ", ["data" => $data]);
           if ($data["timezone"]) {
             Log::debug("Using IPGeolocation");
@@ -243,8 +244,7 @@ class PrayerTimeService
       $response = Http::timeout(5)->get("http://tz.twitchax.com/api/v1/ned/tz/{$lon}/{$lat}");
       if ($response->successful()) {
         $data = $response->json();
-        if ($data[0]["identifier"]) {
-          Log::debug("Using RTZ");
+        if (isset($data[0]["identifier"])) {
           return $data[0]['identifier'];
         }
       }
