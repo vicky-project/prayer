@@ -19,8 +19,7 @@ class PrayerTimeService
     $longitude = null,
     $city = null,
     $telegramUser = null
-  ): array
-  {
+  ): array {
     // Jika ada telegramUser dan memiliki default location, gunakan itu
     if ($telegramUser && isset($telegramUser->data['default_location'])) {
       $default = $telegramUser->data['default_location'];
@@ -40,8 +39,23 @@ class PrayerTimeService
     // 1. Cari berdasarkan nama kota jika ada
     if ($city) {
       $cityModel = $this->findCityByName($city);
+      // Jika tidak ditemukan, coba geocoding untuk mendapatkan koordinat lalu cari kota terdekat
+      if (!$cityModel) {
+        $coords = $this->geocodeCity($city);
+        if ($coords) {
+          $cityModel = $this->findNearestCity($coords['lat'], $coords['lon']);
+          if ($cityModel) {
+            Log::info("Kota '{$city}' tidak ditemukan, menggunakan kota terdekat: {$cityModel->name} berdasarkan geocoding.");
+          }
+        }
+      }
+      // Jika masih belum ditemukan dan ada koordinat, coba kota terdekat langsung
+      if (!$cityModel && $latitude && $longitude) {
+        Log::info("Kota '{$city}' tidak ditemukan, mencari kota terdekat dari koordinat yang diberikan.");
+        $cityModel = $this->findNearestCity($latitude, $longitude);
+      }
     }
-    // 2. Cari berdasarkan koordinat jika nama kota tidak ada
+    // 2. Cari berdasarkan koordinat jika nama kota tidak ada atau tidak ditemukan
     elseif ($latitude && $longitude) {
       $cityModel = $this->findNearestCity($latitude, $longitude);
     } else {
@@ -94,6 +108,12 @@ class PrayerTimeService
     $cityModel = null;
     if (!empty($defaultLocation['city'])) {
       $cityModel = $this->findCityByName($defaultLocation['city']);
+      if (!$cityModel) {
+        $coords = $this->geocodeCity($defaultLocation['city']);
+        if ($coords) {
+          $cityModel = $this->findNearestCity($coords['lat'], $coords['lon']);
+        }
+      }
     } elseif (!empty($defaultLocation['latitude']) && !empty($defaultLocation['longitude'])) {
       $cityModel = $this->findNearestCity($defaultLocation['latitude'], $defaultLocation['longitude']);
     }
@@ -132,16 +152,12 @@ class PrayerTimeService
   /**
   * Cari kota berdasarkan nama (case insensitive)
   */
-  protected function findCityByName($name): City
+  protected function findCityByName($name): ?City
   {
-    // Coba exact match
     $city = City::whereRaw('LOWER(name) = ?', [strtolower(trim($name))])->first();
-
-    // Jika tidak, coba partial match
     if (!$city) {
       $city = City::where('name', 'LIKE', '%' . $name . '%')->first();
     }
-
     return $city;
   }
 
@@ -150,9 +166,7 @@ class PrayerTimeService
   */
   protected function findNearestCity($lat, $lon): ?City
   {
-    // Ambil semua kota yang memiliki koordinat
     $cities = City::whereNotNull('latitude')->whereNotNull('longitude')->get();
-
     $nearest = null;
     $minDistance = PHP_INT_MAX;
 
@@ -170,12 +184,7 @@ class PrayerTimeService
   /**
   * Rumus haversine (jarak dalam km)
   */
-  protected function haversine(
-    $lat1,
-    $lon1,
-    $lat2,
-    $lon2
-  ) {
+  protected function haversine($lat1, $lon1, $lat2, $lon2) {
     $earthRadius = 6371;
     $dLat = deg2rad($lat2 - $lat1);
     $dLon = deg2rad($lon2 - $lon1);
@@ -185,8 +194,38 @@ class PrayerTimeService
   }
 
   /**
+  * Mendapatkan koordinat dari nama kota menggunakan geocoding (Nominatim)
+  */
+  protected function geocodeCity($cityName): ?array
+  {
+    $cacheKey = 'geocode_' . md5($cityName);
+    return Cache::remember($cacheKey, 86400, function () use ($cityName) {
+      try {
+        $response = Http::timeout(5)->get('https://nominatim.openstreetmap.org/search', [
+          'q' => $cityName,
+          'format' => 'json',
+          'limit' => 1,
+          'addressdetails' => 0,
+        ]);
+        if ($response->successful()) {
+          $data = $response->json();
+          if (!empty($data)) {
+            return [
+              'lat' => (float) $data[0]['lat'],
+              'lon' => (float) $data[0]['lon'],
+            ];
+          }
+        }
+      } catch (\Exception $e) {
+        Log::warning('Geocoding error: ' . $e->getMessage());
+      }
+      return null;
+    });
+  }
+
+  /**
   * Mendapatkan daftar semua provinsi yang tersedia
-  * @return array
+  * @return Collection
   */
   public function getProvinces(): Collection
   {
@@ -197,23 +236,32 @@ class PrayerTimeService
     ->unique("province_name");
   }
 
+  /**
+  * Mendapatkan kota berdasarkan ID
+  */
+  public function getCityById(int $id): City
+  {
+    return City::findOrFail($id);
+  }
+
+  /**
+  * Mendapatkan daftar kota berdasarkan provinsi
+  */
   public function getCitiesByProvinceId(int $id): Collection
   {
-    $cities = $this->getCityById($id);
-
-    return City::where("province_id", $cities
-      ->province_id)
+    $city = $this->getCityById($id);
+    return City::where("province_id",
+      $city->province_id)
     ->distinct()
     ->orderBy("name")
     ->get();
   }
 
-  public function getCityById(int $id):City
-  {
-    return City::findOrFail($id);
-  }
-
-  public function getTimezoneFromCoordinates($lat, $lon): ?string
+  /**
+  * Mendapatkan timezone dari koordinat
+  */
+  public function getTimezoneFromCoordinates($lat,
+    $lon): ?string
   {
     // 1. Coba IPGeolocation API
     $apiKey = config("prayer.ipgeolocation.api_key");
@@ -222,16 +270,16 @@ class PrayerTimeService
         $response = Http::timeout(5)->get('https://api.ipgeolocation.io/timezone', [
           'lat' => $lat,
           'lon' => $lon,
-          'apiKey' => config('prayer.ipgeolocation.api_key')
+          'apiKey' => $apiKey
         ]);
 
         if ($response->successful()) {
           $data = $response->json();
-          if ($data["timezone"]) {
+          if (!empty($data['timezone'])) {
             return $data['timezone'];
           }
         }
-        Log::debug($response->object()->message);
+        Log::debug('IPGeolocation error: ' . ($response->json()['message'] ?? 'Unknown'));
       } catch (\Exception $e) {
         Log::warning('IPGeolocation API error: ' . $e->getMessage());
       }
@@ -242,7 +290,7 @@ class PrayerTimeService
       $response = Http::timeout(5)->get("http://tz.twitchax.com/api/v1/ned/tz/{$lon}/{$lat}");
       if ($response->successful()) {
         $data = $response->json();
-        if (isset($data[0]["identifier"])) {
+        if (isset($data[0]['identifier'])) {
           return $data[0]['identifier'];
         }
       }
