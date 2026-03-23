@@ -32,6 +32,9 @@
               <label for="city" class="form-label">Nama Kota</label>
               <input type="text" class="form-control" id="city" name="city"
               value="{{ old('city', $telegramUser->data['default_location']['city'] ?? '') }}" placeholder="Nama Kota/kabupaten">
+              <div class="text-muted mb-2">
+                Gunakan format nama kota beserta kode negara. Contoh: Jakarta, ID
+              </div>
               <div class="form-text">
                 Atau isi koordinat di bawah jika ingin lebih spesifik.
               </div>
