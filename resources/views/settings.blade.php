@@ -63,7 +63,7 @@
             <h5>Notifikasi</h5>
             <div class="form-check form-switch mb-3">
               <input class="form-check-input" type="checkbox" id="notifications_enabled" name="notifications_enabled"
-              {{ old('notifications_enabled', $telegramUser->data['notifications_enabled'] ?? false) ? 'checked' : '' }} value="1">
+              {{ old('notifications_enabled', $telegramUser->data['notifications_prayer_enabled'] ?? false) ? 'checked' : '' }} value="1">
               <label class="form-check-label" for="notifications_enabled">Aktifkan notifikasi waktu shalat</label>
             </div>
 
