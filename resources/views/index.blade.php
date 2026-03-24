@@ -231,7 +231,7 @@
       countdownDiv.innerHTML = `
       <div class="text-center">
       <div class="next-label text-white">Menuju ${getPrayerName(nextPrayer)}</div>
-      <div class="timer">${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}</div>
+      <div class="timer text-white">${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}</div>
       </div>
       `;
       if (diffSeconds <= 0) {
