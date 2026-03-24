@@ -530,7 +530,8 @@
     // Jika server mengirim timezone_offset (menit dari UTC), gunakan itu
     if (data.data.timezone_offset !== undefined) {
     cityTimezoneOffset = data.data.timezone_offset;
-    alert("Timezone offset (menit): ", cityTimezoneOffset);
+    alert("Timezone offset (menit): "
+    + cityTimezoneOffset);
     } else {
     cityTimezoneOffset = null;
     }

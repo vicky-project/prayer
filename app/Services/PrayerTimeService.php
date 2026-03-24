@@ -92,6 +92,7 @@ class PrayerTimeService
         $now = new DateTime('now', $tz);
         $offsetSeconds = $tz->getOffset($now);
         $timezoneOffset = $offsetSeconds / 60;
+        Log::debug("Timezone offset: ". $timezoneOffset);
       } catch (\Exception $e) {
         Log::warning('Gagal mendapatkan offset timezone: ' . $e->getMessage());
       }
