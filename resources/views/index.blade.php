@@ -151,14 +151,12 @@
 
   // Mendapatkan waktu saat ini di zona waktu kota (berdasarkan offset dari server)
   function getCurrentCityTime() {
-    alert(cityTimezoneOffset);
     if (cityTimezoneOffset !== null) {
       const nowUTC = new Date();
-      const nowUTCms = nowUTC.getTime();
-      const cityTime = new Date(nowUTCms + (cityTimezoneOffset * 60 * 1000));
+      const utcTime = nowUTC.getTime() + (nowUTC.getTimezoneOffset() * 60 * 1000); // konversi ke UTC
+      const cityTime = new Date(utcTime + (cityTimezoneOffset * 60 * 1000));
       return cityTime;
     } else {
-      // Fallback: gunakan waktu lokal perangkat
       return new Date();
     }
   }
