@@ -151,6 +151,7 @@
 
   // Mendapatkan waktu saat ini di zona waktu kota (berdasarkan offset dari server)
   function getCurrentCityTime() {
+    alert(cityTimezoneOffset);
     if (cityTimezoneOffset !== null) {
       const nowUTC = new Date();
       const nowUTCms = nowUTC.getTime();
@@ -198,7 +199,7 @@
       'isya'];
     const now = getCurrentCityTime();
     const nowMinutes = now.getHours() * 60 + now.getMinutes();
-    alert(nowMinutes);
+
     let nextPrayer = null;
     let nextMinutes = null;
     for (let name of order) {
