@@ -102,6 +102,7 @@ class PrayerTimeService
       'city' => $prayer->city->name,
       'latitude' => $cityModel->latitude,
       'longitude' => $cityModel->longitude,
+      "timezone_offset" => $timezoneOffset,
       'jadwal' => [
         'imsak' => $prayer->imsak,
         'subuh' => $prayer->subuh,
@@ -112,7 +113,6 @@ class PrayerTimeService
         'maghrib' => $prayer->maghrib,
         'isya' => $prayer->isya,
       ],
-      "timezone_offset" => $timezoneOffset,
       'metode' => 'Kemenag',
     ];
   }
