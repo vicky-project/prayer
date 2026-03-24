@@ -76,7 +76,7 @@
     color: var(--tg-theme-text-color);
   }
   .table-hover tbody tr:hover {
-    color: var(--tg-theme-secondary-bg-color);
+    color: var(--tg-theme-text-color);
     background-color: var(--tg-theme-section-separator-color);
   }
   .table td, .table th {
