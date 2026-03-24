@@ -216,7 +216,7 @@
 
     // Jika tidak ada shalat setelah waktu sekarang (sudah lewat Isya)
     if (nextPrayer === null) {
-      countdownDiv.innerHTML = `<div class="text-center text-muted">✨ Shalat hari ini sudah selesai ✨</div>`;
+      countdownDiv.innerHTML = `<div class="text-center text-white">✨ Shalat hari ini sudah selesai ✨</div>`;
       return;
     }
 
