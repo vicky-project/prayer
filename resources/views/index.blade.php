@@ -190,7 +190,6 @@
     stopCountdown();
     if (!prayerTimes) return;
 
-    alert(prayerTimes);
     const order = ['imsak',
       'subuh',
       'dzuhur',
@@ -203,6 +202,7 @@
     let nextPrayer = null;
     let nextMinutes = null;
     for (let name of order) {
+      alert(prayerTimes[name]);
       if (prayerTimes[name]) {
         const minutes = timeToMinutes(prayerTimes[name]);
         if (minutes > nowMinutes) {
