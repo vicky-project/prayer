@@ -10,6 +10,6 @@ return [
     "name" => "main-apps",
   ],
   "ipgeolocation" => [
-    "api_key" => env("IPGEOLOCATION_APIKEY")
+    "api_key" => env("IPGEOLOCATION_KEY")
   ]
 ];
