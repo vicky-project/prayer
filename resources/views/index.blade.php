@@ -93,7 +93,7 @@
     font-family: monospace;
     text-align: center;
     background: var(--tg-theme-button-color);
-    color: var(--tg-theme-button-text-color);
+    color: var(--tg-theme-hint-color);
     padding: 0.75rem;
     border-radius: 0.75rem;
     margin: 1rem 0;

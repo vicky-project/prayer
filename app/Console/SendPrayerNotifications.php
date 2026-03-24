@@ -52,7 +52,7 @@ class SendPrayerNotifications extends Command
       $prayerData = $this->prayerService->getTodayPrayerByLocation($defaultLocation);
       if (!$prayerData) {
         $this->warn("User {$user->telegram_id}: jadwal tidak ditemukan.");
-        \Log::warn("User {$user->telegram_id}: Jadwal tidak ditemukan.", ['location' => $defaultLocation]);
+        \Log::warning("User {$user->telegram_id}: Jadwal tidak ditemukan.", ['location' => $defaultLocation]);
         continue;
       }
 
@@ -77,7 +77,7 @@ class SendPrayerNotifications extends Command
         }
 
         // Cek kecocokan waktu (dengan toleransi 1 menit)
-        if ($time === $currentTime) {
+        if ($time >= $currentTime && $time <= $currentTime + now()->addMinutes(2)->format('H:i')) {
           $clearName = $this->translatePrayerName($name);
           $message = $this->formatNotificationMessage($prayerData["city_name"], $name, $time);
 
