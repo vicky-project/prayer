@@ -70,7 +70,7 @@
     color: var(--tg-theme-button-text-color);
   }
   .text-muted {
-    color: var(--tg-theme-hint-color) !important;
+    color: var(--tg-theme-text-color) !important;
   }
   .table {
     color: var(--tg-theme-text-color);
@@ -230,7 +230,7 @@
       const seconds = diffSeconds % 60;
       countdownDiv.innerHTML = `
       <div class="text-center">
-      <div class="next-label">Menuju ${getPrayerName(nextPrayer)}</div>
+      <div class="next-label text-white">Menuju ${getPrayerName(nextPrayer)}</div>
       <div class="timer">${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}</div>
       </div>
       `;
