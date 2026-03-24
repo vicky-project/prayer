@@ -202,9 +202,9 @@
     let nextPrayer = null;
     let nextMinutes = null;
     for (let name of order) {
-      alert(prayerTimes[name]);
       if (prayerTimes[name]) {
         const minutes = timeToMinutes(prayerTimes[name]);
+        alert(minutes, nowMinutes);
         if (minutes > nowMinutes) {
           nextPrayer = name;
           nextMinutes = minutes;
