@@ -149,9 +149,26 @@ class PrayerTimeService
       return null;
     }
 
+    // Hitung timezone offset dalam menit
+    $timezoneOffset = null;
+    if ($cityModel->timezone) {
+      try {
+        $tz = new DateTimeZone($cityModel->timezone);
+        $now = new DateTime('now', $tz);
+        $offsetSeconds = $tz->getOffset($now);
+        $timezoneOffset = $offsetSeconds / 60;
+      } catch (\Exception $e) {
+        Log::warning('Gagal mendapatkan offset timezone: ' . $e->getMessage());
+      }
+    }
+
     return [
+      'date' => $prayer->date->format("d-m-Y"),
       'city_name' => $cityModel->name,
+      'latitude' => $cityModel->latitude,
+      'longitude' => $cityModel->longitude,
       'timezone' => $timezone,
+      "timezone_offset" => $timezoneOffset,
       'jadwal' => [
         'imsak' => $prayer->imsak,
         'subuh' => $prayer->subuh,
