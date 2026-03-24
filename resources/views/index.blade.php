@@ -198,13 +198,12 @@
       'isya'];
     const now = getCurrentCityTime();
     const nowMinutes = now.getHours() * 60 + now.getMinutes();
-
+    alert(nowMinutes);
     let nextPrayer = null;
     let nextMinutes = null;
     for (let name of order) {
       if (prayerTimes[name]) {
         const minutes = timeToMinutes(prayerTimes[name]);
-        alert(minutes + ' - ' + nowMinutes);
         if (minutes > nowMinutes) {
           nextPrayer = name;
           nextMinutes = minutes;
