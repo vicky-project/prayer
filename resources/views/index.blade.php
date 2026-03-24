@@ -190,6 +190,7 @@
     stopCountdown();
     if (!prayerTimes) return;
 
+    alert(prayerTimes);
     const order = ['imsak',
       'subuh',
       'dzuhur',
@@ -211,7 +212,6 @@
         }
       }
     }
-    alert("Next prayer: " + nextPrayer + ' next minutes: '+ nextMinutes);
 
     const countdownDiv = document.getElementById('countdown');
     if (!countdownDiv) return;
