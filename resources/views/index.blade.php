@@ -204,7 +204,7 @@
     for (let name of order) {
       if (prayerTimes[name]) {
         const minutes = timeToMinutes(prayerTimes[name]);
-        alert(minutes, nowMinutes);
+        alert(minutes + ' - ' + nowMinutes);
         if (minutes > nowMinutes) {
           nextPrayer = name;
           nextMinutes = minutes;
