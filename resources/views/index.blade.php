@@ -153,11 +153,10 @@
   function getCurrentCityTime() {
     if (cityTimezoneOffset !== null) {
       const nowUTC = new Date();
-      const nowUTCms = nowUTC.getTime();
-      const cityTime = new Date(nowUTCms + (cityTimezoneOffset * 60 * 1000));
+      const utcTime = nowUTC.getTime() + (nowUTC.getTimezoneOffset() * 60 * 1000); // konversi ke UTC
+      const cityTime = new Date(utcTime + (cityTimezoneOffset * 60 * 1000));
       return cityTime;
     } else {
-      // Fallback: gunakan waktu lokal perangkat
       return new Date();
     }
   }
@@ -192,8 +191,6 @@
 
     const order = ['imsak',
       'subuh',
-      'terbit',
-      'dhuha',
       'dzuhur',
       'ashar',
       'maghrib',
@@ -348,6 +345,8 @@
       <i class="bi bi-geo-alt-fill text-primary"></i>
       <span class="ms-2" id="locationDisplay">${locationName}</span>
       </div>
+      <div class="text-center mb-2 small text-muted" id="dateDisplay"></div>
+      <div id="countdown"></div>
       <table class="table table-hover">
       <tbody>
       <tr><th scope="row">Imsak</th><td class="text-end" id="imsak">-</td></tr>
@@ -360,8 +359,6 @@
       <tr><th scope="row">Isya</th><td class="text-end" id="isya">-</td></tr>
       </tbody>
       </table>
-      <div id="countdown"></div>
-      <div class="text-center mb-2 small text-muted" id="dateDisplay"></div>
       <div class="text-center mb-2 small text-muted" id="coordDisplay"></div>
       <div class="text-muted small text-center">
       <i class="bi bi-info-circle me-1"></i>Waktu berdasarkan lokasi terdekat
