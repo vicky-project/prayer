@@ -345,6 +345,7 @@
       <i class="bi bi-geo-alt-fill text-primary"></i>
       <span class="ms-2" id="locationDisplay">${locationName}</span>
       </div>
+      <div class="text-center mb-2 small text-muted" id="dateDisplay"></div>
       <div id="countdown"></div>
       <table class="table table-hover">
       <tbody>
@@ -358,7 +359,6 @@
       <tr><th scope="row">Isya</th><td class="text-end" id="isya">-</td></tr>
       </tbody>
       </table>
-      <div class="text-center mb-2 small text-muted" id="dateDisplay"></div>
       <div class="text-center mb-2 small text-muted" id="coordDisplay"></div>
       <div class="text-muted small text-center">
       <i class="bi bi-info-circle me-1"></i>Waktu berdasarkan lokasi terdekat
