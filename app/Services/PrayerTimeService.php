@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Collection;
+use DateTime;
+use DateTimeZone;
 
 class PrayerTimeService
 {
@@ -82,6 +84,19 @@ class PrayerTimeService
       throw new \Exception('Jadwal shalat tidak ditemukan untuk kota ini.');
     }
 
+    // Hitung timezone offset dalam menit
+    $timezoneOffset = null;
+    if ($cityModel->timezone) {
+      try {
+        $tz = new DateTimeZone($cityModel->timezone);
+        $now = new DateTime('now', $tz);
+        $offsetSeconds = $tz->getOffset($now);
+        $timezoneOffset = $offsetSeconds / 60;
+      } catch (\Exception $e) {
+        Log::warning('Gagal mendapatkan offset timezone: ' . $e->getMessage());
+      }
+    }
+
     return [
       'date' => $prayer->date->format("d-m-Y"),
       'city' => $prayer->city->name,
@@ -97,6 +112,7 @@ class PrayerTimeService
         'maghrib' => $prayer->maghrib,
         'isya' => $prayer->isya,
       ],
+      "timezone_offset" => $timezoneOffset,
       'metode' => 'Kemenag',
     ];
   }

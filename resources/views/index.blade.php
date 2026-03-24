@@ -7,8 +7,7 @@
     <div class="col-md-12">
       <div class="d-flex justify-content-between align-items-center">
         <a href="{{ route('telegram.home') }}" class="btn btn-outline-secondary">
-          <i class="bi bi-arrow-left me-2"></i>
-          Kembali
+          <i class="bi bi-arrow-left me-2"></i>Kembali
         </a>
         @if($telegramUser)
         <a href="{{ route('apps.prayer.settings') }}" class="btn btn-outline-secondary">
@@ -35,7 +34,7 @@
 
 @push('styles')
 <style>
-  /* Menggunakan tema Telegram */
+  /* Tema Telegram */
   body {
     background-color: var(--tg-theme-bg-color);
     color: var(--tg-theme-text-color);
@@ -89,27 +88,169 @@
     margin-top: 1rem;
     font-size: 0.9rem;
   }
-  #dateDisplay, #coordDisplay {
-    font-size: 0.9rem;
+  /* Countdown styling */
+  #countdown {
+    font-family: monospace;
+    text-align: center;
+    background: var(--tg-theme-button-color);
+    color: var(--tg-theme-button-text-color);
+    padding: 0.75rem;
+    border-radius: 0.75rem;
+    margin: 1rem 0;
+  }
+  #countdown .next-label {
+    font-size: 0.85rem;
+    opacity: 0.9;
+  }
+  #countdown .timer {
+    font-size: 2rem;
+    font-weight: bold;
+    letter-spacing: 2px;
+    line-height: 1.2;
+  }
+  @media (max-width: 576px) {
+    #countdown .timer {
+      font-size: 1.5rem;
+    }
   }
 </style>
 @endpush
 
 @push('scripts')
 <script>
+  // ========================
   // State management
-  let currentState = 'loading'; // 'loading', 'denied', 'unavailable', 'manual', 'error', 'loaded'
+  // ========================
+  let currentState = 'loading'; // loading, denied, unavailable, manual, error, loaded
   let errorMessage = '';
   let locationName = '';
   let locationTimeout;
 
   const hasDefaultLocation = @json($telegramUser && isset($telegramUser->data["default_location"]) && !empty($telegramUser->data["default_location"]));
   let usingDefault = hasDefaultLocation;
-
   const defaultLocation = @json($telegramUser->data["default_location"] ?? null);
 
   const appElement = document.getElementById('prayerApp');
 
+  // ========================
+  // Countdown variables
+  // ========================
+  let countdownInterval = null;
+  let currentPrayerTimes = null;
+  let cityTimezoneOffset = null; // offset dalam menit dari UTC, diisi dari server
+
+  // ========================
+  // Helper functions
+  // ========================
+  function stopCountdown() {
+    if (countdownInterval) {
+      clearInterval(countdownInterval);
+      countdownInterval = null;
+    }
+  }
+
+  // Mendapatkan waktu saat ini di zona waktu kota (berdasarkan offset dari server)
+  function getCurrentCityTime() {
+    if (cityTimezoneOffset !== null) {
+      const nowUTC = new Date();
+      const nowUTCms = nowUTC.getTime();
+      const cityTime = new Date(nowUTCms + (cityTimezoneOffset * 60 * 1000));
+      return cityTime;
+    } else {
+      // Fallback: gunakan waktu lokal perangkat
+      return new Date();
+    }
+  }
+
+  // Konversi string waktu "HH:MM" ke menit sejak tengah malam
+  function timeToMinutes(timeStr) {
+    if (!timeStr) return 0;
+    const parts = timeStr.split(':');
+    if (parts.length < 2) return 0;
+    return parseInt(parts[0]) * 60 + parseInt(parts[1]);
+  }
+
+  // Nama shalat dalam bahasa Indonesia
+  function getPrayerName(key) {
+    const names = {
+      'imsak': 'Imsak',
+      'subuh': 'Subuh',
+      'terbit': 'Terbit',
+      'dhuha': 'Dhuha',
+      'dzuhur': 'Dzuhur',
+      'ashar': 'Ashar',
+      'maghrib': 'Maghrib',
+      'isya': 'Isya'
+    };
+    return names[key] || key;
+  }
+
+  // Memulai countdown menuju waktu shalat berikutnya
+  function startCountdown(prayerTimes) {
+    stopCountdown();
+    if (!prayerTimes) return;
+
+    const order = ['imsak',
+      'subuh',
+      'terbit',
+      'dhuha',
+      'dzuhur',
+      'ashar',
+      'maghrib',
+      'isya'];
+    const now = getCurrentCityTime();
+    const nowMinutes = now.getHours() * 60 + now.getMinutes();
+
+    let nextPrayer = null;
+    let nextMinutes = null;
+    for (let name of order) {
+      if (prayerTimes[name]) {
+        const minutes = timeToMinutes(prayerTimes[name]);
+        if (minutes > nowMinutes) {
+          nextPrayer = name;
+          nextMinutes = minutes;
+          break;
+        }
+      }
+    }
+
+    const countdownDiv = document.getElementById('countdown');
+    if (!countdownDiv) return;
+
+    // Jika tidak ada shalat setelah waktu sekarang (sudah lewat Isya)
+    if (nextPrayer === null) {
+      countdownDiv.innerHTML = `<div class="text-center text-muted">✨ Shalat hari ini sudah selesai ✨</div>`;
+      return;
+    }
+
+    // Hitung selisih detik
+    let diffSeconds = (nextMinutes - nowMinutes) * 60 - now.getSeconds();
+    if (diffSeconds < 0) diffSeconds += 24 * 60 * 60; // aman
+
+    function updateDisplay() {
+      const hours = Math.floor(diffSeconds / 3600);
+      const minutes = Math.floor((diffSeconds % 3600) / 60);
+      const seconds = diffSeconds % 60;
+      countdownDiv.innerHTML = `
+      <div class="text-center">
+      <div class="next-label">Menuju ${getPrayerName(nextPrayer)}</div>
+      <div class="timer">${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}</div>
+      </div>
+      `;
+      if (diffSeconds <= 0) {
+        // Waktu telah tercapai, hitung ulang untuk shalat berikutnya
+        stopCountdown();
+        startCountdown(prayerTimes);
+      }
+      diffSeconds--;
+    }
+    updateDisplay();
+    countdownInterval = setInterval(updateDisplay, 1000);
+  }
+
+  // ========================
+  // UI building (sama seperti sebelumnya, dengan tambahan countdown di loaded)
+  // ========================
   function buildUI() {
     let html = '';
     if (currentState === 'loading') {
@@ -201,15 +342,12 @@
       if (hasDefaultLocation && !usingDefault) {
         extraButton = `<button type="button" class="btn btn-outline-secondary w-100 mt-2" onclick="useDefaultLocation();"><i class="bi bi-arrow-repeat me-2"></i>Kembali ke Lokasi Default</button>`;
       }
-
       html = `
       <div>
       <div class="text-center mb-3">
       <i class="bi bi-geo-alt-fill text-primary"></i>
       <span class="ms-2" id="locationDisplay">${locationName}</span>
       </div>
-      <div class="text-center mb-2 small text-muted" id="dateDisplay"></div>
-      <div class="text-center mb-3 small text-muted" id="coordDisplay"></div>
       <table class="table table-hover">
       <tbody>
       <tr><th scope="row">Imsak</th><td class="text-end" id="imsak">-</td></tr>
@@ -222,6 +360,9 @@
       <tr><th scope="row">Isya</th><td class="text-end" id="isya">-</td></tr>
       </tbody>
       </table>
+      <div id="countdown"></div>
+      <div class="text-center mb-2 small text-muted" id="dateDisplay"></div>
+      <div class="text-center mb-2 small text-muted" id="coordDisplay"></div>
       <div class="text-muted small text-center">
       <i class="bi bi-info-circle me-1"></i>Waktu berdasarkan lokasi terdekat
       </div>
@@ -235,6 +376,9 @@
     appElement.innerHTML = html;
   }
 
+  // ========================
+  // Location & API functions
+  // ========================
   function clearLocationTimeout() {
     if (locationTimeout) {
       clearTimeout(locationTimeout);
@@ -336,7 +480,7 @@
 
   window.useDefaultLocation = function() {
     requestLocation(false);
-  }
+  };
 
   window.getManualLocation = function() {
     usingDefault = false;
@@ -383,6 +527,15 @@
     .then(response => response.json())
     .then(data => {
     if (data.success) {
+    // Simpan data untuk countdown
+    currentPrayerTimes = data.data.jadwal;
+    // Jika server mengirim timezone_offset (menit dari UTC), gunakan itu
+    if (data.data.timezone_offset !== undefined) {
+    cityTimezoneOffset = data.data.timezone_offset;
+    } else {
+    cityTimezoneOffset = null;
+    }
+
     currentState = 'loaded';
     locationName = cityName || `Lat: ${data.data.latitude.toFixed(4)}, Lon: ${data.data.longitude.toFixed(4)}`;
     buildUI();
@@ -397,11 +550,14 @@
     document.getElementById('maghrib').innerText = data.data.jadwal.maghrib || '-';
     document.getElementById('isya').innerText = data.data.jadwal.isya || '-';
 
-    // Tampilkan tanggal dan koordinat dari respons server
+    // Tampilkan tanggal dan koordinat
     document.getElementById('dateDisplay').innerText = `📅 ${data.data.date}`;
     document.getElementById('coordDisplay').innerText = `📍 ${data.data.latitude}, ${data.data.longitude}`;
 
     if (cityName) document.getElementById('locationDisplay').innerText = cityName;
+
+    // Mulai countdown
+    startCountdown(currentPrayerTimes);
     } else {
     currentState = 'error';
     errorMessage = data.message || 'Gagal memuat jadwal shalat.';
@@ -416,6 +572,7 @@
     });
   }
 
+  // Inisialisasi
   document.addEventListener('DOMContentLoaded', function() {
   requestLocation();
   });
