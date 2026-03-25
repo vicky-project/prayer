@@ -109,6 +109,7 @@ class PrayerController extends Controller
         'message' => 'Pengaturan berhasil disimpan.'
       ]);
     } catch(\Exception $e) {
+      \Log::error("Gagal menyimpan pengaturan", ['error' => $e->getMessage()]);
       return response()->json(["success" => false, "message" => $e->getMessage()], 500);
     }
   }
