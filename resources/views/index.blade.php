@@ -76,7 +76,7 @@
     color: var(--tg-theme-text-color);
   }
   .table-hover tbody tr:hover {
-    background-color: var(--tg-theme-section-separator-color);
+    background-color: text-white;
   }
   .table td, .table th {
     border-color: var(--tg-theme-section-separator-color);
@@ -216,7 +216,7 @@
 
     // Jika tidak ada shalat setelah waktu sekarang (sudah lewat Isya)
     if (nextPrayer === null) {
-      countdownDiv.innerHTML = `<div class="text-center text-muted">✨ Shalat hari ini sudah selesai ✨</div>`;
+      countdownDiv.innerHTML = `<div class="text-center text-white">✨ Shalat hari ini sudah selesai ✨</div>`;
       return;
     }
 
