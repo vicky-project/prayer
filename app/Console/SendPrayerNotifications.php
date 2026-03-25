@@ -70,20 +70,17 @@ class SendPrayerNotifications extends Command
       // Inisialisasi notifikasi yang sudah dikirim hari ini
       $sentToday = $data['notifications_prayer_sent'][$today] ?? [];
 
-      foreach ($prayerData['jadwal'] as $name => $time) {
-        // Lewati jika sudah dikirim hari ini
-        if (in_array($name, $sentToday)) {
-          continue;
-        }
+      foreach ($prayerData['jadwal'] as $name => $timeStr) {
+        // Buat waktu shalat hari ini
+        $prayerTime = Carbon::today($timezone)->setTimeFromTimeString($timeStr);
+        $diffMinutes = abs($now->diffInMinutes($prayerTime));
 
-        // Cek kecocokan waktu (dengan toleransi 1 menit)
-        if ($time >= $currentTime && $time <= $currentTime + now()->addMinutes(2)->format('H:i')) {
+        if ($diffMinutes <= 1 && !in_array($name, $sentToday)) {
           $clearName = $this->translatePrayerName($name);
-          $message = $this->formatNotificationMessage($prayerData["city_name"], $name, $time);
+          $message = $this->formatNotificationMessage($prayerData["city_name"], $name, $timeStr);
 
           $sent = $this->telegramApi->sendMessage($user->telegram_id, TelegramMarkdownHelper::safeText($message, "HTML"), "HTML");
           if ($sent) {
-            // Catat pengiriman
             $sentToday[] = $name;
             $data['notifications_prayer_sent'][$today] = $sentToday;
             $user->data = $data;
