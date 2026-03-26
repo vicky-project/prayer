@@ -3,11 +3,13 @@
 namespace Modules\Prayer\Providers;
 
 use Illuminate\Support\Facades\Blade;
+use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Schedule;
 use Illuminate\Support\ServiceProvider;
 use Nwidart\Modules\Traits\PathNamespace;
 use RecursiveDirectoryIterator;
 use RecursiveIteratorIterator;
+use Modules\Prayer\Notifications\PrayerSentFailed;
 use Modules\Prayer\Services\PrayerTimeService;
 use Modules\Prayer\Telegram\LocationHandler;
 use Modules\Prayer\Telegram\PrayerCommand;
@@ -142,9 +144,22 @@ class PrayerServiceProvider extends ServiceProvider
   {
     $this->app->booted(function () {
       //     $schedule = $this->app->make(Schedule::class);
-      Schedule::command('app:prayer')->monthly();
-      Schedule::command('app:prayer-sent')->everyMinute();
-      Schedule::command('app:prayer-reset')->dailyAt('00:01');
+      Schedule::command('app:prayer')
+      ->monthly()
+      ->withoutOverlapping()
+      ->timezone(config("prayer.timezone"));
+      Schedule::command('app:prayer-sent')
+      ->everyMinute()
+      ->withoutOverlapping()
+      ->timezone(config("prayer.timezone"))
+      ->onFailure(function() {
+        \Log::error("Schedule failed for  app:prayer-sent");
+        Notification::route("telegram", env("TELEGRAM_CHAT_ID"))->notifyNow(new PrayerSentFailed('app:prayer-sent'));
+      })->pingOnSuccess('https://hc-ping.com/86031fbf-7c4e-40e1-a302-521a1fa6470e');
+      Schedule::command('app:prayer-reset')
+      ->dailyAt('00:01')
+      ->withoutOverlapping()
+      ->timezone(config("prayer.timezone"));
     });
   }
 

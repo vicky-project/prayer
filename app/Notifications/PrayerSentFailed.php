@@ -6,7 +6,7 @@ use Illuminate\Bus\Queueable;
 use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 
-class PrayerSent extends Notification implements ShouldQueue
+class PrayerSentFailed extends Notification implements ShouldQueue
 {
   use Queueable;
 
@@ -32,9 +32,7 @@ class PrayerSent extends Notification implements ShouldQueue
   public $maxExceptions = 3;
 
   public function __construct(
-    protected string $city,
-    protected string $name,
-    protected string $time
+    protected string $signature,
   ) {}
 
   public function via($notifiable) {
@@ -42,22 +40,7 @@ class PrayerSent extends Notification implements ShouldQueue
   }
 
   public function toTelegram($notifiable) {
-    $names = [
-      'imsak' => 'Imsak',
-      'subuh' => 'Subuh',
-      'terbit' => 'Terbit',
-      'dhuha' => 'Dhuha',
-      'dzuhur' => 'Dzuhur',
-      'ashar' => 'Ashar',
-      'maghrib' => 'Maghrib',
-      'isya' => 'Isya',
-    ];
-    $displayName = $names[$this->name] ?? $this->name;
-
-    $message = "🕌 *Waktu Shalat {$displayName}*\n" .
-    "📍 {$this->city}\n" .
-    "⏰ {$this->time} \n\n" .
-    "Semoga ibadah kita diterima Allah SWT.";
+    $message = "⚠️ Failed to process command: ". $this->signature;
 
     return [
       "text" => $message,
