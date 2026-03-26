@@ -172,8 +172,6 @@ class PrayerTimeService
       'jadwal' => [
         'imsak' => $prayer->imsak,
         'subuh' => $prayer->subuh,
-        'terbit' => $prayer->terbit,
-        'dhuha' => $prayer->dhuha,
         'dzuhur' => $prayer->dzuhur,
         'ashar' => $prayer->ashar,
         'maghrib' => $prayer->maghrib,
