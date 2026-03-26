@@ -5,8 +5,6 @@ use Illuminate\Console\Command;
 use Modules\Prayer\Notifications\PrayerSent;
 use Modules\Prayer\Services\PrayerTimeService;
 use Modules\Telegram\Models\TelegramUser;
-use Modules\Telegram\Services\Support\TelegramApi;
-use Modules\Telegram\Services\Support\TelegramMarkdownHelper;
 use Carbon\Carbon;
 
 class SendPrayerNotifications extends Command
@@ -15,15 +13,12 @@ class SendPrayerNotifications extends Command
   protected $description = 'Kirim notifikasi waktu shalat ke pengguna Telegram yang mengaktifkan';
 
   protected PrayerTimeService $prayerService;
-  protected TelegramApi $telegramApi;
 
   public function __construct(
-    PrayerTimeService $prayerService,
-    TelegramApi $telegramApi
+    PrayerTimeService $prayerService
   ) {
     parent::__construct();
     $this->prayerService = $prayerService;
-    $this->telegramApi = $telegramApi;
   }
 
   public function handle() {
