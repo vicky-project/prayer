@@ -2,8 +2,9 @@
 namespace Modules\Prayer\Console;
 
 use Illuminate\Console\Command;
-use Modules\Telegram\Models\TelegramUser;
+use Modules\Prayer\Notifications\PrayerSent;
 use Modules\Prayer\Services\PrayerTimeService;
+use Modules\Telegram\Models\TelegramUser;
 use Modules\Telegram\Services\Support\TelegramApi;
 use Modules\Telegram\Services\Support\TelegramMarkdownHelper;
 use Carbon\Carbon;
@@ -42,45 +43,44 @@ class SendPrayerNotifications extends Command
     $sentCount = 0;
 
     foreach ($users as $user) {
-      $data = $user->data ?? [];
-      $defaultLocation = $data['default_location'] ?? [];
+      try {
+        $data = $user->data ?? [];
+        $defaultLocation = $data['default_location'] ?? [];
 
-      if (empty($defaultLocation)) {
-        continue;
-      }
+        if (empty($defaultLocation)) {
+          continue;
+        }
 
-      $prayerData = $this->prayerService->getTodayPrayerByLocation($defaultLocation);
-      if (!$prayerData) {
-        $this->warn("User {$user->telegram_id}: jadwal tidak ditemukan.");
-        \Log::warning("User {$user->telegram_id}: Jadwal tidak ditemukan.", ['location' => $defaultLocation]);
-        continue;
-      }
+        $prayerData = $this->prayerService->getTodayPrayerByLocation($defaultLocation);
+        if (!$prayerData) {
+          $this->warn("User {$user->telegram_id}: jadwal tidak ditemukan.");
+          \Log::warning("User {$user->telegram_id}: Jadwal tidak ditemukan.", ['location' => $defaultLocation]);
+          continue;
+        }
 
-      // Inisialisasi array notifikasi yang sudah dikirim per tanggal
-      if (!isset($data['notifications_prayer_sent'])) {
-        $data['notifications_prayer_sent'] = [];
-      }
+        // Inisialisasi array notifikasi yang sudah dikirim per tanggal
+        if (!isset($data['notifications_prayer_sent'])) {
+          $data['notifications_prayer_sent'] = [];
+        }
 
-      // Gunakan timezone kota untuk menentukan waktu sekarang
-      $timezone = $prayerData['timezone'] ?? 'Asia/Jakarta';
-      $now = Carbon::now($timezone);
-      $today = $now->toDateString();
-      $currentTime = $now->format('H:i');
+        // Gunakan timezone kota untuk menentukan waktu sekarang
+        $timezone = $prayerData['timezone'] ?? 'Asia/Jakarta';
+        $now = Carbon::now($timezone);
+        $today = $now->toDateString();
+        $currentTime = $now->format('H:i');
 
-      // Inisialisasi notifikasi yang sudah dikirim hari ini
-      $sentToday = $data['notifications_prayer_sent'][$today] ?? [];
+        // Inisialisasi notifikasi yang sudah dikirim hari ini
+        $sentToday = $data['notifications_prayer_sent'][$today] ?? [];
 
-      foreach ($prayerData['jadwal'] as $name => $timeStr) {
-        // Buat waktu shalat hari ini
-        $prayerTime = Carbon::today($timezone)->setTimeFromTimeString($timeStr);
-        $diffMinutes = abs($now->diffInMinutes($prayerTime));
+        foreach ($prayerData['jadwal'] as $name => $timeStr) {
+          // Buat waktu shalat hari ini
+          $prayerTime = Carbon::today($timezone)->setTimeFromTimeString($timeStr);
+          $diffMinutes = abs($now->diffInMinutes($prayerTime));
 
-        if ($diffMinutes <= 1 && !in_array($name, $sentToday)) {
-          $clearName = $this->translatePrayerName($name);
-          $message = $this->formatNotificationMessage($prayerData["city_name"], $name, $timeStr);
+          if ($diffMinutes <= 1 && !in_array($name, $sentToday)) {
+            $user->notify(new PrayerSent(city: $prayerData["city"], name: $name, time: $timeStr));
 
-          $sent = $this->telegramApi->sendMessage($user->telegram_id, TelegramMarkdownHelper::safeText($message, "HTML"), "HTML");
-          if ($sent) {
+
             $sentToday[] = $name;
             $data['notifications_prayer_sent'][$today] = $sentToday;
             $user->data = $data;
@@ -91,29 +91,16 @@ class SendPrayerNotifications extends Command
             $sentCount++;
           }
         }
+      } catch(\Exception $e) {
+        \Log::warning("Failed to sent prayer notifications", [
+          "user" => $user->telegram_id,
+          "message" => $e->getMessage(),
+          "trace" => $e->getTraceAsString()
+        ]);
       }
     }
 
     $this->info("Selesai. {$sentCount} notifikasi terkirim.");
     return 0;
-  }
-
-  protected function formatNotificationMessage($city, $prayerName, $time) {
-    $names = [
-      'imsak' => 'Imsak',
-      'subuh' => 'Subuh',
-      'terbit' => 'Terbit',
-      'dhuha' => 'Dhuha',
-      'dzuhur' => 'Dzuhur',
-      'ashar' => 'Ashar',
-      'maghrib' => 'Maghrib',
-      'isya' => 'Isya',
-    ];
-    $displayName = $names[$prayerName] ?? $prayerName;
-
-    return "🕌 *Waktu Shalat {$displayName}*\n" .
-    "📍 {$city}\n" .
-    "⏰ {$time} WIB\n\n" .
-    "Semoga ibadah kita diterima Allah SWT.";
   }
 }
