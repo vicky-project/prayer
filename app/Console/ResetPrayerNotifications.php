@@ -12,6 +12,7 @@ class ResetPrayerNotifications extends Command
 
   public function handle() {
     $this->info('Memulai reset notifikasi...');
+    \Log::info("Command ResetPrayerNotifications started..");
 
     $users = TelegramUser::all();
     $today = Carbon::today()->toDateString();
@@ -49,7 +50,9 @@ class ResetPrayerNotifications extends Command
     }
 
     $this->info("Reset selesai. {$deletedCount} user dibersihkan.");
-    \Log::info("Reset user notifications with total {$deletedCount}");
+    \Log::info("Command ResetPrayerNotifications finished.", [
+      "deleted_count" => $deletedCount
+    ]);
     return 0;
   }
 }

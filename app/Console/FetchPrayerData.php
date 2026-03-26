@@ -28,7 +28,13 @@ class FetchPrayerData extends Command
       return 1;
     }
 
+    Log::info("Command FetchPrayerData started.", [
+      "url" => $url
+    ]);
+
     $this->info('Starting prayer data fetch using url: '.$url);
+
+    $totalProvinces = 0;
 
     try {
       // Download data dengan timeout panjang
@@ -110,7 +116,6 @@ class FetchPrayerData extends Command
 
       $bar->finish();
       $this->newLine();
-      $this->info('Prayer data updated successfully!');
 
     } catch (\Exception $e) {
       Log::error('Fetch prayer data error: ' . $e->getMessage());
@@ -118,6 +123,10 @@ class FetchPrayerData extends Command
       return 1;
     }
 
+    $this->info('Prayer data updated successfully!');
+    Log::info("Command FetchPrayerData finished.", [
+      "provinces" => $totalProvinces
+    ]);
     return 0;
   }
 }

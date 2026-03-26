@@ -23,6 +23,7 @@ class SendPrayerNotifications extends Command
 
   public function handle() {
     $this->info('Memulai pengiriman notifikasi shalat...');
+    \Log::info("Command SendPrayerNotifications started...");
 
     $users = TelegramUser::all()->filter(function (TelegramUser $user) {
       $data = $user->data ?? [];
@@ -94,7 +95,7 @@ class SendPrayerNotifications extends Command
           }
         }
       } catch(\Exception $e) {
-        \Log::warning("Failed to sent prayer notifications", [
+        \Log::error("Failed to sent prayer notifications", [
           "user" => $user->telegram_id,
           "message" => $e->getMessage(),
           "trace" => $e->getTraceAsString()
@@ -103,6 +104,9 @@ class SendPrayerNotifications extends Command
     }
 
     $this->info("Selesai. {$sentCount} notifikasi terkirim.");
+    \Log::info("Command SendPrayerNotifications finished.", [
+      "sent_count" => $sentCount
+    ]);
     return 0;
   }
 }

@@ -47,13 +47,13 @@ class PrayerTimeService
         if ($coords) {
           $cityModel = $this->findNearestCity($coords['lat'], $coords['lon']);
           if ($cityModel) {
-            Log::warning("Kota '{$city}' tidak ditemukan, menggunakan kota terdekat: {$cityModel->name} berdasarkan geocoding.");
+            Log::info("Kota '{$city}' tidak ditemukan, menggunakan kota terdekat: {$cityModel->name} berdasarkan geocoding.");
           }
         }
       }
       // Jika masih belum ditemukan dan ada koordinat, coba kota terdekat langsung
       if (!$cityModel && $latitude && $longitude) {
-        Log::warning("Kota '{$city}' tidak ditemukan, mencari kota terdekat dari koordinat yang diberikan.");
+        Log::notice("Kota '{$city}' tidak ditemukan, mencari kota terdekat dari koordinat yang diberikan.");
         $cityModel = $this->findNearestCity($latitude, $longitude);
       }
     }
@@ -312,7 +312,7 @@ class PrayerTimeService
             return $data['timezone'];
           }
         }
-        Log::error('IPGeolocation error: ' . ($response->json()['message'] ?? 'Unknown'));
+        Log::warning('IPGeolocation error: ' . ($response->json()['message'] ?? 'Unknown'));
       } catch (\Exception $e) {
         Log::error('IPGeolocation API error: ' . $e->getMessage());
       }
