@@ -19,7 +19,7 @@ class PrayerSent extends Notification implements ShouldQueue
   }
 
   public function via($notifiable) {
-    return $notifiable->notifyAuthenticationLogVia();
+    return ["telegram"];
   }
 
   public function toTelegram($notifiable) {
