@@ -73,6 +73,7 @@ class SendPrayerNotifications extends Command
           // Buat waktu shalat hari ini
           $prayerTime = Carbon::today($timezone)->setTimeFromTimeString($timeStr);
           $diffMinutes = abs($now->diffInMinutes($prayerTime));
+          \Log::debug("Shalat yang ditemukan: ", ["diff" => $diffMinutes, "name" => $name, "sent" => $sentToday]):
 
           if ($diffMinutes <= 1 && !in_array($name, $sentToday)) {
             $user->notify(new PrayerSent(city: $prayerData["city"], name: $name, time: $timeStr));
