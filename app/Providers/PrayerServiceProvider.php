@@ -155,7 +155,8 @@ class PrayerServiceProvider extends ServiceProvider
       ->onFailure(function() {
         \Log::error("Schedule failed for  app:prayer-sent");
         Notification::route("telegram", env("TELEGRAM_CHAT_ID"))->notifyNow(new PrayerSentFailed('app:prayer-sent'));
-      })->pingOnSuccess('https://hc-ping.com/86031fbf-7c4e-40e1-a302-521a1fa6470e');
+      })->pingBefore("https://hc-ping.com/86031fbf-7c4e-40e1-a302-521a1fa6470e")
+      ->pingOnSuccess('https://hc-ping.com/86031fbf-7c4e-40e1-a302-521a1fa6470e');
       Schedule::command('app:prayer-reset')
       ->dailyAt('00:01')
       ->withoutOverlapping()
