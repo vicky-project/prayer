@@ -24,7 +24,7 @@ class SendPrayerNotifications extends Command
   public function handle() {
     $this->info('Memulai pengiriman notifikasi shalat...');
 
-    $users = TelegramUser::all()->filter(function ($user) {
+    $users = TelegramUser::all()->filter(function (TelegramUser $user) {
       $data = $user->data ?? [];
       return ($data['notifications_prayer_enabled'] ?? false) === true;
     });
@@ -43,6 +43,7 @@ class SendPrayerNotifications extends Command
         $defaultLocation = $data['default_location'] ?? [];
 
         if (empty($defaultLocation)) {
+          $this->warn("User tidak menyimpan lokasi default.");
           continue;
         }
 
@@ -56,6 +57,7 @@ class SendPrayerNotifications extends Command
         // Inisialisasi array notifikasi yang sudah dikirim per tanggal
         if (!isset($data['notifications_prayer_sent'])) {
           $data['notifications_prayer_sent'] = [];
+          $this->info("Membuat inisialisasi array notifikasi.");
         }
 
         // Gunakan timezone kota untuk menentukan waktu sekarang
