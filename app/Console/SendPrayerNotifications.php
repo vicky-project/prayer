@@ -75,6 +75,11 @@ class SendPrayerNotifications extends Command
           $diffMinutes = abs($now->diffInMinutes($prayerTime));
 
           if ($diffMinutes <= 1 && !in_array($name, $sentToday)) {
+            \Log::debug("Found matches prayer: ". $name, [
+              "user" => $user->telegram_id,
+              "diff" => $diffMinutes
+            ]);
+
             $user->notify(new PrayerSent(city: $prayerData["city"], name: $name, time: $timeStr));
 
 
