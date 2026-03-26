@@ -142,6 +142,7 @@ class PrayerServiceProvider extends ServiceProvider
   {
     $this->app->booted(function () {
       //     $schedule = $this->app->make(Schedule::class);
+      Schedule::command('app:prayer')->monthly();
       Schedule::command('app:prayer-sent')->everyMinute();
       Schedule::command('app:prayer-reset')->dailyAt('00:01');
     });

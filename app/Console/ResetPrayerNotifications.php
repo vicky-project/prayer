@@ -18,24 +18,33 @@ class ResetPrayerNotifications extends Command
     $deletedCount = 0;
 
     foreach ($users as $user) {
-      $data = $user->data ?? [];
-      if (!isset($data['notifications_prayer_sent'])) {
-        continue;
-      }
+      try {
+        $data = $user->data ?? [];
+        if (!isset($data['notifications_prayer_sent'])) {
+          continue;
+        }
 
-      $notifications = $data['notifications_prayer_sent'];
-      $originalCount = count($notifications);
+        $notifications = $data['notifications_prayer_sent'];
+        $originalCount = count($notifications);
 
-      // Hapus entri dengan tanggal sebelum hari ini
-      $notifications = array_filter($notifications, function ($date) use ($today) {
-        return $date >= $today; // pertahankan hari ini dan masa depan (kalau ada)
-      }, ARRAY_FILTER_USE_KEY);
+        // Hapus entri dengan tanggal sebelum hari ini
+        $notifications = array_filter($notifications, function ($date) use ($today) {
+          return $date >= $today; // pertahankan hari ini dan masa depan (kalau ada)
+        }, ARRAY_FILTER_USE_KEY);
 
-      if (count($notifications) !== $originalCount) {
-        $data['notifications_prayer_sent'] = $notifications;
-        $user->data = $data;
-        $user->save();
-        $deletedCount++;
+        if (count($notifications) !== $originalCount) {
+          $data['notifications_prayer_sent'] = $notifications;
+          $user->data = $data;
+          $user->save();
+          $deletedCount++;
+        }
+      } catch(\Exception $e) {
+        \Log::error("Failed to reset prayer notification records.", [
+          "user" => $user->telegram_id,
+          "message" => $e->getMessage(),
+          "trace" => $e->getTraceAsString()
+        ]);
+        $this->error("Failed to reset prayer notification: ". $e->getMessage());
       }
     }
 
