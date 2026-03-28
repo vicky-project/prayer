@@ -11,5 +11,12 @@ return [
   ],
   "ipgeolocation" => [
     "api_key" => env("IPGEOLOCATION_KEY")
+  ],
+
+  "notifications" => [
+    /**
+    * Currently support via telegram
+    */
+    "stack" => env("PRAYER_NOTIFICATIONS", "telegram")
   ]
 ];
