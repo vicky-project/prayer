@@ -2,35 +2,10 @@
 
 namespace Modules\Prayer\Notifications;
 
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Notification;
 
-class PrayerSent extends Notification implements ShouldQueue
+class PrayerSent extends Notification
 {
-  use Queueable;
-
-  /**
-  * The number of times the notification may be attempted.
-  *
-  * @var int
-  */
-  public $tries = 5;
-
-  /**
-  * The number of seconds the notification can run before timing out.
-  *
-  * @var int
-  */
-  public $timeout = 120;
-
-  /**
-  * The maximum number of unhandled exceptions to allow before failing.
-  *
-  * @var int
-  */
-  public $maxExceptions = 3;
-
   public function __construct(
     protected string $city,
     protected string $name,
