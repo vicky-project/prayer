@@ -36,7 +36,9 @@ class PrayerSentFailed extends Notification implements ShouldQueue
   ) {}
 
   public function via($notifiable) {
-    return ["telegram"];
+    $stack = config("prayer.notifications.stack");
+
+    return !is_string($stack) ? ["telegram"] : explode(",", trim($stack));
   }
 
   public function toTelegram($notifiable) {
