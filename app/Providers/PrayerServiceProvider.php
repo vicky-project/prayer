@@ -150,7 +150,9 @@ class PrayerServiceProvider extends ServiceProvider
       ->timezone(config("prayer.timezone"));
       Schedule::command('app:prayer-sent')
       ->everyMinute()
+      ->onOneServer()
       ->withoutOverlapping()
+      ->runInBackground()
       ->timezone(config("prayer.timezone"))
       ->onFailure(function() {
         \Log::error("Schedule failed for  app:prayer-sent");
@@ -160,6 +162,8 @@ class PrayerServiceProvider extends ServiceProvider
       Schedule::command('app:prayer-reset')
       ->dailyAt('00:01')
       ->withoutOverlapping()
+      ->onOneServer()
+      ->runInBackground()
       ->timezone(config("prayer.timezone"));
     });
   }
