@@ -81,7 +81,7 @@ class SendPrayerNotifications extends Command
               "diff" => $diffMinutes
             ]);
 
-            $user->notify(new PrayerSent(city: $prayerData["city"], name: $name, time: $timeStr));
+            $user->notify(new PrayerSent(city: $prayerData["city_name"], name: $name, time: $timeStr));
 
 
             $sentToday[] = $name;
