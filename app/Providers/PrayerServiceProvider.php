@@ -146,13 +146,13 @@ class PrayerServiceProvider extends ServiceProvider
       //     $schedule = $this->app->make(Schedule::class);
       Schedule::command('app:prayer')
       ->monthly()
+      ->runInBackground()
       ->withoutOverlapping()
       ->timezone(config("prayer.timezone"));
       Schedule::command('app:prayer-sent')
       ->everyMinute()
       ->onOneServer()
       ->withoutOverlapping()
-      ->runInBackground()
       ->timezone(config("prayer.timezone"))
       ->onFailure(function() {
         \Log::error("Schedule failed for  app:prayer-sent");
@@ -163,7 +163,6 @@ class PrayerServiceProvider extends ServiceProvider
       ->dailyAt('00:01')
       ->withoutOverlapping()
       ->onOneServer()
-      ->runInBackground()
       ->timezone(config("prayer.timezone"));
     });
   }
