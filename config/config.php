@@ -18,5 +18,11 @@ return [
     * Currently support via telegram
     */
     "stack" => env("PRAYER_NOTIFICATIONS", "telegram")
+  ],
+  "cache_prefix" => [
+    "city" => "nearest_city",
+    "timezone" => "timezone",
+    "prayer_times" => "prayer_times",
+    "geocode" => "geocode_"
   ]
 ];

@@ -23,7 +23,6 @@ class SendPrayerNotifications extends Command
 
   public function handle() {
     $this->info('Memulai pengiriman notifikasi shalat...');
-    \Log::info("Command SendPrayerNotifications started...");
 
     $users = TelegramUser::all()->filter(function (TelegramUser $user) {
       $data = $user->data ?? [];
@@ -35,9 +34,7 @@ class SendPrayerNotifications extends Command
       return 0;
     }
 
-    $nowGlobal = Carbon::now();
     $sentCount = 0;
-
     foreach ($users as $user) {
       try {
         $data = $user->data ?? [];
@@ -76,12 +73,7 @@ class SendPrayerNotifications extends Command
           $diffMinutes = abs($now->diffInMinutes($prayerTime));
 
           if ($diffMinutes <= 1 && !in_array($name, $sentToday)) {
-            \Log::debug("Found matches prayer: ". $name, [
-              "user" => $user->telegram_id,
-              "diff" => $diffMinutes
-            ]);
-
-            $user->notify(new PrayerSent(city: $prayerData["city_name"], name: $name, time: $timeStr));
+            $user->notify(new PrayerSent(city: $prayerData["city"], name: $name, time: $timeStr));
 
 
             $sentToday[] = $name;
@@ -90,7 +82,6 @@ class SendPrayerNotifications extends Command
             $user->save();
 
             $this->info("Notifikasi {$name} terkirim ke {$user->telegram_id}");
-            \Log::info("Notification sent: ", ["name" => $name, "telegram_id" => $user->telegram_id]);
             $sentCount++;
           }
         }
@@ -104,9 +95,6 @@ class SendPrayerNotifications extends Command
     }
 
     $this->info("Selesai. {$sentCount} notifikasi terkirim.");
-    \Log::info("Command SendPrayerNotifications finished.", [
-      "sent_count" => $sentCount
-    ]);
     return 0;
   }
 }
