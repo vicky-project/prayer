@@ -91,6 +91,8 @@ class SendPrayerNotifications extends Command
           "message" => $e->getMessage(),
           "trace" => $e->getTraceAsString()
         ]);
+
+        return 1;
       }
     }
 
