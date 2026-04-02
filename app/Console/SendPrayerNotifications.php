@@ -64,7 +64,6 @@ class SendPrayerNotifications extends Command
         $today = $now->toDateString();
         $currentTime = $now->format('H:i');
         $isRamadhan = $now->toHijri()->month === 9;
-        \Log::debug("Is ramadhan: ". $isRamadhan, ["month" => $now->toHijri()->month, "hijri" => $now->toHijri()]);
 
         // Inisialisasi notifikasi yang sudah dikirim hari ini
         $sentToday = $data['notifications_prayer_sent'][$today] ?? [];

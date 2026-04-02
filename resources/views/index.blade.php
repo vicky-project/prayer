@@ -548,7 +548,7 @@
     document.getElementById('isya').innerText = data.data.jadwal.isya || '-';
 
     // Tampilkan tanggal dan koordinat
-    document.getElementById('dateDisplay').innerText = `📅 ${data.data.date}`;
+    document.getElementById('dateDisplay').innerText = `📅 ${data.data.date}\n${data.data.hijri}`;
     document.getElementById('coordDisplay').innerText = `📍 ${data.data.latitude}, ${data.data.longitude}`;
 
     if (cityName) document.getElementById('locationDisplay').innerText = cityName;
