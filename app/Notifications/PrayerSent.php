@@ -31,7 +31,9 @@ class PrayerSent extends Notification
     ];
     $displayName = $names[$this->name] ?? $this->name;
 
-    $message = "🕌 *Waktu Shalat {$displayName}*\n" .
+    $displayName = $displayName === "imsak" ? "Imsak" : "Shalat ". ucfirst($displayName);
+
+    $message = "🕌 *Waktu {$displayName} telah tiba*\n" .
     "📍 {$this->city}\n" .
     "⏰ {$this->time} \n\n" .
     "Semoga ibadah kita diterima Allah SWT.";
