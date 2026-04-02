@@ -63,16 +63,23 @@ class SendPrayerNotifications extends Command
         $now = Carbon::now($timezone);
         $today = $now->toDateString();
         $currentTime = $now->format('H:i');
+        $isRamadhan = $now->toHijri()->month === 9;
+        \Log::debug("Is ramadhan: ". $isRamadhan, ["month" => $now->toHijri()->month, "hijri" => $now->toHijri()]);
 
         // Inisialisasi notifikasi yang sudah dikirim hari ini
         $sentToday = $data['notifications_prayer_sent'][$today] ?? [];
 
         foreach ($prayerData['jadwal'] as $name => $timeStr) {
+          if ($name === "imsak" && !$isRamadhan) {
+            continue;
+          }
+
           // Buat waktu shalat hari ini
           $prayerTime = Carbon::today($timezone)->setTimeFromTimeString($timeStr);
           $diffMinutes = abs($now->diffInMinutes($prayerTime));
 
           if ($diffMinutes <= 1 && !in_array($name, $sentToday)) {
+
             $user->notify(new PrayerSent(city: $prayerData["city"], name: $name, time: $timeStr));
 
 
