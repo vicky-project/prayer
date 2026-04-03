@@ -13,6 +13,14 @@ class PrayerSent extends Notification
   ) {}
 
   public function via($notifiable) {
+    if ($notifiable instanceof \Modules\Telegram\Models\TelegramUser) {
+      return ["telegram"];
+    }
+
+    if (method_exists($notifiable, "notifyAuthenticationLogVia")) {
+      return $notifiable->notifyAuthenticationLogVia();
+    }
+
     $stack = config("prayer.notifications.stack");
 
     return !is_string($stack) ? ["telegram"] : explode(",", trim($stack));
