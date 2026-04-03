@@ -82,7 +82,7 @@
     border-color: var(--tg-theme-section-separator-color);
   }
   .table-active {
-    background-color: rgba(75, 125, 50, 0.2) !important;
+    background-color: rgba(35, 150, 55, 0.6) !important;
     color: white;
   }
   .spinner-border {
