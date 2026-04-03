@@ -121,6 +121,7 @@ class PrayerTimeService
     return [
       'date' => $prayer->date->format("d-m-Y"),
       'hijri' => $prayer->date->toHijri()->toDateString(),
+      'is_ramadhan' => $prayer->date->toHijri()->month === 9,
       'city' => $prayer->city->name,
       'latitude' => $cityModel->latitude,
       'longitude' => $cityModel->longitude,

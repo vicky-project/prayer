@@ -81,6 +81,9 @@
   .table td, .table th {
     border-color: var(--tg-theme-section-separator-color);
   }
+  .table-active {
+    background-color: rgba(var(--tg-theme-button-color-rgb), 0.2) !important;
+  }
   .spinner-border {
     color: var(--tg-theme-button-color) !important;
   }
@@ -138,6 +141,7 @@
   let countdownInterval = null;
   let currentPrayerTimes = null;
   let cityTimezoneOffset = null; // offset dalam menit dari UTC, diisi dari server
+  let isRamadhan = false;
 
   // ========================
   // Helper functions
@@ -245,8 +249,42 @@
     countdownInterval = setInterval(updateDisplay, 1000);
   }
 
+  // Mendapatkan nama waktu shalat yang sedang berlangsung atau yang akan datang terdekat
+  function getCurrentPrayer(prayerTimes) {
+    const order = ['imsak',
+      'subuh',
+      'dzuhur',
+      'ashar',
+      'maghrib',
+      'isya'];
+    const now = getCurrentCityTime();
+    const nowMinutes = now.getHours() * 60 + now.getMinutes();
+
+    let current = null;
+    let next = null;
+
+    for (let i = 0; i < order.length; i++) {
+      const name = order[i];
+      if (prayerTimes[name]) {
+        const minutes = timeToMinutes(prayerTimes[name]);
+        if (minutes <= nowMinutes) {
+          current = name;
+        } else {
+          next = name;
+          break;
+        }
+      }
+    }
+
+    // Jika sekarang setelah Isya, maka yang sedang berlangsung adalah Isya atau tidak ada
+    if (!next && current) return current;
+    // Jika sebelum Subuh, tidak ada yang sedang berlangsung
+    if (!current && next) return null;
+    return current;
+  }
+
   // ========================
-  // UI building (sama seperti sebelumnya, dengan tambahan countdown di loaded)
+  // UI building
   // ========================
   function buildUI() {
     let html = '';
@@ -335,6 +373,26 @@
       </div>
       `;
     } else if (currentState === 'loaded') {
+      const currentPrayer = getCurrentPrayer(currentPrayerTimes);
+
+      const prayerOrder = [
+        'imsak',
+        'subuh',
+        'terbit',
+        'dhuha',
+        'dzuhur',
+        'ashar',
+        'maghrib',
+        'isya'
+      ];
+      let rows = '';
+      for (let name of prayerOrder) {
+        const time = currentPrayerTimes[name] || '-';
+        const isCurrent = (name === currentPrayer);
+        const rowClass = isCurrent ? 'table-active': '';
+        rows += `<tr class="${rowClass}"><th scope="row">${getPrayerName(name)}</th><td class="text-end">${time}</td></tr>`;
+      }
+
       let extraButton = '';
       if (hasDefaultLocation && !usingDefault) {
         extraButton = `<button type="button" class="btn btn-outline-secondary w-100 mt-2" onclick="useDefaultLocation();"><i class="bi bi-arrow-repeat me-2"></i>Kembali ke Lokasi Default</button>`;
@@ -349,14 +407,7 @@
       <div id="countdown"></div>
       <table class="table table-hover">
       <tbody>
-      <tr><th scope="row">Imsak</th><td class="text-end" id="imsak">-</td></tr>
-      <tr><th scope="row">Subuh</th><td class="text-end" id="subuh">-</td></tr>
-      <tr><th scope="row">Terbit</th><td class="text-end" id="terbit">-</td></tr>
-      <tr><th scope="row">Dhuha</th><td class="text-end" id="dhuha">-</td></tr>
-      <tr><th scope="row">Dzuhur</th><td class="text-end" id="dzuhur">-</td></tr>
-      <tr><th scope="row">Ashar</th><td class="text-end" id="ashar">-</td></tr>
-      <tr><th scope="row">Maghrib</th><td class="text-end" id="maghrib">-</td></tr>
-      <tr><th scope="row">Isya</th><td class="text-end" id="isya">-</td></tr>
+      ${rows}
       </tbody>
       </table>
       <div class="text-center mb-2 small text-muted" id="coordDisplay"></div>
@@ -527,25 +578,11 @@
     // Simpan data untuk countdown
     currentPrayerTimes = data.data.jadwal;
     // Jika server mengirim timezone_offset (menit dari UTC), gunakan itu
-    if (data.data.timezone_offset !== undefined) {
-    cityTimezoneOffset = data.data.timezone_offset;
-    } else {
-    cityTimezoneOffset = null;
-    }
-
+    cityTimezoneOffset = data.data.timezone_offset || null;
+    isRamadhan = data.data.is_ramadhan || false;
     currentState = 'loaded';
     locationName = cityName || `Lat: ${data.data.latitude.toFixed(4)}, Lon: ${data.data.longitude.toFixed(4)}`;
     buildUI();
-
-    // Isi data ke tabel
-    document.getElementById('imsak').innerText = data.data.jadwal.imsak || '-';
-    document.getElementById('subuh').innerText = data.data.jadwal.subuh || '-';
-    document.getElementById('terbit').innerText = data.data.jadwal.terbit || '-';
-    document.getElementById('dhuha').innerText = data.data.jadwal.dhuha || '-';
-    document.getElementById('dzuhur').innerText = data.data.jadwal.dzuhur || '-';
-    document.getElementById('ashar').innerText = data.data.jadwal.ashar || '-';
-    document.getElementById('maghrib').innerText = data.data.jadwal.maghrib || '-';
-    document.getElementById('isya').innerText = data.data.jadwal.isya || '-';
 
     // Tampilkan tanggal dan koordinat
     document.getElementById('dateDisplay').innerText = `📅 ${data.data.date}\n${data.data.hijri}`;
