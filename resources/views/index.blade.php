@@ -82,7 +82,7 @@
     border-color: var(--tg-theme-section-separator-color);
   }
   .table-active {
-    background-color: rgba(var(--tg-theme-button-color-rgb), 0.2) !important;
+    background-color: rgba(75, 255, 100, 0.2) !important;
   }
   .spinner-border {
     color: var(--tg-theme-button-color) !important;
@@ -249,6 +249,39 @@
     countdownInterval = setInterval(updateDisplay, 1000);
   }
 
+  // ========== RINGKASAN LISAN SEDERHANA ==========
+  function getSummaryText(prayerTimes, currentPrayer) {
+    if (!prayerTimes || !currentPrayer) return '';
+    const order = ['imsak',
+      'subuh',
+      'dzuhur',
+      'ashar',
+      'maghrib',
+      'isya'];
+    const now = getCurrentCityTime();
+    let nextPrayer = null;
+    let found = false;
+    for (let name of order) {
+      if (found) {
+        nextPrayer = name;
+        break;
+      }
+      if (name === currentPrayer) found = true;
+    }
+    if (!nextPrayer) nextPrayer = order[0]; // kembali ke imsak besok
+    const nowMinutes = now.getHours() * 60 + now.getMinutes();
+    const targetMinutes = timeToMinutes(prayerTimes[nextPrayer]);
+    let diffMinutes = targetMinutes - nowMinutes;
+    if (diffMinutes < 0) diffMinutes += 24 * 60;
+    const hours = Math.floor(diffMinutes / 60);
+    const minutes = diffMinutes % 60;
+    let timeStr = '';
+    if (hours > 0) timeStr += `${hours} jam `;
+    if (minutes > 0) timeStr += `${minutes} menit`;
+    if (timeStr === '') timeStr = 'beberapa saat lagi';
+    return `🕌 Waktu ${getPrayerName(nextPrayer)} akan tiba dalam ${timeStr}.`;
+  }
+
   // Mendapatkan nama waktu shalat yang sedang berlangsung atau yang akan datang terdekat
   function getCurrentPrayer(prayerTimes) {
     const order = ['imsak',
@@ -375,6 +408,10 @@
     } else if (currentState === 'loaded') {
       const currentPrayer = getCurrentPrayer(currentPrayerTimes);
 
+      // Ringkasan lisan
+      const summaryText = getSummaryText(currentPrayerTimes, currentPrayer);
+      const summaryHtml = summaryText ? `<div class="text-center small mt-2 text-muted"><i class="bi bi-chat-dots"></i> ${summaryText}</div>`: '';
+
       const prayerOrder = [
         'imsak',
         'subuh',
@@ -410,6 +447,7 @@
       ${rows}
       </tbody>
       </table>
+      ${summaryHtml}
       <div class="text-center mb-2 small text-muted" id="coordDisplay"></div>
       <div class="text-muted small text-center">
       <i class="bi bi-info-circle me-1"></i>Waktu berdasarkan lokasi terdekat
