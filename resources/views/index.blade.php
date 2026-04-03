@@ -82,7 +82,8 @@
     border-color: var(--tg-theme-section-separator-color);
   }
   .table-active {
-    background-color: rgba(75, 255, 100, 0.2) !important;
+    background-color: rgba(35, 150, 55, 0.6) !important;
+    color: white;
   }
   .spinner-border {
     color: var(--tg-theme-button-color) !important;
@@ -448,10 +449,10 @@
       </tbody>
       </table>
       ${summaryHtml}
-      <div class="text-center mb-2 small text-muted" id="coordDisplay"></div>
       <div class="text-muted small text-center">
       <i class="bi bi-info-circle me-1"></i>Waktu berdasarkan lokasi terdekat
       </div>
+      <div class="text-center mb-2 small text-muted" id="coordDisplay"></div>
       <button class="btn btn-outline-primary w-100 mt-3" onclick="requestLocation(true)">
       <i class="bi bi-arrow-repeat me-2"></i>Perbarui Lokasi
       </button>
