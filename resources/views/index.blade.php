@@ -225,6 +225,7 @@
   cityTimezoneOffset = prayerData.timezone_offset || null;
   renderPrayerView();
   } catch (err) {
+  alert(err.message);
   handleGlobalError(err, 'loadPrayerTimes');
   } finally {
   hideLoading();
