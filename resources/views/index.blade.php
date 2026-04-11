@@ -404,6 +404,7 @@
   try {
   const settings = await fetchWithAuth('{{ config("app.url") }}/api/prayer/settings');
   settingsData = settings.data || {};
+  alert(settingsData);
   if (settingsData.city) {
   await loadPrayerTimes(null, null, settingsData.city);
   } else if (settingsData.latitude && settingsData.longitude) {
