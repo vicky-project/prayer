@@ -19,10 +19,7 @@ class PrayerController extends Controller
   * Display a listing of the resource.
   */
   public function index(Request $request) {
-    $tgUser = $request->get("telegram_user");
-    $telegramUser = TelegramUser::find($tgUser["id"]);
-
-    return view('prayer::index', compact("telegramUser"));
+    return view('prayer::index');
   }
 
   /**
@@ -30,7 +27,7 @@ class PrayerController extends Controller
   */
   public function getTimes(LocationRequest $request) {
     try {
-      $telegramUser = $request->get('telegram_user');
+      $telegramUser = $request->user('sanctum');
       $times = $this->prayerService->getPrayerTimes(
         $request->lat,
         $request->lot,
@@ -53,17 +50,16 @@ class PrayerController extends Controller
   * Store a newly created resource in storage.
   */
   public function settings(Request $request) {
-    $tgUser = $request->get("telegram_user");
-    $telegramUser = TelegramUser::find($tgUser["id"]);
+    $telegramUser = $request->user('sanctum');
 
-    return view("prayer::settings", compact("telegramUser"));
+    return response()->json(['success' => true, 'data' => $telegramUser->data ?? []]);
   }
 
   /**
   * Update the specified resource in storage.
   */
   public function update(Request $request) {
-    $telegramUser = $request->get("telegram_user");
+    $telegramUser = $request->user("sanctum");
     if (!$telegramUser) {
       return response()->json(["success" => false, "message" => "Telegram user tidak ditemukan"], 404);
     }
@@ -83,12 +79,7 @@ class PrayerController extends Controller
     }
 
     try {
-      $telegram = TelegramUser::find($telegramUser["id"]);
-      if (!$telegram) {
-        return response()->json(["success" => false, "message" => "Telegram ID not found."], 500);
-      }
-
-      $data = $telegram->data ?? [];
+      $data = $telegramUser->data ?? [];
       $defaultLocation = [];
 
       if ($request->filled('city')) {
@@ -101,8 +92,8 @@ class PrayerController extends Controller
       $data['default_location'] = $defaultLocation;
       $data['notifications_prayer_enabled'] = $request->boolean('notifications_enabled');
 
-      $telegram->data = $data;
-      $telegram->save();
+      $telegramUser->data = $data;
+      $telegramUser->save();
 
       return response()->json([
         'success' => true,
