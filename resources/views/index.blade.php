@@ -413,6 +413,7 @@
   requestLiveLocation();
   }
   } catch(e) {
+  alert(e.message);
   requestLiveLocation();
   } finally {
   hideLoading();
