@@ -222,6 +222,7 @@
   const response = await fetchWithAuth('{{ config("app.url") }}/api/prayer/times', { method: 'POST', body: JSON.stringify(body) });
   if (!response.success) throw new Error(response.message || 'Gagal memuat jadwal');
   prayerData = response.data;
+  alert(prayerData):
   cityTimezoneOffset = prayerData.timezone_offset || null;
   renderPrayerView();
   } catch (err) {
