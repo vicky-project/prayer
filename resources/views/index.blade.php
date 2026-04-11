@@ -218,6 +218,7 @@
   if (city) body.city = city;
   else if (lat && lon) { body.latitude = lat; body.longitude = lon; }
   else throw new Error('Tidak ada lokasi yang diberikan');
+  alert(JSON.stringify(body));
 
   const response = await fetchWithAuth('{{ config("app.url") }}/api/prayer/times', { method: 'POST', body: JSON.stringify(body) });
   if (!response.success) throw new Error(response.message || 'Gagal memuat jadwal');
