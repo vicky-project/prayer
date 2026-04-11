@@ -29,9 +29,9 @@ class PrayerController extends Controller
     try {
       $telegramUser = $request->user('sanctum');
       $times = $this->prayerService->getPrayerTimes(
-        $request->lat,
-        $request->lot,
-        $request->city,
+        $request->input('latitude'),
+        $request->input('longitude'),
+        $request->input('city'),
         $telegramUser
       );
 
