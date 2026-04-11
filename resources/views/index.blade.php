@@ -236,7 +236,10 @@
   try {
   const res = await fetchWithAuth('{{ config("app.url") }}/api/prayer/settings');
   settingsData = res.data || {};
-  } catch(e) { settingsData = {}; }
+  } catch(e) {
+  alert(e.message);
+  settingsData = {};
+  }
   }
 
   async function saveSettings(formData) {
