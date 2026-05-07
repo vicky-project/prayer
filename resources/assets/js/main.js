@@ -1,4 +1,4 @@
-// main.js for Prayer Times (compatible with new settings structure)
+// main.js for Prayer Times - OPTIMIZED (no stuck)
 (function(window, document, undefined) {
   'use strict';
 
@@ -9,15 +9,52 @@
     return;
   }
 
-  // ----- API calls -----
-  async function fetchSettings() {
+  // ---------- Helper: fetch dengan timeout ----------
+  async function fetchWithTimeout(promise, timeoutMs = 15000) {
+    let timeoutId;
+    const timeoutPromise = new Promise((_, reject) => {
+      timeoutId = setTimeout(() => reject(new Error(`Request timeout after ${timeoutMs}ms`)), timeoutMs);
+    });
     try {
-      const res = await Core.api.get('/api/prayer/settings');
+      const result = await Promise.race([promise, timeoutPromise]);
+      clearTimeout(timeoutId);
+      return result;
+    } catch (err) {
+      clearTimeout(timeoutId);
+      throw err;
+    }
+  }
+
+  // ---------- API calls dengan timeout ----------
+  async function fetchSettings() {
+    // Cek cache di localStorage (durasi 5 menit)
+    const cached = localStorage.getItem('prayer_settings_cache');
+    if (cached) {
+      try {
+        const {
+          data,
+          timestamp
+        } = JSON.parse(cached);
+        if (Date.now() - timestamp < 5 * 60 * 1000) {
+          Core.setState({
+            settings: data
+          });
+          return data;
+        }
+      } catch(e) {}
+    }
+
+    try {
+      const res = await fetchWithTimeout(Core.api.get('/api/prayer/settings'), 10000);
       if (res.success) {
-        // Simpan langsung seluruh data settings
         Core.setState({
           settings: res.data
         });
+        // Simpan ke localStorage
+        localStorage.setItem('prayer_settings_cache', JSON.stringify({
+          data: res.data,
+          timestamp: Date.now()
+        }));
         return res.data;
       }
       throw new Error(res.message || 'Gagal memuat pengaturan');
@@ -43,7 +80,7 @@
       } else {
         throw new Error('Tidak ada lokasi yang diberikan');
       }
-      const res = await Core.api.post('/api/prayer/times', body);
+      const res = await fetchWithTimeout(Core.api.post('/api/prayer/times', body), 15000);
       if (!res.success) throw new Error(res.message || 'Gagal memuat jadwal');
       Core.setState({
         prayer: res.data,
@@ -61,20 +98,21 @@
     }
   }
 
-  // ----- Auto-save location to settings (mengirim latitude, longitude) -----
   async function saveLocationToSettings(lat, lon) {
     try {
       const currentSettings = Core.getState().settings || {};
-      const res = await Core.api.post('/api/prayer/settings', {
+      const res = await fetchWithTimeout(Core.api.post('/api/prayer/settings', {
         city: undefined,
         latitude: lat,
         longitude: lon,
         notifications_enabled: currentSettings.notifications_prayer_enabled === true
-      });
+      }), 10000);
       if (res.success) {
         console.log('Location auto-saved:', {
           lat, lon
         });
+        // Hapus cache settings
+        localStorage.removeItem('prayer_settings_cache');
         await fetchSettings();
         return true;
       }
@@ -86,7 +124,7 @@
     }
   }
 
-  // ----- Geolocation (sama seperti sebelumnya) -----
+  // ----- Geolocation (dengan timeout) -----
   function getTelegramLocation(timeoutMs = 15000) {
     return new Promise((resolve, reject) => {
       const tg = window.Telegram?.WebApp;
@@ -119,19 +157,27 @@
       const timeoutId = setTimeout(() => reject(new Error(`Browser geolocation timeout ${timeoutMs}ms`)), timeoutMs);
       navigator.geolocation.getCurrentPosition(
         (pos) => {
-          clearTimeout(timeoutId); resolve( {
+          clearTimeout(timeoutId);
+          resolve( {
             lat: pos.coords.latitude, lon: pos.coords.longitude
           });
         },
         (err) => {
-          clearTimeout(timeoutId); reject(new Error(err.message));
+          clearTimeout(timeoutId);
+          reject(new Error(err.message));
         }
       );
     });
   }
 
-  // ----- Load from geolocation dengan auto-save -----
+  // ----- Load from geolocation dengan auto-save dan race condition prevention -----
+  let isGeolocating = false;
   async function loadFromGeolocation() {
+    if (isGeolocating) {
+      console.log('Geolocation already in progress, skipping...');
+      return;
+    }
+    isGeolocating = true;
     const TIMEOUT = 15000;
     try {
       Core.showLoading('Meminta lokasi (maks 15 detik)...');
@@ -139,44 +185,38 @@
       try {
         loc = await getTelegramLocation(TIMEOUT);
       } catch (e) {
-        console.warn('Telegram location gagal, fallback ke browser',
-          e);
-        Core.showToast('Telegram: ' + e.message,
-          'warning');
+        console.warn('Telegram location gagal, fallback ke browser', e);
+        Core.showToast('Telegram: ' + e.message, 'warning');
         loc = await getBrowserLocation(TIMEOUT);
       }
-      // Simpan lokasi ke settings terlebih dahulu
-      await saveLocationToSettings(loc.lat,
-        loc.lon);
-      // Kemudian ambil jadwal shalat
-      await fetchPrayerTimes(loc.lat,
-        loc.lon);
+      await saveLocationToSettings(loc.lat, loc.lon);
+      await fetchPrayerTimes(loc.lat, loc.lon);
       Core.setState({
         currentView: 'prayer'
       });
     } catch (err) {
-      console.error('loadFromGeolocation error:',
-        err);
+      console.error('loadFromGeolocation error:', err);
       Core.setState({
-        loading: false,
-        error: err.message
+        loading: false, error: err.message
       });
-      Core.showToast(err.message,
-        'danger');
+      Core.showToast(err.message, 'danger');
       Core.setState({
         currentView: 'settings'
       });
     } finally {
       Core.hideLoading();
+      isGeolocating = false;
     }
   }
 
-  // ----- Load default location from settings (prioritas default_location) -----
   async function loadDefaultLocation() {
+    // Jangan jalankan jika sedang loading atau geolocating
+    const state = Core.getState();
+    if (state.loading || isGeolocating) return;
+
     try {
       Core.showLoading('Memuat pengaturan...');
       const settings = await fetchSettings();
-      // Cek apakah ada default_location
       if (settings.default_location && typeof settings.default_location.latitude === 'number' && typeof settings.default_location.longitude === 'number') {
         const {
           latitude,
@@ -184,13 +224,10 @@
         } = settings.default_location;
         await fetchPrayerTimes(latitude, longitude);
       } else if (settings.city) {
-        // fallback jika pakai city (legacy)
         await fetchPrayerTimes(null, null, settings.city);
       } else if (settings.latitude && settings.longitude) {
-        // fallback jika langsung latitude/longitude (legacy)
         await fetchPrayerTimes(settings.latitude, settings.longitude);
       } else {
-        // Tidak ada lokasi tersimpan, coba geolocation
         await loadFromGeolocation();
       }
       Core.setState({
@@ -209,22 +246,20 @@
     }
   }
 
-  // ----- Save settings dari form (sesuai validasi backend) -----
   async function saveSettings(formData) {
     try {
       Core.showLoading('Menyimpan pengaturan...');
-      // Kirim hanya field yang divalidasi
       const payload = {
         city: formData.city || undefined,
         latitude: formData.latitude !== undefined ? formData.latitude: undefined,
         longitude: formData.longitude !== undefined ? formData.longitude: undefined,
         notifications_enabled: formData.notifications_enabled === true
       };
-      const res = await Core.api.post('/api/prayer/settings', payload);
+      const res = await fetchWithTimeout(Core.api.post('/api/prayer/settings', payload), 10000);
       if (res.success) {
         Core.showToast('Pengaturan disimpan');
+        localStorage.removeItem('prayer_settings_cache');
         await fetchSettings();
-        // Setelah simpan, reload jadwal berdasarkan settings baru
         const newSettings = Core.getState().settings;
         if (newSettings.default_location) {
           await fetchPrayerTimes(newSettings.default_location.latitude, newSettings.default_location.longitude);
@@ -248,8 +283,10 @@
     }
   }
 
+  // refreshPrayer, event delegation, onStateChange, init tetap sama (hanya tambahkan guard)
   async function refreshPrayer() {
     const state = Core.getState();
+    if (state.loading) return;
     if (state.prayer) {
       if (state.prayer.city) {
         await fetchPrayerTimes(null, null, state.prayer.city);
@@ -265,7 +302,6 @@
     }
   }
 
-  // ----- Event Delegation (sama, tapi perhatikan ID elemen) -----
   function setupEventDelegation() {
     document.body.addEventListener('click', (e) => {
       const target = e.target;
@@ -345,7 +381,6 @@
     });
   }
 
-  // ----- Subscribe state change -----
   function onStateChange(state) {
     const prayerDiv = document.getElementById('prayer-view');
     const settingsDiv = document.getElementById('settings-view');
