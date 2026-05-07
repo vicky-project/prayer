@@ -11,7 +11,7 @@
     "php": "^8.2",
     "joshbrw/laravel-module-installer": "^1.0",
     "pharaonic/laravel-hijri": "*",
-    "limenet/laravel-mysql-spatial": "^12.0",
+    "limenet/laravel-mysql-spatial": "^11.0",
     "vicky-project/users-module": "^1.0",
     "vicky-project/telegram-module": "^1.0"
   },
