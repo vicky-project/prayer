@@ -10,7 +10,7 @@ return new class extends Migration
     Schema::create('prayer_times', function (Blueprint $table) {
       $table->id();
       $table->string('prayer_id')->unique(); // ID asli dari JSON
-      $table->foreignId('city_id')->constrained()->onDelete('cascade');
+      $table->foreignId('city_id')->constrained('prayer_cities')->onDelete('cascade');
       $table->date('date');
       $table->string('imsak')->nullable();
       $table->string('subuh')->nullable();
@@ -27,6 +27,6 @@ return new class extends Migration
   }
 
   public function down() {
-    Schema::dropIfExists('prayers');
+    Schema::dropIfExists('prayer_times');
   }
 };

@@ -21,7 +21,7 @@ return new class extends Migration
   */
   public function down(): void
   {
-    Schema::table('cities', function (Blueprint $table) {
+    Schema::table('prayer_cities', function (Blueprint $table) {
       $table->dropColumn("timezone");
     });
   }

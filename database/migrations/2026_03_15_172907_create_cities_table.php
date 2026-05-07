@@ -21,6 +21,6 @@ return new class extends Migration
   }
 
   public function down() {
-    Schema::dropIfExists('cities');
+    Schema::dropIfExists('prayer_cities');
   }
 };
