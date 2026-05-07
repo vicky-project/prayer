@@ -122,6 +122,7 @@
   eruda.init(); // Ikon Eruda akan muncul
 </script>
 <script>
+  const BASE_URL = '{{ rtrim(config("app.url"), "/") }}';
   {!! file_get_contents(module_path('prayer', 'resources/assets/js/core.js')); !!}
   {!! file_get_contents(module_path('prayer', 'resources/assets/js/page.js')); !!}
   {!! file_get_contents(module_path('prayer', 'resources/assets/js/main.js')); !!}
