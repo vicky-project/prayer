@@ -74,8 +74,9 @@
 
   // Helpers untuk countdown
   Core.stopCountdown = function() {
-    if (_state.countdownInterval) {
-      clearInterval(_state.countdownInterval);
+    const state = Core.getState();
+    if (state.countdownInterval) {
+      clearInterval(state.countdownInterval);
       Core.setState({
         countdownInterval: null
       });

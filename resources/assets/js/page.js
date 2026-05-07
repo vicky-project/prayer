@@ -1,4 +1,4 @@
-// page.js for Prayer Times
+// page.js for Prayer Times (FINAL - with null safety)
 (function(window, document, undefined) {
   'use strict';
 
@@ -67,7 +67,7 @@
       const time = jadwal[name] || '-';
       const isCurrent = (name === currentPrayer);
       const rowClass = isCurrent ? 'table-active': '';
-      rows += `<tr class="${rowClass}"><th scope="row">${Core.getPrayerName(name)}</th><td class="text-end">${time}</td></tr>`;
+      rows += `<tr class="${rowClass}"><th scope="row">${Core.getPrayerName(name)}</th><td class="text-end">${time}</td><tr>`;
     }
 
     let extraButton = '';
@@ -167,7 +167,7 @@
     });
   }
 
-  // Render halaman pengaturan
+  // Render halaman pengaturan (amankan akses DOM)
   function renderSettingsView(state) {
     const prayerDiv = document.getElementById('prayer-view');
     const settingsDiv = document.getElementById('settings-view');
@@ -225,10 +225,10 @@
     loadingDiv.style.display = 'none';
   }
 
-  // Expose
+  // Expose UI functions
   window.PrayerAppUI = {
     renderPrayerView: renderPrayerView,
-    renderSettingsView: renderSettingsView,
-    // Biarkan main.js yang panggil startCountdown jika perlu, tapi kita sudah panggil internal
+    renderSettingsView: renderSettingsView
   };
+
 })(window, document);

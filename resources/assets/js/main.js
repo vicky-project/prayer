@@ -252,6 +252,39 @@
             }
           }
         })();
+      } else if (target.id === 'autoLocationBtn' || target.closest('#autoLocationBtn')) {
+        (async () => {
+          const statusSpan = document.getElementById('locationStatus');
+          if (statusSpan) statusSpan.innerText = 'Meminta lokasi...';
+          try {
+            const loc = await getTelegramLocation(10000);
+            const latInput = document.getElementById('latitude');
+            const lonInput = document.getElementById('longitude');
+            const cityInput = document.getElementById('city');
+            if (latInput && lonInput && cityInput) {
+              latInput.value = loc.lat;
+              lonInput.value = loc.lon;
+              cityInput.value = '';
+            }
+            if (statusSpan) statusSpan.innerText = 'Lokasi berhasil diambil.';
+          } catch (err) {
+            try {
+              const locBrowser = await getBrowserLocation(10000);
+              const latInput = document.getElementById('latitude');
+              const lonInput = document.getElementById('longitude');
+              const cityInput = document.getElementById('city');
+              if (latInput && lonInput && cityInput) {
+                latInput.value = locBrowser.lat;
+                lonInput.value = locBrowser.lon;
+                cityInput.value = '';
+              }
+              if (statusSpan) statusSpan.innerText = 'Lokasi berhasil diambil (browser).';
+            } catch (err2) {
+              if (statusSpan) statusSpan.innerText = 'Gagal mengambil lokasi.';
+              Core.showToast(err2.message, 'danger');
+            }
+          }
+        })();
       }
     });
 
@@ -275,6 +308,9 @@
 
   // ----- Subscribe state change untuk render -----
   function onStateChange(state) {
+    const prayerDiv = document.getElementById('prayer-view');
+    const settingsDiv = document.getElementById('settings-view');
+    if (!prayerDiv || !settingsDiv) return;
     if (state.currentView === 'prayer') {
       UI.renderPrayerView(state);
     } else if (state.currentView === 'settings') {
