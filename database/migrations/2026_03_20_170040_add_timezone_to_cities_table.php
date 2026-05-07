@@ -11,7 +11,7 @@ return new class extends Migration
   */
   public function up(): void
   {
-    Schema::table('cities', function (Blueprint $table) {
+    Schema::table('prayer_cities', function (Blueprint $table) {
       $table->string('timezone')->nullable()->after('longitude');
     });
   }

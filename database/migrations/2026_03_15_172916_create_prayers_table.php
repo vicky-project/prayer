@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
   public function up() {
-    Schema::create('prayers', function (Blueprint $table) {
+    Schema::create('prayer_times', function (Blueprint $table) {
       $table->id();
       $table->string('prayer_id')->unique(); // ID asli dari JSON
       $table->foreignId('city_id')->constrained()->onDelete('cascade');

@@ -5,6 +5,8 @@ use Illuminate\Database\Eloquent\Model;
 
 class Prayer extends Model
 {
+  protected $table = "prayer_times";
+
   protected $fillable = [
     'prayer_id',
     'city_id',

@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Schema;
 return new class extends Migration
 {
   public function up() {
-    Schema::create('cities', function (Blueprint $table) {
+    Schema::create('prayer_cities', function (Blueprint $table) {
       $table->id();
       $table->string('city_id')->unique(); // ID asli dari JSON
       $table->string('name');

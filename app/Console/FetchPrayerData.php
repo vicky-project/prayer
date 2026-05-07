@@ -4,6 +4,7 @@ namespace Modules\Prayer\Console;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Schema;
 use Modules\Prayer\Models\City;
 use Modules\Prayer\Models\Prayer;
 use Modules\Prayer\Services\PrayerTimeService;
@@ -22,6 +23,16 @@ class FetchPrayerData extends Command
   }
 
   public function handle() {
+    // 🔍 Cek apakah tabel prayer_times sudah ada
+    if (!Schema::hasTable('prayer_times')) {
+      $this->error('❌ Tabel "prayer_times" belum tersedia di database.');
+      $this->warn('Silakan jalankan perintah berikut terlebih dahulu:');
+      $this->line('   php artisan migrate');
+      $this->newLine();
+      $this->info('Setelah migrasi berhasil, jalankan kembali command ini.');
+      return 1;
+    }
+
     $url = config("prayer.base_api_url");
     if (!$url) {
       $this->error("Api URL not found. Please provide Api URL in .env (PRAYER_BASEAPI_URL)");
