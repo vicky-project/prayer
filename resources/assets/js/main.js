@@ -1,4 +1,4 @@
-// main.js for Prayer Times - Auto-save location after geolocation
+// main.js for Prayer Times (compatible with new settings structure)
 (function(window, document, undefined) {
   'use strict';
 
@@ -14,6 +14,7 @@
     try {
       const res = await Core.api.get('/api/prayer/settings');
       if (res.success) {
+        // Simpan langsung seluruh data settings
         Core.setState({
           settings: res.data
         });
@@ -60,25 +61,24 @@
     }
   }
 
-  // ----- Fungsi untuk menyimpan lokasi ke settings (otomatis) -----
+  // ----- Auto-save location to settings (mengirim latitude, longitude) -----
   async function saveLocationToSettings(lat, lon) {
     try {
       const currentSettings = Core.getState().settings || {};
       const res = await Core.api.post('/api/prayer/settings', {
-        city: undefined, // kosongkan city
+        city: undefined,
         latitude: lat,
         longitude: lon,
-        notifications_enabled: currentSettings.notifications_enabled === true
+        notifications_enabled: currentSettings.notifications_prayer_enabled === true
       });
       if (res.success) {
-        console.log('Location automatically saved to settings:', {
+        console.log('Location auto-saved:', {
           lat, lon
         });
-        await fetchSettings(); // refresh state settings
+        await fetchSettings();
         return true;
-      } else {
-        throw new Error(res.message || 'Gagal menyimpan lokasi');
       }
+      throw new Error(res.message || 'Gagal menyimpan lokasi');
     } catch (err) {
       console.warn('Auto-save location failed:', err);
       Core.showToast('Gagal menyimpan lokasi otomatis: ' + err.message, 'warning');
@@ -86,7 +86,7 @@
     }
   }
 
-  // ----- Geolocation with timeout -----
+  // ----- Geolocation (sama seperti sebelumnya) -----
   function getTelegramLocation(timeoutMs = 15000) {
     return new Promise((resolve, reject) => {
       const tg = window.Telegram?.WebApp;
@@ -130,7 +130,7 @@
     });
   }
 
-  // ----- Load from geolocation (auto-save before fetch) -----
+  // ----- Load from geolocation dengan auto-save -----
   async function loadFromGeolocation() {
     const TIMEOUT = 15000;
     try {
@@ -171,18 +171,26 @@
     }
   }
 
+  // ----- Load default location from settings (prioritas default_location) -----
   async function loadDefaultLocation() {
     try {
       Core.showLoading('Memuat pengaturan...');
       const settings = await fetchSettings();
-      if (settings.city) {
+      // Cek apakah ada default_location
+      if (settings.default_location && typeof settings.default_location.latitude === 'number' && typeof settings.default_location.longitude === 'number') {
+        const {
+          latitude,
+          longitude
+        } = settings.default_location;
+        await fetchPrayerTimes(latitude, longitude);
+      } else if (settings.city) {
+        // fallback jika pakai city (legacy)
         await fetchPrayerTimes(null, null, settings.city);
-        // Jika ada city, kita tidak menyimpan ulang (biarkan city sebagai default)
       } else if (settings.latitude && settings.longitude) {
+        // fallback jika langsung latitude/longitude (legacy)
         await fetchPrayerTimes(settings.latitude, settings.longitude);
-        // Tidak perlu simpan ulang karena sudah ada di settings
       } else {
-        // Tidak ada pengaturan, coba geolocation dan auto-save
+        // Tidak ada lokasi tersimpan, coba geolocation
         await loadFromGeolocation();
       }
       Core.setState({
@@ -194,22 +202,33 @@
       });
       Core.showToast(err.message, 'danger');
       Core.setState({
-        currentView: 'settings', settings: Core.getState().settings || {}
+        currentView: 'settings'
       });
     } finally {
       Core.hideLoading();
     }
   }
 
+  // ----- Save settings dari form (sesuai validasi backend) -----
   async function saveSettings(formData) {
     try {
       Core.showLoading('Menyimpan pengaturan...');
-      const res = await Core.api.post('/api/prayer/settings', formData);
+      // Kirim hanya field yang divalidasi
+      const payload = {
+        city: formData.city || undefined,
+        latitude: formData.latitude !== undefined ? formData.latitude: undefined,
+        longitude: formData.longitude !== undefined ? formData.longitude: undefined,
+        notifications_enabled: formData.notifications_enabled === true
+      };
+      const res = await Core.api.post('/api/prayer/settings', payload);
       if (res.success) {
         Core.showToast('Pengaturan disimpan');
         await fetchSettings();
+        // Setelah simpan, reload jadwal berdasarkan settings baru
         const newSettings = Core.getState().settings;
-        if (newSettings.city) {
+        if (newSettings.default_location) {
+          await fetchPrayerTimes(newSettings.default_location.latitude, newSettings.default_location.longitude);
+        } else if (newSettings.city) {
           await fetchPrayerTimes(null, null, newSettings.city);
         } else if (newSettings.latitude && newSettings.longitude) {
           await fetchPrayerTimes(newSettings.latitude, newSettings.longitude);
@@ -246,7 +265,7 @@
     }
   }
 
-  // ----- Event Delegation (dengan pengecekan elemen) -----
+  // ----- Event Delegation (sama, tapi perhatikan ID elemen) -----
   function setupEventDelegation() {
     document.body.addEventListener('click', (e) => {
       const target = e.target;
@@ -264,8 +283,13 @@
         UI.renderPrayerView(Core.getState());
       } else if (target.id === 'useDefaultLocationBtn' || target.closest('#useDefaultLocationBtn')) {
         const sett = Core.getState().settings;
-        if (sett.city) fetchPrayerTimes(null, null, sett.city);
-        else if (sett.latitude && sett.longitude) fetchPrayerTimes(sett.latitude, sett.longitude);
+        if (sett.default_location) {
+          fetchPrayerTimes(sett.default_location.latitude, sett.default_location.longitude);
+        } else if (sett.city) {
+          fetchPrayerTimes(null, null, sett.city);
+        } else if (sett.latitude && sett.longitude) {
+          fetchPrayerTimes(sett.latitude, sett.longitude);
+        }
       } else if (target.id === 'autoLocationBtn' || target.closest('#autoLocationBtn')) {
         (async () => {
           const statusSpan = document.getElementById('locationStatus');
@@ -279,8 +303,6 @@
               latInput.value = loc.lat;
               lonInput.value = loc.lon;
               cityInput.value = '';
-              // Opsional: langsung simpan setelah ambil lokasi? Lebih baik user klik simpan.
-              // Untuk konsisten, kita tidak auto-save di sini.
             }
             if (statusSpan) statusSpan.innerText = 'Lokasi berhasil diambil.';
           } catch (err) {
@@ -335,7 +357,6 @@
     }
   }
 
-  // ----- SAFE INITIALIZATION -----
   function init() {
     const loadingDiv = document.getElementById('loading-view');
     const prayerDiv = document.getElementById('prayer-view');

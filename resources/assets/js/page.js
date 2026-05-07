@@ -175,10 +175,19 @@
     if (!prayerDiv || !settingsDiv || !loadingDiv) return;
 
     const sett = state.settings || {};
+    // Ambil koordinat dari default_location jika ada
+    let lat = '',
+    lon = '';
+    if (sett.default_location && typeof sett.default_location.latitude === 'number') {
+      lat = String(sett.default_location.latitude);
+      lon = String(sett.default_location.longitude);
+    } else if (sett.latitude !== undefined && sett.longitude !== undefined) {
+      lat = String(sett.latitude);
+      lon = String(sett.longitude);
+    }
     const city = (sett.city && sett.city !== null) ? String(sett.city): '';
-    const lat = (sett.latitude !== undefined && sett.latitude !== null) ? String(sett.latitude): '';
-    const lon = (sett.longitude !== undefined && sett.longitude !== null) ? String(sett.longitude): '';
-    const notifications = sett.notifications_enabled === true;
+    // Notifikasi: gunakan notifications_prayer_enabled
+    const notifications = sett.notifications_prayer_enabled === true;
 
     const html = `
     <div class="card shadow">
