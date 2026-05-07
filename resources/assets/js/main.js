@@ -1,4 +1,4 @@
-// main.js for Prayer Times
+// main.js for Prayer Times (Safe Initialization)
 (function(window, document, undefined) {
   'use strict';
 
@@ -57,7 +57,7 @@
     }
   }
 
-  // ----- Geolocation dengan timeout (sama seperti cuaca) -----
+  // ----- Geolocation with timeout -----
   function getTelegramLocation(timeoutMs = 15000) {
     return new Promise((resolve, reject) => {
       const tg = window.Telegram?.WebApp;
@@ -164,7 +164,6 @@
     }
   }
 
-  // ----- Save settings -----
   async function saveSettings(formData) {
     try {
       Core.showLoading('Menyimpan pengaturan...');
@@ -193,7 +192,6 @@
     }
   }
 
-  // ----- Refresh prayer (dari button) -----
   async function refreshPrayer() {
     const state = Core.getState();
     if (state.prayer) {
@@ -209,7 +207,7 @@
     }
   }
 
-  // ----- Event delegation (global) -----
+  // ----- Event Delegation (dengan pengecekan elemen) -----
   function setupEventDelegation() {
     document.body.addEventListener('click', (e) => {
       const target = e.target;
@@ -229,29 +227,6 @@
         const sett = Core.getState().settings;
         if (sett.city) fetchPrayerTimes(null, null, sett.city);
         else if (sett.latitude && sett.longitude) fetchPrayerTimes(sett.latitude, sett.longitude);
-      } else if (target.id === 'autoLocationBtn' || target.closest('#autoLocationBtn')) {
-        (async () => {
-          const statusSpan = document.getElementById('locationStatus');
-          if (statusSpan) statusSpan.innerText = 'Meminta lokasi...';
-          try {
-            const loc = await getTelegramLocation(10000);
-            document.getElementById('latitude').value = loc.lat;
-            document.getElementById('longitude').value = loc.lon;
-            document.getElementById('city').value = '';
-            if (statusSpan) statusSpan.innerText = 'Lokasi berhasil diambil.';
-          } catch (err) {
-            try {
-              const locBrowser = await getBrowserLocation(10000);
-              document.getElementById('latitude').value = locBrowser.lat;
-              document.getElementById('longitude').value = locBrowser.lon;
-              document.getElementById('city').value = '';
-              if (statusSpan) statusSpan.innerText = 'Lokasi berhasil diambil (browser).';
-            } catch (err2) {
-              if (statusSpan) statusSpan.innerText = 'Gagal mengambil lokasi.';
-              Core.showToast(err2.message, 'danger');
-            }
-          }
-        })();
       } else if (target.id === 'autoLocationBtn' || target.closest('#autoLocationBtn')) {
         (async () => {
           const statusSpan = document.getElementById('locationStatus');
@@ -291,22 +266,23 @@
     document.body.addEventListener('submit', (e) => {
       if (e.target && e.target.id === 'settingsForm') {
         e.preventDefault();
-        const cityVal = document.getElementById('city').value;
-        const latVal = document.getElementById('latitude').value;
-        const lonVal = document.getElementById('longitude').value;
-        const notify = document.getElementById('notifications_enabled').checked;
+        const cityEl = document.getElementById('city');
+        const latEl = document.getElementById('latitude');
+        const lonEl = document.getElementById('longitude');
+        const notifyEl = document.getElementById('notifications_enabled');
+        if (!cityEl || !latEl || !lonEl || !notifyEl) return;
         const formData = {
-          city: cityVal || undefined,
-          latitude: latVal ? parseFloat(latVal): undefined,
-          longitude: lonVal ? parseFloat(lonVal): undefined,
-          notifications_enabled: notify
+          city: cityEl.value || undefined,
+          latitude: latEl.value ? parseFloat(latEl.value): undefined,
+          longitude: lonEl.value ? parseFloat(lonEl.value): undefined,
+          notifications_enabled: notifyEl.checked
         };
         saveSettings(formData);
       }
     });
   }
 
-  // ----- Subscribe state change untuk render -----
+  // ----- Subscribe state change -----
   function onStateChange(state) {
     const prayerDiv = document.getElementById('prayer-view');
     const settingsDiv = document.getElementById('settings-view');
@@ -318,8 +294,31 @@
     }
   }
 
-  // ----- Start -----
-  Core.subscribe(onStateChange);
-  setupEventDelegation();
-  loadDefaultLocation();
+  // ----- SAFE INITIALIZATION -----
+  function init() {
+    // Pastikan elemen penting ada
+    const loadingDiv = document.getElementById('loading-view');
+    const prayerDiv = document.getElementById('prayer-view');
+    const settingsDiv = document.getElementById('settings-view');
+    if (!loadingDiv || !prayerDiv || !settingsDiv) {
+      console.error('Required elements missing: loading-view, prayer-view, settings-view');
+      return;
+    }
+    // Set initial display
+    loadingDiv.style.display = 'flex';
+    prayerDiv.style.display = 'none';
+    settingsDiv.style.display = 'none';
+
+    Core.subscribe(onStateChange);
+    setupEventDelegation();
+    loadDefaultLocation();
+  }
+
+  // Tunggu DOM siap
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+  } else {
+    init();
+  }
+
 })(window, document);
