@@ -313,7 +313,11 @@
     setupEventDelegation();
     loadDefaultLocation();
   }
-
+  console.log('Checking elements:', {
+    loading: document.getElementById('loading-view'),
+    prayer: document.getElementById('prayer-view'),
+    settings: document.getElementById('settings-view')
+  });
   // Tunggu DOM siap
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
