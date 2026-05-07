@@ -36,7 +36,7 @@
       const body = {};
       if (city) body.city = city;
       else if (lat && lon) {
-        body.latitude = lat; body.longitude = lon;
+        body.lat = lat; body.lon = lon;
       } else throw new Error('Tidak ada lokasi yang diberikan');
 
       const res = await Core.api.post('/api/prayer/times', body);
