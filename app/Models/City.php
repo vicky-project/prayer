@@ -2,9 +2,12 @@
 namespace Modules\Prayer\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Grimzy\LaravelMysqlSpatial\Eloquent\SpatialTrait;
 
 class City extends Model
 {
+  use SpatialTrait;
+
   protected $table = "prayer_cities";
 
   protected $fillable = [
@@ -13,10 +16,11 @@ class City extends Model
     'slug',
     'province_id',
     'province_name',
-    'latitude',
-    'longitude',
+    'coordinates',
     'timezone'
   ];
+
+  protected $spatialFields = ['coordinates'];
 
   public function prayers() {
     return $this->hasMany(Prayer::class);

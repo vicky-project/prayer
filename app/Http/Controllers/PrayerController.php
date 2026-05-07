@@ -67,27 +67,31 @@ class PrayerController extends Controller
     $validator = Validator::make($request->all(), [
       "city" => "nullable|string|max:255",
       "latitude" => "nullable|numeric|between:-90,90",
-      "longitude" => "nullable|between:-180,180",
+      "longitude" => "nullable|numeric|between:-180,180",
       "notifications_enabled" => "boolean"
     ]);
 
     if ($validator->fails()) {
       return response()->json([
         "success" => false,
-        "erros" => $validator->errors()
+        "errors" => $validator->errors() // perbaiki typo "erros" menjadi "errors"
       ], 422);
     }
 
     try {
       $data = $telegramUser->data ?? [];
-      $defaultLocation = [];
+      // Ambil default_location yang sudah ada, jangan langsung kosong
+      $defaultLocation = $data['default_location'] ?? [];
 
       if ($request->filled('city')) {
-        $defaultLocation['city'] = $request->city;
+        $defaultLocation = ['city' => $request->city];
       } elseif ($request->filled('latitude') && $request->filled('longitude')) {
-        $defaultLocation['latitude'] = (float) $request->latitude;
-        $defaultLocation['longitude'] = (float) $request->longitude;
+        $defaultLocation = [
+          'latitude' => (float) $request->latitude,
+          'longitude' => (float) $request->longitude
+        ];
       }
+      // Jika tidak ada keduanya, biarkan $defaultLocation tetap seperti sebelumnya
 
       $data['default_location'] = $defaultLocation;
       $data['notifications_prayer_enabled'] = $request->boolean('notifications_enabled');

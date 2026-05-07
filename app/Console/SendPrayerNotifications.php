@@ -14,9 +14,7 @@ class SendPrayerNotifications extends Command
 
   protected PrayerTimeService $prayerService;
 
-  public function __construct(
-    PrayerTimeService $prayerService
-  ) {
+  public function __construct(PrayerTimeService $prayerService) {
     parent::__construct();
     $this->prayerService = $prayerService;
   }
@@ -24,10 +22,8 @@ class SendPrayerNotifications extends Command
   public function handle() {
     $this->info('Memulai pengiriman notifikasi shalat...');
 
-    $users = TelegramUser::all()->filter(function (TelegramUser $user) {
-      $data = $user->data ?? [];
-      return ($data['notifications_prayer_enabled'] ?? false) === true;
-    });
+    // Efisiensi query: hanya user dengan notifikasi aktif
+    $users = TelegramUser::whereRaw('JSON_EXTRACT(data, "$.notifications_prayer_enabled") = true')->get();
 
     if ($users->isEmpty()) {
       $this->info('Tidak ada user dengan notifikasi aktif.');
@@ -41,64 +37,63 @@ class SendPrayerNotifications extends Command
         $defaultLocation = $data['default_location'] ?? [];
 
         if (empty($defaultLocation)) {
-          $this->warn("User tidak menyimpan lokasi default.");
+          $this->warn("User {$user->telegram_id} tidak menyimpan lokasi default.");
           continue;
         }
 
         $prayerData = $this->prayerService->getTodayPrayerByLocation($defaultLocation);
         if (!$prayerData) {
           $this->warn("User {$user->telegram_id}: jadwal tidak ditemukan.");
-          \Log::warning("User {$user->telegram_id}: Jadwal shalat tidak ditemukan.", ['location' => $defaultLocation]);
           continue;
         }
 
-        // Inisialisasi array notifikasi yang sudah dikirim per tanggal
         if (!isset($data['notifications_prayer_sent'])) {
           $data['notifications_prayer_sent'] = [];
-          $this->info("Membuat inisialisasi array notifikasi.");
         }
 
-        // Gunakan timezone kota untuk menentukan waktu sekarang
         $timezone = $prayerData['timezone'] ?? 'Asia/Jakarta';
         $now = Carbon::now($timezone);
         $today = $now->toDateString();
-        $currentTime = $now->format('H:i');
         $isRamadhan = $now->toHijri()->month === 9;
 
-        // Inisialisasi notifikasi yang sudah dikirim hari ini
         $sentToday = $data['notifications_prayer_sent'][$today] ?? [];
+        $updated = false;
 
         foreach ($prayerData['jadwal'] as $name => $timeStr) {
-          if ($name === "imsak" && !$isRamadhan) {
-            continue;
-          }
+          if ($name === 'imsak' && !$isRamadhan) continue;
 
-          // Buat waktu shalat hari ini
           $prayerTime = Carbon::today($timezone)->setTimeFromTimeString($timeStr);
-          $diffMinutes = abs($now->diffInMinutes($prayerTime));
 
-          if ($diffMinutes <= 1 && !in_array($name, $sentToday)) {
-
-            $user->notify(new PrayerSent(city: $prayerData["city"], name: $name, time: $timeStr));
-
+          // Kirim tepat waktu (setelah atau saat adzan, max 1 menit setelah)
+          if ($now->gte($prayerTime) && $now->diffInMinutes($prayerTime) <= 1 && !in_array($name, $sentToday)) {
+            $user->notify(new PrayerSent(
+              city: $prayerData['city'],
+              name: $name,
+              time: $timeStr
+            ));
 
             $sentToday[] = $name;
-            $data['notifications_prayer_sent'][$today] = $sentToday;
-            $user->data = $data;
-            $user->save();
-
+            $updated = true;
             $this->info("Notifikasi {$name} terkirim ke {$user->telegram_id}");
             $sentCount++;
           }
         }
-      } catch(\Exception $e) {
-        \Log::error("Failed to sent prayer notifications", [
-          "user" => $user->telegram_id,
-          "message" => $e->getMessage(),
-          "trace" => $e->getTraceAsString()
-        ]);
 
-        return 1;
+        if ($updated) {
+          $data['notifications_prayer_sent'][$today] = $sentToday;
+          // Hapus data sent lebih dari 7 hari
+          $cutoff = Carbon::now()->subDays(7);
+          $data['notifications_prayer_sent'] = collect($data['notifications_prayer_sent'])
+          ->filter(fn($sent, $date) => Carbon::parse($date)->gte($cutoff))
+          ->toArray();
+          $user->data = $data;
+          $user->save();
+        }
+      } catch (\Exception $e) {
+        \Log::error("Gagal kirim notifikasi shalat", [
+          'user' => $user->telegram_id,
+          'message' => $e->getMessage()
+        ]);
       }
     }
 

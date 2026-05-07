@@ -9,6 +9,7 @@ use Modules\Prayer\Models\City;
 use Modules\Prayer\Models\Prayer;
 use Modules\Prayer\Services\PrayerTimeService;
 use Carbon\Carbon;
+use Grimzy\LaravelMysqlSpatial\Types\Point;
 
 class FetchPrayerData extends Command
 {
@@ -23,10 +24,10 @@ class FetchPrayerData extends Command
   }
 
   public function handle() {
-    // 🔍 Cek apakah tabel prayer_times sudah ada
+    // Cek apakah tabel prayer_times sudah ada
     if (!Schema::hasTable('prayer_times')) {
       $this->error('❌ Tabel "prayer_times" belum tersedia di database.');
-      $this->warn('Silakan jalankan perintah berikut terlebih dahulu:');
+      $this->warn('Silakan jalankan perintah migrate terlebih dahulu.');
       $this->line('   php artisan migrate');
       $this->newLine();
       $this->info('Setelah migrasi berhasil, jalankan kembali command ini.');
@@ -43,12 +44,11 @@ class FetchPrayerData extends Command
       "url" => $url
     ]);
 
-    $this->info('Starting prayer data fetch using url: '.$url);
+    $this->info('Starting prayer data fetch using url: ' . $url);
 
     $totalProvinces = 0;
 
     try {
-      // Download data dengan timeout panjang
       $response = Http::timeout(3600)->get($url);
 
       if (!$response->successful()) {
@@ -74,7 +74,17 @@ class FetchPrayerData extends Command
         $provinceName = $province['name'];
 
         foreach ($province['cities'] as $cityData) {
-          // Simpan atau update city
+          // Ambil koordinat dari data JSON
+          $lat = isset($cityData['coordinate']['latitude']) ? (float) $cityData['coordinate']['latitude'] : null;
+          $lon = isset($cityData['coordinate']['longitude']) ? (float) $cityData['coordinate']['longitude'] : null;
+
+          // Buat Point object (latitude, longitude)
+          $point = null;
+          if ($lat !== null && $lon !== null) {
+            $point = new Point($lat, $lon);
+          }
+
+          // Simpan atau update city (tanpa latitude/longitude terpisah)
           $city = City::updateOrCreate(
             ['city_id' => $cityData['id']],
             [
@@ -82,14 +92,13 @@ class FetchPrayerData extends Command
               'slug' => $cityData['slug'] ?? null,
               'province_id' => $provinceId,
               'province_name' => $provinceName,
-              'latitude' => $cityData['coordinate']['latitude'] ?? null,
-              'longitude' => $cityData['coordinate']['longitude'] ?? null,
+              'coordinates' => $point,
             ]
           );
 
-          // Jika latitude/longitude ada dan timezone belum diisi, ambil timezone
-          if ($city->latitude && $city->longitude && empty($city->timezone)) {
-            $timezone = $this->prayerService->getTimezoneFromCoordinates($city->latitude, $city->longitude);
+          // Jika koordinat ada dan timezone belum diisi, isi timezone
+          if ($point && empty($city->timezone)) {
+            $timezone = $this->prayerService->getTimezoneFromCoordinates($lat, $lon);
             $city->timezone = $timezone;
             $city->save();
           }
@@ -97,7 +106,7 @@ class FetchPrayerData extends Command
           // Hapus semua prayer kota ini untuk mengisi ulang (data bisa berubah)
           Prayer::where('city_id', $city->id)->delete();
 
-          // Insert prayers
+          // Insert prayer records
           $prayers = [];
           foreach ($cityData['prayers'] as $prayerData) {
             $prayers[] = [
@@ -117,7 +126,6 @@ class FetchPrayerData extends Command
             ];
           }
 
-          // Insert batch untuk efisiensi
           if (!empty($prayers)) {
             Prayer::insert($prayers);
           }

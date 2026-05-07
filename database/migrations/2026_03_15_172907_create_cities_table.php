@@ -9,14 +9,17 @@ return new class extends Migration
   public function up() {
     Schema::create('prayer_cities', function (Blueprint $table) {
       $table->id();
-      $table->string('city_id')->unique(); // ID asli dari JSON
+      $table->string('city_id')->unique();
       $table->string('name');
       $table->string('slug')->nullable();
-      $table->string('province_id'); // ID provinsi dari JSON
+      $table->string('province_id');
       $table->string('province_name')->nullable();
-      $table->decimal('latitude', 10, 8)->nullable();
-      $table->decimal('longitude', 11, 8)->nullable();
+      $table->point('coordinates', 4326)->nullable(); // kolom spasial
+      $table->string('timezone')->nullable(); // tambahan
       $table->timestamps();
+
+      $table->spatialIndex('coordinates');
+      $table->index("name");
     });
   }
 
