@@ -212,6 +212,7 @@
   async function loadDefaultLocation() {
     // Jangan jalankan jika sedang loading atau geolocating
     const state = Core.getState();
+    console.log(state);
     if (state.loading || isGeolocating) return;
 
     try {
