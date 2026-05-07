@@ -87,6 +87,7 @@
         error: null
       });
     } catch (err) {
+      console.log(err)
       Core.setState({
         loading: false, error: err.message
       });
