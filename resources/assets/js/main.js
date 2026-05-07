@@ -1,4 +1,4 @@
-// main.js for Prayer Times - OPTIMIZED (no stuck)
+// main.js for Prayer Times - FIXED (loading state issue resolved)
 (function(window, document, undefined) {
   'use strict';
 
@@ -9,7 +9,7 @@
     return;
   }
 
-  // ---------- Helper: fetch dengan timeout ----------
+  // Helper fetch dengan timeout
   async function fetchWithTimeout(promise, timeoutMs = 15000) {
     let timeoutId;
     const timeoutPromise = new Promise((_, reject) => {
@@ -25,9 +25,8 @@
     }
   }
 
-  // ---------- API calls dengan timeout ----------
+  // API calls
   async function fetchSettings() {
-    // Cek cache di localStorage (durasi 5 menit)
     const cached = localStorage.getItem('prayer_settings_cache');
     if (cached) {
       try {
@@ -50,7 +49,6 @@
         Core.setState({
           settings: res.data
         });
-        // Simpan ke localStorage
         localStorage.setItem('prayer_settings_cache', JSON.stringify({
           data: res.data,
           timestamp: Date.now()
@@ -111,7 +109,6 @@
         console.log('Location auto-saved:', {
           lat, lon
         });
-        // Hapus cache settings
         localStorage.removeItem('prayer_settings_cache');
         await fetchSettings();
         return true;
@@ -124,7 +121,7 @@
     }
   }
 
-  // ----- Geolocation (dengan timeout) -----
+  // Geolocation
   function getTelegramLocation(timeoutMs = 15000) {
     return new Promise((resolve, reject) => {
       const tg = window.Telegram?.WebApp;
@@ -170,7 +167,6 @@
     });
   }
 
-  // ----- Load from geolocation dengan auto-save dan race condition prevention -----
   let isGeolocating = false;
   async function loadFromGeolocation() {
     if (isGeolocating) {
@@ -209,11 +205,9 @@
     }
   }
 
+  // PERBAIKAN: Hapus pengecekan state.loading (karena inisialisasi awal loading=true)
   async function loadDefaultLocation() {
-    // Jangan jalankan jika sedang loading atau geolocating
-    const state = Core.getState();
-    console.log(state);
-    if (state.loading || isGeolocating) return;
+    if (isGeolocating) return; // hanya cegah multiple geolocation
 
     try {
       Core.showLoading('Memuat pengaturan...');
@@ -284,7 +278,6 @@
     }
   }
 
-  // refreshPrayer, event delegation, onStateChange, init tetap sama (hanya tambahkan guard)
   async function refreshPrayer() {
     const state = Core.getState();
     if (state.loading) return;
@@ -303,6 +296,7 @@
     }
   }
 
+  // Event delegation (sama seperti sebelumnya, disingkat untuk ruang)
   function setupEventDelegation() {
     document.body.addEventListener('click', (e) => {
       const target = e.target;
