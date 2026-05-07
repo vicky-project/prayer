@@ -1,4 +1,4 @@
-// main.js for Prayer Times (Safe Initialization)
+// main.js for Prayer Times - Auto-save location after geolocation
 (function(window, document, undefined) {
   'use strict';
 
@@ -34,11 +34,14 @@
     try {
       Core.showLoading('Memuat jadwal shalat...');
       const body = {};
-      if (city) body.city = city;
-      else if (lat && lon) {
-        body.lat = lat; body.lon = lon;
-      } else throw new Error('Tidak ada lokasi yang diberikan');
-
+      if (city) {
+        body.city = city;
+      } else if (typeof lat === 'number' && typeof lon === 'number') {
+        body.lat = lat;
+        body.lon = lon;
+      } else {
+        throw new Error('Tidak ada lokasi yang diberikan');
+      }
       const res = await Core.api.post('/api/prayer/times', body);
       if (!res.success) throw new Error(res.message || 'Gagal memuat jadwal');
       Core.setState({
@@ -54,6 +57,32 @@
       Core.showToast(err.message, 'danger');
     } finally {
       Core.hideLoading();
+    }
+  }
+
+  // ----- Fungsi untuk menyimpan lokasi ke settings (otomatis) -----
+  async function saveLocationToSettings(lat, lon) {
+    try {
+      const currentSettings = Core.getState().settings || {};
+      const res = await Core.api.post('/api/prayer/settings', {
+        city: undefined, // kosongkan city
+        latitude: lat,
+        longitude: lon,
+        notifications_enabled: currentSettings.notifications_enabled === true
+      });
+      if (res.success) {
+        console.log('Location automatically saved to settings:', {
+          lat, lon
+        });
+        await fetchSettings(); // refresh state settings
+        return true;
+      } else {
+        throw new Error(res.message || 'Gagal menyimpan lokasi');
+      }
+    } catch (err) {
+      console.warn('Auto-save location failed:', err);
+      Core.showToast('Gagal menyimpan lokasi otomatis: ' + err.message, 'warning');
+      return false;
     }
   }
 
@@ -101,6 +130,7 @@
     });
   }
 
+  // ----- Load from geolocation (auto-save before fetch) -----
   async function loadFromGeolocation() {
     const TIMEOUT = 15000;
     try {
@@ -115,6 +145,10 @@
           'warning');
         loc = await getBrowserLocation(TIMEOUT);
       }
+      // Simpan lokasi ke settings terlebih dahulu
+      await saveLocationToSettings(loc.lat,
+        loc.lon);
+      // Kemudian ambil jadwal shalat
       await fetchPrayerTimes(loc.lat,
         loc.lon);
       Core.setState({
@@ -143,9 +177,12 @@
       const settings = await fetchSettings();
       if (settings.city) {
         await fetchPrayerTimes(null, null, settings.city);
+        // Jika ada city, kita tidak menyimpan ulang (biarkan city sebagai default)
       } else if (settings.latitude && settings.longitude) {
         await fetchPrayerTimes(settings.latitude, settings.longitude);
+        // Tidak perlu simpan ulang karena sudah ada di settings
       } else {
+        // Tidak ada pengaturan, coba geolocation dan auto-save
         await loadFromGeolocation();
       }
       Core.setState({
@@ -157,7 +194,7 @@
       });
       Core.showToast(err.message, 'danger');
       Core.setState({
-        currentView: 'settings'
+        currentView: 'settings', settings: Core.getState().settings || {}
       });
     } finally {
       Core.hideLoading();
@@ -199,6 +236,8 @@
         await fetchPrayerTimes(null, null, state.prayer.city);
       } else if (state.prayer.latitude && state.prayer.longitude) {
         await fetchPrayerTimes(state.prayer.latitude, state.prayer.longitude);
+      } else if (state.prayer.lat && state.prayer.lon) {
+        await fetchPrayerTimes(state.prayer.lat, state.prayer.lon);
       } else {
         await loadDefaultLocation();
       }
@@ -240,6 +279,8 @@
               latInput.value = loc.lat;
               lonInput.value = loc.lon;
               cityInput.value = '';
+              // Opsional: langsung simpan setelah ambil lokasi? Lebih baik user klik simpan.
+              // Untuk konsisten, kita tidak auto-save di sini.
             }
             if (statusSpan) statusSpan.innerText = 'Lokasi berhasil diambil.';
           } catch (err) {
@@ -296,15 +337,13 @@
 
   // ----- SAFE INITIALIZATION -----
   function init() {
-    // Pastikan elemen penting ada
     const loadingDiv = document.getElementById('loading-view');
     const prayerDiv = document.getElementById('prayer-view');
     const settingsDiv = document.getElementById('settings-view');
     if (!loadingDiv || !prayerDiv || !settingsDiv) {
-      console.error('Required elements missing: loading-view, prayer-view, settings-view');
+      console.error('Required elements missing');
       return;
     }
-    // Set initial display
     loadingDiv.style.display = 'flex';
     prayerDiv.style.display = 'none';
     settingsDiv.style.display = 'none';
@@ -314,11 +353,9 @@
     loadDefaultLocation();
   }
 
-  // Tunggu DOM siap
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
   } else {
     init();
   }
-
 })(window, document);
