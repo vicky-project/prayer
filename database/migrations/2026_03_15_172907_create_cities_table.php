@@ -19,9 +19,6 @@ return new class extends Migration
       $table->timestamps();
 
       $table->index("name");
-    });
-
-    Schema::table('prayer_cities', function(Blueprint $table) {
       $table->spatialIndex('coordinates');
     });
   }

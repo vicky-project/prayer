@@ -235,11 +235,17 @@ class PrayerTimeService
   */
   protected function findCityByName($name): ?City
   {
-    $city = City::whereRaw('LOWER(name) = ?', [strtolower(trim($name))])->first();
-    if (!$city) {
-      $city = City::where('name', 'LIKE', '%' . $name . '%')->first();
-    }
-    return $city;
+    $normalized = strtolower(trim($name));
+    // Coba exact match dengan indeks (jika collation case-insensitive)
+    $city = City::where('name', $name)->first(); // asumsi collation case-insensitive
+    if ($city) return $city;
+
+    // Coba awalan (bisa gunakan indeks)
+    $city = City::where('name', 'LIKE', $normalized . '%')->first();
+    if ($city) return $city;
+
+    // Terakhir, partial match full scan (hindari ini sebisa mungkin)
+    return City::where('name', 'LIKE', '%' . $normalized . '%')->first();
   }
 
   /**
