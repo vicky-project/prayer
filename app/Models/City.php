@@ -21,7 +21,9 @@ class City extends Model
     'timezone'
   ];
 
-  protected array $casts = ['coordinates' => LocationCast::class];
+  protected $casts = [
+    'coordinates' => LocationCast::class
+  ];
 
   public function prayers() {
     return $this->hasMany(Prayer::class);
