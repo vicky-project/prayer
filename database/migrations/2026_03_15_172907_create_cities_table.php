@@ -14,12 +14,15 @@ return new class extends Migration
       $table->string('slug')->nullable();
       $table->string('province_id');
       $table->string('province_name')->nullable();
-      $table->point('coordinates', 4326)->nullable(); // kolom spasial
+      $table->geography('coordinates', subtype: 'point');
       $table->string('timezone')->nullable(); // tambahan
       $table->timestamps();
 
-      $table->spatialIndex('coordinates');
       $table->index("name");
+    });
+
+    Schema::table('prayer_cities', function(Blueprint $table) {
+      $table->spatialIndex('coordinates');
     });
   }
 

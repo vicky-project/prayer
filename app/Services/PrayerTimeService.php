@@ -8,7 +8,7 @@ use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use Grimzy\LaravelMysqlSpatial\Types\Point;
+use TarfinLabs\LaravelSpatial\Types\Point;
 
 class PrayerTimeService
 {
@@ -52,11 +52,11 @@ class PrayerTimeService
     $cacheKey = config("prayer.cache_prefix.city") . ":{$roundedLat}:{$roundedLon}";
 
     return Cache::remember($cacheKey, 86400, function () use ($latitude, $longitude) {
-      $point = new Point($latitude, $longitude);
+      $point = new Point(lat: $latitude, lng: $longitude);
       // distanceSphere() menambahkan kolom 'distance' dalam meter
       return City::whereNotNull('coordinates')
-      ->distanceSphere('coordinates', $point, 200000) // radius 200 km
-      ->orderBy('distance', 'asc')
+      ->withinDistanceTo('coordinates', $point, 200000) // radius 200 km
+      ->orderByDistanceTo('coordinates', $point)
       ->first();
     });
   }

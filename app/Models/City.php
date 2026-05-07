@@ -2,11 +2,12 @@
 namespace Modules\Prayer\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use Grimzy\LaravelMysqlSpatial\Eloquent\SpatialTrait;
+use TarfinLabs\LaravelSpatial\Casts\LocationCast;
+use TarfinLabs\LaravelSpatial\Traits\HasSpatial;
 
 class City extends Model
 {
-  use SpatialTrait;
+  use HasSpatial;
 
   protected $table = "prayer_cities";
 
@@ -20,7 +21,7 @@ class City extends Model
     'timezone'
   ];
 
-  protected $spatialFields = ['coordinates'];
+  protected array $casts = ['coordinates' => LocationCast::class];
 
   public function prayers() {
     return $this->hasMany(Prayer::class);

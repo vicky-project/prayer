@@ -9,7 +9,7 @@ use Modules\Prayer\Models\City;
 use Modules\Prayer\Models\Prayer;
 use Modules\Prayer\Services\PrayerTimeService;
 use Carbon\Carbon;
-use Grimzy\LaravelMysqlSpatial\Types\Point;
+use TarfinLabs\LaravelSpatial\Types\Point;
 
 class FetchPrayerData extends Command
 {
@@ -81,7 +81,7 @@ class FetchPrayerData extends Command
           // Buat Point object (latitude, longitude)
           $point = null;
           if ($lat !== null && $lon !== null) {
-            $point = new Point($lat, $lon);
+            $point = new Point(lat: $lat, lng: $lon);
           }
 
           // Simpan atau update city (tanpa latitude/longitude terpisah)
