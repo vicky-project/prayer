@@ -67,9 +67,18 @@
   }
 
   async function fetchPrayerTimes(lat, lon, city) {
+    // Cegah multiple request bersamaan
+    if (isFetchingPrayer) {
+      console.log('Fetch prayer already in progress, skipping...');
+      return;
+    }
+
+    isFetchingPrayer = true;
+
     try {
       Core.showLoading('Memuat jadwal shalat...');
       const body = {};
+
       if (city) {
         body.city = city;
       } else if (typeof lat === 'number' && typeof lon === 'number') {
@@ -78,8 +87,12 @@
       } else {
         throw new Error('Tidak ada lokasi yang diberikan');
       }
+
+      console.log('Prayer request body:', body);
+
       const res = await fetchWithTimeout(Core.api.post('/api/prayer/times', body), 15000);
       if (!res.success) throw new Error(res.message || 'Gagal memuat jadwal');
+
       Core.setState({
         prayer: res.data,
         cityTimezoneOffset: res.data.timezone_offset || null,
@@ -87,13 +100,13 @@
         error: null
       });
     } catch (err) {
-      console.log(err)
       Core.setState({
         loading: false, error: err.message
       });
       Core.showToast(err.message, 'danger');
     } finally {
       Core.hideLoading();
+      isFetchingPrayer = false;
     }
   }
 

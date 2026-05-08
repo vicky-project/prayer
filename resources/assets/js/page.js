@@ -109,7 +109,9 @@
   }
 
   function startCountdown(jadwal) {
+    // Hentikan countdown sebelumnya jika ada
     Core.stopCountdown();
+
     if (!jadwal) return;
 
     const order = ['imsak',
@@ -120,8 +122,10 @@
       'isya'];
     const now = Core.getCurrentCityTime();
     const nowMinutes = now.getHours() * 60 + now.getMinutes();
+
     let nextPrayer = null;
     let nextMinutes = null;
+
     for (let name of order) {
       if (jadwal[name]) {
         const minutes = Core.timeToMinutes(jadwal[name]);
@@ -144,26 +148,49 @@
     let diffSeconds = (nextMinutes - nowMinutes) * 60 - now.getSeconds();
     if (diffSeconds < 0) diffSeconds += 24 * 60 * 60;
 
+    // Gunakan variabel lokal untuk flag, bukan state global
+    let isRunning = true;
+
     function updateDisplay() {
+      // Hentikan jika sudah tidak berjalan
+      if (!isRunning) return;
+
       const hours = Math.floor(diffSeconds / 3600);
       const minutes = Math.floor((diffSeconds % 3600) / 60);
       const seconds = diffSeconds % 60;
-      countdownDiv.innerHTML = `
-      <div class="text-center">
-      <div class="next-label">Menuju ${Core.getPrayerName(nextPrayer)}</div>
-      <div class="timer">${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}</div>
-      </div>
-      `;
-      if (diffSeconds <= 0) {
-        Core.stopCountdown();
-        startCountdown(jadwal);
+
+      if (countdownDiv) {
+        countdownDiv.innerHTML = `
+        <div class="text-center">
+        <div class="next-label">Menuju ${Core.getPrayerName(nextPrayer)}</div>
+        <div class="timer">${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}</div>
+        </div>
+        `;
       }
+
+      if (diffSeconds <= 0) {
+        // Hentikan interval dan mulai ulang countdown
+        if (intervalId) {
+          clearInterval(intervalId);
+          intervalId = null;
+        }
+        isRunning = false;
+        startCountdown(jadwal);
+        return;
+      }
+
       diffSeconds--;
     }
+
+    // Update tampilan sekali sebelum interval dimulai
     updateDisplay();
-    const interval = setInterval(updateDisplay, 1000);
+
+    // Simpan ID interval
+    let intervalId = setInterval(updateDisplay, 1000);
+
+    // Simpan ID interval ke Core state untuk dapat dihentikan nanti
     Core.setState({
-      countdownInterval: interval
+      countdownInterval: intervalId
     });
   }
 
