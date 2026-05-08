@@ -1,4 +1,5 @@
 <?php
+
 namespace Modules\Prayer\Console;
 
 use Illuminate\Console\Command;
@@ -22,7 +23,6 @@ class SendPrayerNotifications extends Command
   public function handle() {
     $this->info('Memulai pengiriman notifikasi shalat...');
 
-    // Efisiensi query: hanya user dengan notifikasi aktif
     $users = TelegramUser::whereRaw('JSON_EXTRACT(data, "$.notifications_prayer_enabled") = true')->get();
 
     if ($users->isEmpty()) {
@@ -57,15 +57,20 @@ class SendPrayerNotifications extends Command
         $isRamadhan = $now->toHijri()->month === 9;
 
         $sentToday = $data['notifications_prayer_sent'][$today] ?? [];
+        $reminderMinutes = $data['reminder_minutes'] ?? 0;
         $updated = false;
 
         foreach ($prayerData['jadwal'] as $name => $timeStr) {
           if ($name === 'imsak' && !$isRamadhan) continue;
 
           $prayerTime = Carbon::today($timezone)->setTimeFromTimeString($timeStr);
+          // Waktu pengiriman = waktu shalat dikurangi reminder_minutes
+          $notifyTime = $prayerTime->copy()->subMinutes($reminderMinutes);
+          $diffMinutes = $now->diffInMinutes($notifyTime);
+          $diffSeconds = $now->diffInSeconds($notifyTime);
 
-          // Kirim tepat waktu (setelah atau saat adzan, max 1 menit setelah)
-          if ($now->gte($prayerTime) && $now->diffInMinutes($prayerTime) <= 1 && !in_array($name, $sentToday)) {
+          // Kirim jika waktu sekarang sudah melewati notifyTime dan selisih <= 60 detik
+          if ($now->gte($notifyTime) && $diffMinutes == 0 && $diffSeconds <= 60 && !in_array($name, $sentToday)) {
             $user->notify(new PrayerSent(
               city: $prayerData['city'],
               name: $name,
@@ -74,14 +79,14 @@ class SendPrayerNotifications extends Command
 
             $sentToday[] = $name;
             $updated = true;
-            $this->info("Notifikasi {$name} terkirim ke {$user->telegram_id}");
+            $this->info("Notifikasi {$name} (reminder {$reminderMinutes} menit) terkirim ke {$user->telegram_id}");
             $sentCount++;
           }
         }
 
         if ($updated) {
           $data['notifications_prayer_sent'][$today] = $sentToday;
-          // Hapus data sent lebih dari 7 hari
+          // Hapus history lebih dari 7 hari
           $cutoff = Carbon::now()->subDays(7);
           $data['notifications_prayer_sent'] = collect($data['notifications_prayer_sent'])
           ->filter(fn($sent, $date) => Carbon::parse($date)->gte($cutoff))

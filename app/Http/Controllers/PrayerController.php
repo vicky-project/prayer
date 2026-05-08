@@ -60,7 +60,7 @@ class PrayerController extends Controller
   * Update the specified resource in storage.
   */
   public function update(Request $request) {
-    $telegramUser = $request->user("sanctum");
+    $telegramUser = $request->user();
     if (!$telegramUser) {
       return response()->json(["success" => false, "message" => "Telegram user tidak ditemukan"], 404);
     }
@@ -69,7 +69,8 @@ class PrayerController extends Controller
       "city" => "nullable|string|max:255",
       "latitude" => "nullable|numeric|between:-90,90",
       "longitude" => "nullable|numeric|between:-180,180",
-      "notifications_enabled" => "boolean"
+      "notifications_enabled" => "boolean",
+      "reminder_minutes" => "nullable|integer|min:0|max:60"
     ]);
 
     if ($validator->fails()) {
@@ -83,13 +84,11 @@ class PrayerController extends Controller
       $data = $telegramUser->data ?? [];
       $defaultLocation = $data['default_location'] ?? [];
 
-      // Cek apakah semua field lokasi kosong
       $city = $request->input('city');
       $lat = $request->input('latitude');
       $lon = $request->input('longitude');
 
       if (empty($city) && empty($lat) && empty($lon)) {
-        // Hapus default location
         $defaultLocation = [];
       } elseif (!empty($city)) {
         $defaultLocation = ['city' => $city];
@@ -99,19 +98,18 @@ class PrayerController extends Controller
           'longitude' => (float) $lon
         ];
       }
-      // Jika hanya salah satu yang diisi (misal lat kosong, lon terisi) maka tidak diubah
 
       $data['default_location'] = $defaultLocation;
       $data['notifications_prayer_enabled'] = $request->boolean('notifications_enabled');
+      $data['reminder_minutes'] = (int) $request->input('reminder_minutes', 0);
 
       $telegramUser->data = $data;
       $telegramUser->save();
 
-      // Hapus cache settings di frontend (via response, tapi frontend juga akan hapus sendiri)
       return response()->json([
         'success' => true,
         'message' => 'Pengaturan berhasil disimpan.',
-        'data' => $data // kembalikan data terbaru
+        'data' => $data
       ]);
     } catch(\Exception $e) {
       \Log::error("Gagal menyimpan pengaturan", ['error' => $e->getMessage()]);

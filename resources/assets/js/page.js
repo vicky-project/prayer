@@ -199,12 +199,13 @@
     }
 
     const notifications = sett.notifications_prayer_enabled === true;
+    const reminderMinutes = sett.reminder_minutes !== undefined ? sett.reminder_minutes: 0;
     const datalistId = 'city-suggestions';
 
     const html = `
     <div class="card shadow">
     <div class="card-header d-flex justify-content-between align-items-center">
-    <h4 class="mb-0"><i class="bi bi-gear-fill me-2"></i>Pengaturan Jadwal Shalat</h4>
+    <h4 class="mb-0"><i class="bi bi-gear-fill me-2"></i>Pengaturan</h4>
     <button id="backToPrayerBtn" class="btn btn-sm btn-outline-light"><i class="bi bi-arrow-left"></i> Kembali</button>
     </div>
     <div class="card-body">
@@ -235,6 +236,19 @@
     <input class="form-check-input" type="checkbox" id="notifications_enabled" ${notifications ? 'checked': ''}>
     <label class="form-check-label">Aktifkan notifikasi waktu shalat</label>
     </div>
+    <div class="mb-3">
+    <label class="form-label">⏰ Pengingat Sebelum Adzan</label>
+    <select class="form-select" id="reminder_minutes">
+    <option value="0">Tepat waktu (0 menit)</option>
+    <option value="5">5 menit sebelum</option>
+    <option value="10">10 menit sebelum</option>
+    <option value="15">15 menit sebelum</option>
+    <option value="30">30 menit sebelum</option>
+    <option value="45">45 menit sebelum</option>
+    <option value="60">60 menit sebelum</option>
+    </select>
+    <div class="small text-muted mt-1">Notifikasi akan dikirim sesuai pengingat yang dipilih</div>
+    </div>
     <button type="submit" class="btn btn-primary w-100">Simpan Pengaturan</button>
     </form>
     </div>
@@ -245,6 +259,9 @@
     prayerDiv.style.display = 'none';
     settingsDiv.style.display = 'block';
     loadingDiv.style.display = 'none';
+
+    const reminderSelect = document.getElementById('reminder_minutes');
+    if (reminderSelect) reminderSelect.value = reminderMinutes;
 
     // Autocomplete kota (sama seperti sebelumnya)
     const cityInput = document.getElementById('city');

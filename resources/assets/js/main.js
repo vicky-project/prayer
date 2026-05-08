@@ -299,7 +299,8 @@
           city: formData.city || undefined,
           latitude: formData.latitude !== undefined ? formData.latitude: undefined,
           longitude: formData.longitude !== undefined ? formData.longitude: undefined,
-          notifications_enabled: formData.notifications_enabled === true
+          notifications_enabled: formData.notifications_enabled === true,
+          reminder_minutes: formData.reminder_minutes !== undefined ? formData.reminder_minutes: 0
         };
         const res = await fetchWithTimeout(Core.api.post('/api/prayer/settings', payload), 10000);
         if (res.success) {
@@ -423,12 +424,14 @@
           const latEl = document.getElementById('latitude');
           const lonEl = document.getElementById('longitude');
           const notifyEl = document.getElementById('notifications_enabled');
+          const reminderSelect = document.getElementById('reminder_minutes');
           if (!cityEl || !latEl || !lonEl || !notifyEl) return;
           const formData = {
             city: cityEl.value || undefined,
             latitude: latEl.value ? parseFloat(latEl.value): undefined,
             longitude: lonEl.value ? parseFloat(lonEl.value): undefined,
-            notifications_enabled: notifyEl.checked
+            notifications_enabled: notifyEl.checked,
+            reminder_minutes: parseInt(reminderSelect.value)
           };
           saveSettings(formData);
         }
