@@ -23,7 +23,8 @@ class SendPrayerNotifications extends Command
   public function handle() {
     $this->info('Memulai pengiriman notifikasi shalat...');
 
-    $users = TelegramUser::whereRaw('JSON_EXTRACT(data, "$.notifications_prayer_enabled") = true')->get();
+    // Hanya user dengan prayer.notifications_enabled = true
+    $users = TelegramUser::whereRaw('JSON_EXTRACT(data, "$.prayer.notifications_enabled") = true')->get();
 
     if ($users->isEmpty()) {
       $this->info('Tidak ada user dengan notifikasi aktif.');
@@ -34,7 +35,10 @@ class SendPrayerNotifications extends Command
     foreach ($users as $user) {
       try {
         $data = $user->data ?? [];
-        $defaultLocation = $data['default_location'] ?? [];
+        $prayer = $data['prayer'] ?? [];
+
+        // Ambil default_location dari $prayer
+        $defaultLocation = $prayer['default_location'] ?? [];
 
         if (empty($defaultLocation)) {
           $this->warn("User {$user->telegram_id} tidak menyimpan lokasi default.");
@@ -43,12 +47,13 @@ class SendPrayerNotifications extends Command
 
         $prayerData = $this->prayerService->getTodayPrayerByLocation($defaultLocation);
         if (!$prayerData) {
-          $this->warn("User {$user->telegram_id}: jadwal tidak ditemukan.");
+          $this->warn("User {$user->telegram_id}: jadwal tidak ditemukan untuk lokasi default.");
           continue;
         }
 
-        if (!isset($data['notifications_prayer_sent'])) {
-          $data['notifications_prayer_sent'] = [];
+        // Inisialisasi array history notifikasi jika belum ada
+        if (!isset($prayer['notifications_sent'])) {
+          $prayer['notifications_sent'] = [];
         }
 
         $timezone = $prayerData['timezone'] ?? 'Asia/Jakarta';
@@ -56,12 +61,14 @@ class SendPrayerNotifications extends Command
         $today = $now->toDateString();
         $isRamadhan = $now->toHijri()->month === 9;
 
-        $sentToday = $data['notifications_prayer_sent'][$today] ?? [];
-        $reminderMinutes = $data['reminder_minutes'] ?? 0;
+        $sentToday = $prayer['notifications_sent'][$today] ?? [];
+        $reminderMinutes = $prayer['reminder_minutes'] ?? 0;
         $updated = false;
 
         foreach ($prayerData['jadwal'] as $name => $timeStr) {
-          if ($name === 'imsak' && !$isRamadhan) continue;
+          if ($name === 'imsak' && !$isRamadhan) {
+            continue;
+          }
 
           $prayerTime = Carbon::today($timezone)->setTimeFromTimeString($timeStr);
           // Waktu pengiriman = waktu shalat dikurangi reminder_minutes
@@ -85,12 +92,13 @@ class SendPrayerNotifications extends Command
         }
 
         if ($updated) {
-          $data['notifications_prayer_sent'][$today] = $sentToday;
+          $prayer['notifications_sent'][$today] = $sentToday;
           // Hapus history lebih dari 7 hari
           $cutoff = Carbon::now()->subDays(7);
-          $data['notifications_prayer_sent'] = collect($data['notifications_prayer_sent'])
+          $prayer['notifications_sent'] = collect($prayer['notifications_sent'])
           ->filter(fn($sent, $date) => Carbon::parse($date)->gte($cutoff))
           ->toArray();
+          $data['prayer'] = $prayer;
           $user->data = $data;
           $user->save();
         }

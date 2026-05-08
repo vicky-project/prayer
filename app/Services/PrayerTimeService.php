@@ -48,14 +48,12 @@ class PrayerTimeService
     $cacheKey = config("prayer.cache_prefix.city") . ":{$roundedLat}:{$roundedLon}";
 
     return Cache::remember($cacheKey, 86400, function () use ($latitude, $longitude) {
-      // Bounding box (kurang lebih 1 derajat ≈ 111 km)
       $delta = 1.0;
       $minLat = $latitude - $delta;
       $maxLat = $latitude + $delta;
       $minLon = $longitude - $delta;
       $maxLon = $longitude + $delta;
 
-      // Rumus Haversine (jarak dalam meter)
       $haversine = "(6371 * acos(
                 cos(radians(?)) * cos(radians(latitude)) *
                 cos(radians(longitude) - radians(?)) +
@@ -102,16 +100,20 @@ class PrayerTimeService
     $city = null,
     $telegramUser = null
   ): array {
-    // Prioritaskan default_location dari user
-    if ($telegramUser && isset($telegramUser->data['default_location'])) {
-      $default = $telegramUser->data['default_location'];
-      if (isset($default['city']) && !empty($default['city'])) {
-        $city = $default['city'];
-        $latitude = $longitude = null;
-      } elseif (isset($default['latitude'], $default['longitude'])) {
-        $latitude = $default['latitude'];
-        $longitude = $default['longitude'];
-        $city = null;
+    // Prioritaskan default_location dari user (struktur data baru: data['prayer']['default_location'])
+    if ($telegramUser) {
+      $userData = $telegramUser->data ?? [];
+      $prayerSettings = $userData['prayer'] ?? [];
+      if (isset($prayerSettings['default_location'])) {
+        $default = $prayerSettings['default_location'];
+        if (isset($default['city']) && !empty($default['city'])) {
+          $city = $default['city'];
+          $latitude = $longitude = null;
+        } elseif (isset($default['latitude'], $default['longitude'])) {
+          $latitude = $default['latitude'];
+          $longitude = $default['longitude'];
+          $city = null;
+        }
       }
     }
 

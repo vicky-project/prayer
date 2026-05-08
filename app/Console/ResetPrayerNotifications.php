@@ -12,7 +12,7 @@ class ResetPrayerNotifications extends Command
 
   public function handle() {
     $this->info('Memulai reset notifikasi...');
-    \Log::info("Command ResetPrayerNotifications started..");
+    \Log::info("Command ResetPrayerNotifications started.");
 
     $users = TelegramUser::all();
     $today = Carbon::today()->toDateString();
@@ -21,11 +21,16 @@ class ResetPrayerNotifications extends Command
     foreach ($users as $user) {
       try {
         $data = $user->data ?? [];
-        if (!isset($data['notifications_prayer_sent'])) {
+        // Ambil array prayer
+        if (!isset($data['prayer'])) {
+          continue;
+        }
+        $prayer = $data['prayer'];
+        if (!isset($prayer['notifications_sent'])) {
           continue;
         }
 
-        $notifications = $data['notifications_prayer_sent'];
+        $notifications = $prayer['notifications_sent'];
         $originalCount = count($notifications);
 
         // Hapus entri dengan tanggal sebelum hari ini
@@ -34,18 +39,19 @@ class ResetPrayerNotifications extends Command
         }, ARRAY_FILTER_USE_KEY);
 
         if (count($notifications) !== $originalCount) {
-          $data['notifications_prayer_sent'] = $notifications;
+          $prayer['notifications_sent'] = $notifications;
+          $data['prayer'] = $prayer;
           $user->data = $data;
           $user->save();
           $deletedCount++;
         }
-      } catch(\Exception $e) {
+      } catch (\Exception $e) {
         \Log::error("Failed to reset prayer notification records.", [
           "user" => $user->telegram_id,
           "message" => $e->getMessage(),
           "trace" => $e->getTraceAsString()
         ]);
-        $this->error("Failed to reset prayer notification: ". $e->getMessage());
+        $this->error("Failed to reset prayer notification: " . $e->getMessage());
       }
     }
 

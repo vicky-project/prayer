@@ -28,7 +28,7 @@ class PrayerController extends Controller
   */
   public function getTimes(LocationRequest $request) {
     try {
-      $telegramUser = $request->user('sanctum');
+      $telegramUser = $request->user();
       $times = $this->prayerService->getPrayerTimes(
         $request->input('latitude'),
         $request->input('longitude'),
@@ -53,7 +53,9 @@ class PrayerController extends Controller
   public function settings(Request $request) {
     $telegramUser = $request->user();
 
-    return response()->json(['success' => true, 'data' => $telegramUser->data ?? []]);
+    abort_if(!$telegramUser, 401, 'Unauthenticated');
+
+    return response()->json(['success' => true, 'data' => $telegramUser->data['prayer'] ?? []]);
   }
 
   /**
@@ -82,7 +84,8 @@ class PrayerController extends Controller
 
     try {
       $data = $telegramUser->data ?? [];
-      $defaultLocation = $data['default_location'] ?? [];
+      $prayer = $data['prayer'] ?? [];
+      $defaultLocation = $prayer['default_location'] ?? [];
 
       $city = $request->input('city');
       $lat = $request->input('latitude');
@@ -99,10 +102,11 @@ class PrayerController extends Controller
         ];
       }
 
-      $data['default_location'] = $defaultLocation;
-      $data['notifications_prayer_enabled'] = $request->boolean('notifications_enabled');
-      $data['reminder_minutes'] = (int) $request->input('reminder_minutes', 0);
+      $prayer['default_location'] = $defaultLocation;
+      $prayer['notifications_enabled'] = $request->boolean('notifications_enabled');
+      $prayer['reminder_minutes'] = (int) $request->input('reminder_minutes', 0);
 
+      $data['prayer'] = $prayer;
       $telegramUser->data = $data;
       $telegramUser->save();
 
