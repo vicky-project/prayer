@@ -169,9 +169,7 @@
 
     updateDisplay();
     intervalId = setInterval(updateDisplay, 1000);
-    Core.setState({
-      countdownInterval: intervalId
-    });
+    Core.setCountdownInterval(intervalId);
   }
 
   // Render halaman pengaturan

@@ -1,4 +1,4 @@
-// core.js for Prayer Times
+// core.js untuk Prayer Times - FIXED (tanpa state change untuk countdown)
 (function(window, document, undefined) {
   'use strict';
 
@@ -18,24 +18,27 @@
 
   let _state = {
     prayer: null,
-    // data jadwal dari API
     settings: null,
     loading: true,
     error: null,
     currentView: 'prayer',
-    // 'prayer' or 'settings'
-    cityTimezoneOffset: null,
-    countdownInterval: null
+    cityTimezoneOffset: null
+    // countdownInterval dihapus dari state
   };
   const _listeners = [];
+  let _countdownInterval = null; // private variable
 
   const Core = {};
 
-  // State
+  // State management
   Core.getState = function() {
     return _state;
   };
   Core.setState = function(newState) {
+    // Jangan izinkan perubahan countdownInterval melalui state
+    if (newState.hasOwnProperty('countdownInterval')) {
+      delete newState.countdownInterval;
+    }
     Object.assign(_state, newState);
     _listeners.forEach(fn => {
       try {
@@ -50,6 +53,18 @@
     return () => {
       const idx = _listeners.indexOf(fn); if (idx !== -1) _listeners.splice(idx, 1);
     };
+  };
+
+  // Countdown management (tidak memicu re-render)
+  Core.stopCountdown = function() {
+    if (_countdownInterval) {
+      clearInterval(_countdownInterval);
+      _countdownInterval = null;
+    }
+  };
+  Core.setCountdownInterval = function(intervalId) {
+    Core.stopCountdown();
+    _countdownInterval = intervalId;
   };
 
   // API wrapper
@@ -72,16 +87,7 @@
     del: (endpoint) => _apiRequest(endpoint, 'DELETE')
   };
 
-  // Helpers untuk countdown
-  Core.stopCountdown = function() {
-    const state = Core.getState();
-    if (state.countdownInterval) {
-      clearInterval(state.countdownInterval);
-      Core.setState({
-        countdownInterval: null
-      });
-    }
-  };
+  // Waktu dan helper
   Core.getCurrentCityTime = function() {
     if (_state.cityTimezoneOffset !== null) {
       const nowUTC = new Date();
@@ -110,7 +116,7 @@
     return names[key] || key;
   };
 
-  // Expose utilities for UI
+  // Expose utilities
   Core.showToast = showToast;
   Core.showLoading = showLoading;
   Core.hideLoading = hideLoading;
