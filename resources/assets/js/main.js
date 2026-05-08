@@ -254,12 +254,21 @@
       try {
         Core.showLoading('Memuat pengaturan...');
         const settings = await fetchSettings();
-        if (settings.default_location && typeof settings.default_location.latitude === 'number' && typeof settings.default_location.longitude === 'number') {
+        // Cek apakah ada default_location yang tidak kosong
+        const hasDefaultLoc = settings.default_location &&
+        (settings.default_location.city ||
+          (settings.default_location.latitude && settings.default_location.longitude));
+        if (hasDefaultLoc) {
           const {
             latitude,
-            longitude
+            longitude,
+            city
           } = settings.default_location;
-          await fetchPrayerTimes(latitude, longitude);
+          if (city) {
+            await fetchPrayerTimes(null, null, city);
+          } else {
+            await fetchPrayerTimes(latitude, longitude);
+          }
         } else if (settings.city) {
           await fetchPrayerTimes(null, null, settings.city);
         } else if (settings.latitude && settings.longitude) {
@@ -297,14 +306,22 @@
           Core.showToast('Pengaturan disimpan');
           localStorage.removeItem('prayer_settings_cache');
           await fetchSettings();
+          // Di dalam saveSettings, setelah fetchSettings() dan sebelum set currentView
           const newSettings = Core.getState().settings;
-          if (newSettings.default_location) {
-            await fetchPrayerTimes(newSettings.default_location.latitude, newSettings.default_location.longitude);
+          if (newSettings.default_location && Object.keys(newSettings.default_location).length > 0 &&
+            (newSettings.default_location.city || (newSettings.default_location.latitude && newSettings.default_location.longitude))) {
+            // Ada default location, gunakan itu
+            if (newSettings.default_location.city) {
+              await fetchPrayerTimes(null, null, newSettings.default_location.city);
+            } else {
+              await fetchPrayerTimes(newSettings.default_location.latitude, newSettings.default_location.longitude);
+            }
           } else if (newSettings.city) {
             await fetchPrayerTimes(null, null, newSettings.city);
           } else if (newSettings.latitude && newSettings.longitude) {
             await fetchPrayerTimes(newSettings.latitude, newSettings.longitude);
           } else {
+            // Tidak ada lokasi sama sekali, minta ulang
             await loadFromGeolocation();
           }
           Core.setState({

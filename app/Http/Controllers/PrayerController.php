@@ -74,24 +74,31 @@ class PrayerController extends Controller
     if ($validator->fails()) {
       return response()->json([
         "success" => false,
-        "errors" => $validator->errors() // perbaiki typo "erros" menjadi "errors"
+        "errors" => $validator->errors()
       ], 422);
     }
 
     try {
       $data = $telegramUser->data ?? [];
-      // Ambil default_location yang sudah ada, jangan langsung kosong
       $defaultLocation = $data['default_location'] ?? [];
 
-      if ($request->filled('city')) {
-        $defaultLocation = ['city' => $request->city];
-      } elseif ($request->filled('latitude') && $request->filled('longitude')) {
+      // Cek apakah semua field lokasi kosong
+      $city = $request->input('city');
+      $lat = $request->input('latitude');
+      $lon = $request->input('longitude');
+
+      if (empty($city) && empty($lat) && empty($lon)) {
+        // Hapus default location
+        $defaultLocation = [];
+      } elseif (!empty($city)) {
+        $defaultLocation = ['city' => $city];
+      } elseif (!empty($lat) && !empty($lon)) {
         $defaultLocation = [
-          'latitude' => (float) $request->latitude,
-          'longitude' => (float) $request->longitude
+          'latitude' => (float) $lat,
+          'longitude' => (float) $lon
         ];
       }
-      // Jika tidak ada keduanya, biarkan $defaultLocation tetap seperti sebelumnya
+      // Jika hanya salah satu yang diisi (misal lat kosong, lon terisi) maka tidak diubah
 
       $data['default_location'] = $defaultLocation;
       $data['notifications_prayer_enabled'] = $request->boolean('notifications_enabled');
@@ -99,9 +106,11 @@ class PrayerController extends Controller
       $telegramUser->data = $data;
       $telegramUser->save();
 
+      // Hapus cache settings di frontend (via response, tapi frontend juga akan hapus sendiri)
       return response()->json([
         'success' => true,
-        'message' => 'Pengaturan berhasil disimpan.'
+        'message' => 'Pengaturan berhasil disimpan.',
+        'data' => $data // kembalikan data terbaru
       ]);
     } catch(\Exception $e) {
       \Log::error("Gagal menyimpan pengaturan", ['error' => $e->getMessage()]);
