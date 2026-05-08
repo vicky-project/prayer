@@ -1,4 +1,4 @@
-// page.js for Prayer Times (FINAL - with null safety)
+// page.js for Prayer Times
 (function(window, document, undefined) {
   'use strict';
 
@@ -8,7 +8,7 @@
     return;
   }
 
-  // Fungsi render jadwal shalat
+  // Render halaman utama jadwal shalat
   function renderPrayerView(state) {
     const prayerDiv = document.getElementById('prayer-view');
     const settingsDiv = document.getElementById('settings-view');
@@ -67,12 +67,12 @@
       const time = jadwal[name] || '-';
       const isCurrent = (name === currentPrayer);
       const rowClass = isCurrent ? 'table-active': '';
-      rows += `<tr class="${rowClass}"><th scope="row">${Core.getPrayerName(name)}</th><td class="text-end">${time}</td><tr>`;
+      rows += `<tr class="${rowClass}"><th scope="row">${Core.getPrayerName(name)}</th><td class="text-end">${time}</td></tr>`;
     }
 
     let extraButton = '';
     const sett = state.settings || {};
-    if (sett.city || (sett.latitude && sett.longitude)) {
+    if (sett.default_location || sett.city || (sett.latitude && sett.longitude)) {
       extraButton = `<button id="useDefaultLocationBtn" class="btn btn-outline-secondary w-100 mt-2"><i class="bi bi-arrow-repeat me-2"></i>Kembali ke Lokasi Default</button>`;
     }
 
@@ -88,7 +88,7 @@
     <div class="card-body">
     <div class="text-center mb-2">
     <i class="bi bi-geo-alt-fill text-primary"></i>
-    <span class="ms-2">${Core.escapeHtml(state.prayer.city || state.prayer.latitude + ', ' + state.prayer.longitude)}</span>
+    <span class="ms-2">${Core.escapeHtml(state.prayer.city || (state.prayer.latitude + ', ' + state.prayer.longitude))}</span>
     </div>
     <div class="text-center small text-muted mb-2">📅 ${state.prayer.date} | ${state.prayer.hijri}</div>
     <div id="countdown"></div>
@@ -104,14 +104,11 @@
     settingsDiv.style.display = 'none';
     loadingDiv.style.display = 'none';
 
-    // Start countdown after render
     startCountdown(jadwal);
   }
 
   function startCountdown(jadwal) {
-    // Hentikan countdown sebelumnya jika ada
     Core.stopCountdown();
-
     if (!jadwal) return;
 
     const order = ['imsak',
@@ -122,10 +119,8 @@
       'isya'];
     const now = Core.getCurrentCityTime();
     const nowMinutes = now.getHours() * 60 + now.getMinutes();
-
     let nextPrayer = null;
     let nextMinutes = null;
-
     for (let name of order) {
       if (jadwal[name]) {
         const minutes = Core.timeToMinutes(jadwal[name]);
@@ -148,53 +143,38 @@
     let diffSeconds = (nextMinutes - nowMinutes) * 60 - now.getSeconds();
     if (diffSeconds < 0) diffSeconds += 24 * 60 * 60;
 
-    // Gunakan variabel lokal untuk flag, bukan state global
-    let isRunning = true;
+    let active = true;
+    let intervalId = null;
 
     function updateDisplay() {
-      // Hentikan jika sudah tidak berjalan
-      if (!isRunning) return;
-
+      if (!active) return;
       const hours = Math.floor(diffSeconds / 3600);
       const minutes = Math.floor((diffSeconds % 3600) / 60);
       const seconds = diffSeconds % 60;
-
-      if (countdownDiv) {
-        countdownDiv.innerHTML = `
-        <div class="text-center">
-        <div class="next-label">Menuju ${Core.getPrayerName(nextPrayer)}</div>
-        <div class="timer">${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}</div>
-        </div>
-        `;
-      }
-
+      countdownDiv.innerHTML = `
+      <div class="text-center">
+      <div class="next-label">Menuju ${Core.getPrayerName(nextPrayer)}</div>
+      <div class="timer">${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}</div>
+      </div>
+      `;
       if (diffSeconds <= 0) {
-        // Hentikan interval dan mulai ulang countdown
-        if (intervalId) {
-          clearInterval(intervalId);
-          intervalId = null;
-        }
-        isRunning = false;
+        active = false;
+        if (intervalId) clearInterval(intervalId);
+        Core.stopCountdown();
         startCountdown(jadwal);
         return;
       }
-
       diffSeconds--;
     }
 
-    // Update tampilan sekali sebelum interval dimulai
     updateDisplay();
-
-    // Simpan ID interval
-    let intervalId = setInterval(updateDisplay, 1000);
-
-    // Simpan ID interval ke Core state untuk dapat dihentikan nanti
+    intervalId = setInterval(updateDisplay, 1000);
     Core.setState({
       countdownInterval: intervalId
     });
   }
 
-  // Render halaman pengaturan (amankan akses DOM)
+  // Render halaman pengaturan
   function renderSettingsView(state) {
     const prayerDiv = document.getElementById('prayer-view');
     const settingsDiv = document.getElementById('settings-view');
@@ -202,7 +182,6 @@
     if (!prayerDiv || !settingsDiv || !loadingDiv) return;
 
     const sett = state.settings || {};
-    // Ambil koordinat dari default_location jika ada
     let lat = '',
     lon = '';
     if (sett.default_location && typeof sett.default_location.latitude === 'number') {
@@ -213,7 +192,6 @@
       lon = String(sett.longitude);
     }
     const city = (sett.city && sett.city !== null) ? String(sett.city): '';
-    // Notifikasi: gunakan notifications_prayer_enabled
     const notifications = sett.notifications_prayer_enabled === true;
 
     const html = `
@@ -261,10 +239,8 @@
     loadingDiv.style.display = 'none';
   }
 
-  // Expose UI functions
   window.PrayerAppUI = {
     renderPrayerView: renderPrayerView,
     renderSettingsView: renderSettingsView
   };
-
 })(window, document);
