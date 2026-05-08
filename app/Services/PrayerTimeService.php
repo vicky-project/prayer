@@ -6,6 +6,7 @@ use Modules\Prayer\Models\City;
 use Modules\Prayer\Models\Prayer;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use TarfinLabs\LaravelSpatial\Types\Point;
@@ -52,12 +53,30 @@ class PrayerTimeService
     $cacheKey = config("prayer.cache_prefix.city") . ":{$roundedLat}:{$roundedLon}";
 
     return Cache::remember($cacheKey, 86400, function () use ($latitude, $longitude) {
-      $point = new Point(lat: $latitude, lng: $longitude);
-      // distanceSphere() menambahkan kolom 'distance' dalam meter
-      return City::whereNotNull('coordinates')
-      ->withinDistanceTo('coordinates', $point, 200000) // radius 200 km
-      ->orderByDistanceTo('coordinates', $point)
-      ->first();
+      // Format POINT untuk MariaDB/MySQL: 'POINT(lon lat)'
+      $pointText = "POINT({$longitude} {$latitude})";
+
+      // Query raw menggunakan ST_Distance_Sphere (return meter)
+      $sql = "
+            SELECT
+                *,
+                ST_Distance_Sphere(coordinates, ST_GeomFromText(?, 4326)) AS distance
+            FROM prayer_cities
+            WHERE coordinates IS NOT NULL
+              AND ST_AsText(coordinates) != 'POINT(0 0)'
+              AND ST_Distance_Sphere(coordinates, ST_GeomFromText(?, 4326)) <= 200000
+            ORDER BY distance
+            LIMIT 1
+        ";
+
+      $result = DB::select($sql, [$pointText, $pointText]);
+
+      if (!empty($result)) {
+        // Hydrate result ke model City
+        return City::hydrate($result)->first();
+      }
+
+      return null;
     });
   }
 
