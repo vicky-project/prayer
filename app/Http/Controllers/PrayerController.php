@@ -50,7 +50,7 @@ class PrayerController extends Controller
   * Store a newly created resource in storage.
   */
   public function settings(Request $request) {
-    $telegramUser = $request->user('sanctum');
+    $telegramUser = $request->user();
 
     return response()->json(['success' => true, 'data' => $telegramUser->data ?? []]);
   }
