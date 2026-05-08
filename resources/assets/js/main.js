@@ -1,4 +1,4 @@
-// main.js for Prayer Times - Final
+// main.js for Prayer Times - FINAL with proper geolocation error handling
 (function(window, document, undefined) {
   'use strict';
 
@@ -61,7 +61,10 @@
       throw new Error(res.message || 'Gagal memuat pengaturan');
     } catch (err) {
       console.error('fetchSettings error:', err);
-      Core.showToast('Gagal memuat pengaturan: ' + err.message, 'danger');
+      // Jangan tampilkan toast jika error karena unauthenticated (biarkan fallback geolocation)
+      if (err.status !== 401) {
+        Core.showToast('Gagal memuat pengaturan: ' + err.message, 'danger');
+      }
       Core.setState({
         settings: {}
       });
@@ -131,24 +134,27 @@
     }
   }
 
-  // ----- Geolocation -----
+  // ----- Geolocation dengan error handling detail -----
   function getTelegramLocation(timeoutMs = 15000) {
     return new Promise((resolve, reject) => {
       const tg = window.Telegram?.WebApp;
       if (!tg || !tg.LocationManager) {
-        reject(new Error('Telegram LocationManager tidak tersedia'));
+        reject(new Error('❌ Telegram WebApp tidak tersedia. Pastikan aplikasi dibuka dari Telegram.'));
         return;
       }
-      const timeoutId = setTimeout(() => reject(new Error(`Telegram location timeout ${timeoutMs}ms`)), timeoutMs);
+      const timeoutId = setTimeout(() => {
+        reject(new Error('⏱️ Timeout: Telegram tidak merespon permintaan lokasi dalam 15 detik.'));
+      }, timeoutMs);
+
       tg.LocationManager.init(() => {
         tg.LocationManager.getLocation((location) => {
           clearTimeout(timeoutId);
-          if (location && location.latitude && location.longitude) {
+          if (location && typeof location.latitude === 'number' && typeof location.longitude === 'number') {
             resolve( {
               lat: location.latitude, lon: location.longitude
             });
           } else {
-            reject(new Error('Akses lokasi ditolak'));
+            reject(new Error('🚫 Izin lokasi ditolak atau data lokasi tidak valid dari Telegram.'));
           }
         });
       });
@@ -158,10 +164,12 @@
   function getBrowserLocation(timeoutMs = 15000) {
     return new Promise((resolve, reject) => {
       if (!navigator.geolocation) {
-        reject(new Error('Geolocation tidak didukung'));
+        reject(new Error('🌐 Browser ini tidak mendukung Geolocation.'));
         return;
       }
-      const timeoutId = setTimeout(() => reject(new Error(`Browser geolocation timeout ${timeoutMs}ms`)), timeoutMs);
+      const timeoutId = setTimeout(() => {
+        reject(new Error('⏱️ Timeout: Browser tidak mendapatkan lokasi dalam 15 detik.'));
+      }, timeoutMs);
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           clearTimeout(timeoutId);
@@ -171,249 +179,276 @@
         },
         (err) => {
           clearTimeout(timeoutId);
-          reject(new Error(err.message));
-        }
-      );
-    });
-  }
-
-  async function loadFromGeolocation() {
-    if (isGeolocating) {
-      console.log('Geolocation already in progress, skipping...');
-      return;
+          let errorMsg = '';
+          switch (err.code) {
+            case err.PERMISSION_DENIED:
+              errorMsg = '🚫 Izin lokasi ditolak. Silakan aktifkan izin lokasi di browser/Telegram.';
+              break;
+            case err.POSITION_UNAVAILABLE:
+              errorMsg = '📡 Lokasi tidak tersedia. Pastikan GPS aktif dan sinyal kuat.';
+              break;
+            case err.TIMEOUT:
+              errorMsg = '⏱️ Waktu habis saat mengambil lokasi. Coba lagi nanti.';
+              break;
+            default:
+              errorMsg = '❌ Gagal mengambil lokasi: ' + err.message;
+            }
+            reject(new Error(errorMsg));
+          }
+        );
+      });
     }
-    isGeolocating = true;
-    const TIMEOUT = 15000;
-    try {
-      Core.showLoading('Meminta lokasi (maks 15 detik)...');
-      let loc;
+
+    async function loadFromGeolocation() {
+      if (isGeolocating) {
+        console.log('Geolocation already in progress, skipping...');
+        return;
+      }
+      isGeolocating = true;
+      const TIMEOUT = 15000;
       try {
-        loc = await getTelegramLocation(TIMEOUT);
-      } catch (e) {
-        console.warn('Telegram location gagal, fallback ke browser', e);
-        Core.showToast('Telegram: ' + e.message, 'warning');
-        loc = await getBrowserLocation(TIMEOUT);
+        Core.showLoading('Meminta lokasi... (maks 15 detik)');
+        let loc;
+        let lastError = null;
+        try {
+          loc = await getTelegramLocation(TIMEOUT);
+          console.log('Telegram location success:', loc);
+        } catch (eTele) {
+          console.warn('Telegram location failed:', eTele);
+          lastError = eTele.message;
+          Core.showToast('Telegram: ' + eTele.message, 'warning');
+          // Fallback ke browser
+          try {
+            loc = await getBrowserLocation(TIMEOUT);
+            console.log('Browser location success:', loc);
+          } catch (eBrowser) {
+            console.error('Browser location also failed:', eBrowser);
+            lastError = eBrowser.message;
+            throw new Error(`Lokasi tidak dapat diperoleh: ${lastError}`);
+          }
+        }
+        // Sukses mendapatkan lokasi
+        await saveLocationToSettings(loc.lat, loc.lon);
+        await fetchPrayerTimes(loc.lat, loc.lon);
+        Core.setState({
+          currentView: 'prayer'
+        });
+      } catch (err) {
+        console.error('loadFromGeolocation error:', err);
+        Core.setState({
+          loading: false, error: err.message
+        });
+        Core.showToast(err.message, 'danger');
+        // Jika gagal, arahkan ke halaman settings agar user bisa input manual
+        Core.setState({
+          currentView: 'settings', error: null
+        });
+      } finally {
+        Core.hideLoading();
+        isGeolocating = false;
       }
-      await saveLocationToSettings(loc.lat, loc.lon);
-      await fetchPrayerTimes(loc.lat, loc.lon);
-      Core.setState({
-        currentView: 'prayer'
-      });
-    } catch (err) {
-      console.error('loadFromGeolocation error:', err);
-      Core.setState({
-        loading: false, error: err.message
-      });
-      Core.showToast(err.message, 'danger');
-      Core.setState({
-        currentView: 'settings'
-      });
-    } finally {
-      Core.hideLoading();
-      isGeolocating = false;
     }
-  }
 
-  async function loadDefaultLocation() {
-    if (isGeolocating) return;
-    try {
-      Core.showLoading('Memuat pengaturan...');
-      const settings = await fetchSettings();
-      if (settings.default_location && typeof settings.default_location.latitude === 'number' && typeof settings.default_location.longitude === 'number') {
-        const {
-          latitude,
-          longitude
-        } = settings.default_location;
-        await fetchPrayerTimes(latitude, longitude);
-      } else if (settings.city) {
-        await fetchPrayerTimes(null, null, settings.city);
-      } else if (settings.latitude && settings.longitude) {
-        await fetchPrayerTimes(settings.latitude, settings.longitude);
-      } else {
-        await loadFromGeolocation();
-      }
-      Core.setState({
-        currentView: 'prayer'
-      });
-    } catch (err) {
-      Core.setState({
-        loading: false, error: err.message
-      });
-      Core.showToast(err.message, 'danger');
-      Core.setState({
-        currentView: 'settings'
-      });
-    } finally {
-      Core.hideLoading();
-    }
-  }
-
-  async function saveSettings(formData) {
-    try {
-      Core.showLoading('Menyimpan pengaturan...');
-      const payload = {
-        city: formData.city || undefined,
-        latitude: formData.latitude !== undefined ? formData.latitude: undefined,
-        longitude: formData.longitude !== undefined ? formData.longitude: undefined,
-        notifications_enabled: formData.notifications_enabled === true
-      };
-      const res = await fetchWithTimeout(Core.api.post('/api/prayer/settings', payload), 10000);
-      if (res.success) {
-        Core.showToast('Pengaturan disimpan');
-        localStorage.removeItem('prayer_settings_cache');
-        await fetchSettings();
-        const newSettings = Core.getState().settings;
-        if (newSettings.default_location) {
-          await fetchPrayerTimes(newSettings.default_location.latitude, newSettings.default_location.longitude);
-        } else if (newSettings.city) {
-          await fetchPrayerTimes(null, null, newSettings.city);
-        } else if (newSettings.latitude && newSettings.longitude) {
-          await fetchPrayerTimes(newSettings.latitude, newSettings.longitude);
+    async function loadDefaultLocation() {
+      if (isGeolocating) return;
+      try {
+        Core.showLoading('Memuat pengaturan...');
+        const settings = await fetchSettings();
+        if (settings.default_location && typeof settings.default_location.latitude === 'number' && typeof settings.default_location.longitude === 'number') {
+          const {
+            latitude,
+            longitude
+          } = settings.default_location;
+          await fetchPrayerTimes(latitude, longitude);
+        } else if (settings.city) {
+          await fetchPrayerTimes(null, null, settings.city);
+        } else if (settings.latitude && settings.longitude) {
+          await fetchPrayerTimes(settings.latitude, settings.longitude);
         } else {
           await loadFromGeolocation();
         }
         Core.setState({
           currentView: 'prayer'
         });
-      } else {
-        throw new Error(res.message || 'Gagal menyimpan');
-      }
-    } catch (err) {
-      Core.showToast('Error: ' + err.message, 'danger');
-    } finally {
-      Core.hideLoading();
-    }
-  }
-
-  async function refreshPrayer() {
-    const state = Core.getState();
-    if (state.loading || isFetchingPrayer) return;
-    if (state.prayer) {
-      if (state.prayer.city) {
-        await fetchPrayerTimes(null, null, state.prayer.city);
-      } else if (state.prayer.latitude && state.prayer.longitude) {
-        await fetchPrayerTimes(state.prayer.latitude, state.prayer.longitude);
-      } else if (state.prayer.lat && state.prayer.lon) {
-        await fetchPrayerTimes(state.prayer.lat, state.prayer.lon);
-      } else {
-        await loadDefaultLocation();
-      }
-    } else {
-      await loadDefaultLocation();
-    }
-  }
-
-  // ----- Event Delegation -----
-  function setupEventDelegation() {
-    document.body.addEventListener('click', (e) => {
-      const target = e.target;
-      if (target.id === 'settingsBtn' || target.closest('#settingsBtn')) {
+      } catch (err) {
+        Core.setState({
+          loading: false, error: err.message
+        });
+        Core.showToast(err.message, 'danger');
         Core.setState({
           currentView: 'settings'
         });
-        UI.renderSettingsView(Core.getState());
-      } else if (target.id === 'refreshPrayerBtn' || target.closest('#refreshPrayerBtn')) {
-        refreshPrayer();
-      } else if (target.id === 'backToPrayerBtn' || target.closest('#backToPrayerBtn')) {
-        Core.setState({
-          currentView: 'prayer'
-        });
-        UI.renderPrayerView(Core.getState());
-      } else if (target.id === 'useDefaultLocationBtn' || target.closest('#useDefaultLocationBtn')) {
-        const sett = Core.getState().settings;
-        if (sett.default_location) {
-          fetchPrayerTimes(sett.default_location.latitude, sett.default_location.longitude);
-        } else if (sett.city) {
-          fetchPrayerTimes(null, null, sett.city);
-        } else if (sett.latitude && sett.longitude) {
-          fetchPrayerTimes(sett.latitude, sett.longitude);
+      } finally {
+        Core.hideLoading();
+      }
+    }
+
+    async function saveSettings(formData) {
+      try {
+        Core.showLoading('Menyimpan pengaturan...');
+        const payload = {
+          city: formData.city || undefined,
+          latitude: formData.latitude !== undefined ? formData.latitude: undefined,
+          longitude: formData.longitude !== undefined ? formData.longitude: undefined,
+          notifications_enabled: formData.notifications_enabled === true
+        };
+        const res = await fetchWithTimeout(Core.api.post('/api/prayer/settings', payload), 10000);
+        if (res.success) {
+          Core.showToast('Pengaturan disimpan');
+          localStorage.removeItem('prayer_settings_cache');
+          await fetchSettings();
+          const newSettings = Core.getState().settings;
+          if (newSettings.default_location) {
+            await fetchPrayerTimes(newSettings.default_location.latitude, newSettings.default_location.longitude);
+          } else if (newSettings.city) {
+            await fetchPrayerTimes(null, null, newSettings.city);
+          } else if (newSettings.latitude && newSettings.longitude) {
+            await fetchPrayerTimes(newSettings.latitude, newSettings.longitude);
+          } else {
+            await loadFromGeolocation();
+          }
+          Core.setState({
+            currentView: 'prayer'
+          });
+        } else {
+          throw new Error(res.message || 'Gagal menyimpan');
         }
-      } else if (target.id === 'autoLocationBtn' || target.closest('#autoLocationBtn')) {
-        (async () => {
-          const statusSpan = document.getElementById('locationStatus');
-          if (statusSpan) statusSpan.innerText = 'Meminta lokasi...';
-          try {
-            const loc = await getTelegramLocation(10000);
-            const latInput = document.getElementById('latitude');
-            const lonInput = document.getElementById('longitude');
-            const cityInput = document.getElementById('city');
-            if (latInput && lonInput && cityInput) {
-              latInput.value = loc.lat;
-              lonInput.value = loc.lon;
-              cityInput.value = '';
-            }
-            if (statusSpan) statusSpan.innerText = 'Lokasi berhasil diambil.';
-          } catch (err) {
+      } catch (err) {
+        Core.showToast('Error: ' + err.message, 'danger');
+      } finally {
+        Core.hideLoading();
+      }
+    }
+
+    async function refreshPrayer() {
+      const state = Core.getState();
+      if (state.loading || isFetchingPrayer) return;
+      if (state.prayer) {
+        if (state.prayer.city) {
+          await fetchPrayerTimes(null, null, state.prayer.city);
+        } else if (state.prayer.latitude && state.prayer.longitude) {
+          await fetchPrayerTimes(state.prayer.latitude, state.prayer.longitude);
+        } else if (state.prayer.lat && state.prayer.lon) {
+          await fetchPrayerTimes(state.prayer.lat, state.prayer.lon);
+        } else {
+          await loadDefaultLocation();
+        }
+      } else {
+        await loadDefaultLocation();
+      }
+    }
+
+    // ----- Event Delegation (sama seperti sebelumnya) -----
+    function setupEventDelegation() {
+      document.body.addEventListener('click', (e) => {
+        const target = e.target;
+        if (target.id === 'settingsBtn' || target.closest('#settingsBtn')) {
+          Core.setState({
+            currentView: 'settings'
+          });
+          UI.renderSettingsView(Core.getState());
+        } else if (target.id === 'refreshPrayerBtn' || target.closest('#refreshPrayerBtn')) {
+          refreshPrayer();
+        } else if (target.id === 'backToPrayerBtn' || target.closest('#backToPrayerBtn')) {
+          Core.setState({
+            currentView: 'prayer'
+          });
+          UI.renderPrayerView(Core.getState());
+        } else if (target.id === 'useDefaultLocationBtn' || target.closest('#useDefaultLocationBtn')) {
+          const sett = Core.getState().settings;
+          if (sett.default_location) {
+            fetchPrayerTimes(sett.default_location.latitude, sett.default_location.longitude);
+          } else if (sett.city) {
+            fetchPrayerTimes(null, null, sett.city);
+          } else if (sett.latitude && sett.longitude) {
+            fetchPrayerTimes(sett.latitude, sett.longitude);
+          }
+        } else if (target.id === 'autoLocationBtn' || target.closest('#autoLocationBtn')) {
+          (async () => {
+            const statusSpan = document.getElementById('locationStatus');
+            if (statusSpan) statusSpan.innerText = 'Meminta lokasi...';
             try {
-              const locBrowser = await getBrowserLocation(10000);
+              const loc = await getTelegramLocation(10000);
               const latInput = document.getElementById('latitude');
               const lonInput = document.getElementById('longitude');
               const cityInput = document.getElementById('city');
               if (latInput && lonInput && cityInput) {
-                latInput.value = locBrowser.lat;
-                lonInput.value = locBrowser.lon;
+                latInput.value = loc.lat;
+                lonInput.value = loc.lon;
                 cityInput.value = '';
               }
-              if (statusSpan) statusSpan.innerText = 'Lokasi berhasil diambil (browser).';
-            } catch (err2) {
-              if (statusSpan) statusSpan.innerText = 'Gagal mengambil lokasi.';
-              Core.showToast(err2.message, 'danger');
+              if (statusSpan) statusSpan.innerText = 'Lokasi berhasil diambil.';
+            } catch (err) {
+              try {
+                const locBrowser = await getBrowserLocation(10000);
+                const latInput = document.getElementById('latitude');
+                const lonInput = document.getElementById('longitude');
+                const cityInput = document.getElementById('city');
+                if (latInput && lonInput && cityInput) {
+                  latInput.value = locBrowser.lat;
+                  lonInput.value = locBrowser.lon;
+                  cityInput.value = '';
+                }
+                if (statusSpan) statusSpan.innerText = 'Lokasi berhasil diambil (browser).';
+              } catch (err2) {
+                if (statusSpan) statusSpan.innerText = 'Gagal mengambil lokasi.';
+                Core.showToast(err2.message, 'danger');
+              }
             }
-          }
-        })();
-      }
-    });
+          })();
+        }
+      });
 
-    document.body.addEventListener('submit', (e) => {
-      if (e.target && e.target.id === 'settingsForm') {
-        e.preventDefault();
-        const cityEl = document.getElementById('city');
-        const latEl = document.getElementById('latitude');
-        const lonEl = document.getElementById('longitude');
-        const notifyEl = document.getElementById('notifications_enabled');
-        if (!cityEl || !latEl || !lonEl || !notifyEl) return;
-        const formData = {
-          city: cityEl.value || undefined,
-          latitude: latEl.value ? parseFloat(latEl.value): undefined,
-          longitude: lonEl.value ? parseFloat(lonEl.value): undefined,
-          notifications_enabled: notifyEl.checked
-        };
-        saveSettings(formData);
-      }
-    });
-  }
-
-  function onStateChange(state) {
-    const prayerDiv = document.getElementById('prayer-view');
-    const settingsDiv = document.getElementById('settings-view');
-    if (!prayerDiv || !settingsDiv) return;
-    if (state.currentView === 'prayer') {
-      UI.renderPrayerView(state);
-    } else if (state.currentView === 'settings') {
-      UI.renderSettingsView(state);
+      document.body.addEventListener('submit', (e) => {
+        if (e.target && e.target.id === 'settingsForm') {
+          e.preventDefault();
+          const cityEl = document.getElementById('city');
+          const latEl = document.getElementById('latitude');
+          const lonEl = document.getElementById('longitude');
+          const notifyEl = document.getElementById('notifications_enabled');
+          if (!cityEl || !latEl || !lonEl || !notifyEl) return;
+          const formData = {
+            city: cityEl.value || undefined,
+            latitude: latEl.value ? parseFloat(latEl.value): undefined,
+            longitude: lonEl.value ? parseFloat(lonEl.value): undefined,
+            notifications_enabled: notifyEl.checked
+          };
+          saveSettings(formData);
+        }
+      });
     }
-  }
 
-  function init() {
-    const loadingDiv = document.getElementById('loading-view');
-    const prayerDiv = document.getElementById('prayer-view');
-    const settingsDiv = document.getElementById('settings-view');
-    if (!loadingDiv || !prayerDiv || !settingsDiv) {
-      console.error('Required elements missing');
-      return;
+    function onStateChange(state) {
+      const prayerDiv = document.getElementById('prayer-view');
+      const settingsDiv = document.getElementById('settings-view');
+      if (!prayerDiv || !settingsDiv) return;
+      if (state.currentView === 'prayer') {
+        UI.renderPrayerView(state);
+      } else if (state.currentView === 'settings') {
+        UI.renderSettingsView(state);
+      }
     }
-    loadingDiv.style.display = 'flex';
-    prayerDiv.style.display = 'none';
-    settingsDiv.style.display = 'none';
 
-    Core.subscribe(onStateChange);
-    setupEventDelegation();
-    loadDefaultLocation();
-  }
+    function init() {
+      const loadingDiv = document.getElementById('loading-view');
+      const prayerDiv = document.getElementById('prayer-view');
+      const settingsDiv = document.getElementById('settings-view');
+      if (!loadingDiv || !prayerDiv || !settingsDiv) {
+        console.error('Required elements missing');
+        return;
+      }
+      loadingDiv.style.display = 'flex';
+      prayerDiv.style.display = 'none';
+      settingsDiv.style.display = 'none';
 
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', init);
-  } else {
-    init();
-  }
-})(window, document);
+      Core.subscribe(onStateChange);
+      setupEventDelegation();
+      loadDefaultLocation();
+    }
+
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', init);
+    } else {
+      init();
+    }
+  })(window, document);
