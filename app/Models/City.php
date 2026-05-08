@@ -2,12 +2,10 @@
 namespace Modules\Prayer\Models;
 
 use Illuminate\Database\Eloquent\Model;
-use TarfinLabs\LaravelSpatial\Casts\LocationCast;
-use TarfinLabs\LaravelSpatial\Traits\HasSpatial;
 
 class City extends Model
 {
-  use HasSpatial;
+
 
   protected $table = "prayer_cities";
 
@@ -17,12 +15,14 @@ class City extends Model
     'slug',
     'province_id',
     'province_name',
-    'coordinates',
+    'latitude',
+    'longitude',
     'timezone'
   ];
 
   protected $casts = [
-    'coordinates' => LocationCast::class
+    'latitude' => 'float',
+    'longitude' => 'float',
   ];
 
   public function prayers() {

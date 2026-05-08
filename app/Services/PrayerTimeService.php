@@ -6,10 +6,8 @@ use Modules\Prayer\Models\City;
 use Modules\Prayer\Models\Prayer;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
-use TarfinLabs\LaravelSpatial\Types\Point;
 
 class PrayerTimeService
 {
@@ -41,10 +39,7 @@ class PrayerTimeService
   }
 
   /**
-  * Mencari kota terdekat dari koordinat menggunakan indeks spasial
-  * @param float $latitude
-  * @param float $longitude
-  * @return City|null
+  * Mencari kota terdekat menggunakan rumus Haversine + bounding box
   */
   protected function findNearestCity($latitude, $longitude): ?City
   {
@@ -53,51 +48,42 @@ class PrayerTimeService
     $cacheKey = config("prayer.cache_prefix.city") . ":{$roundedLat}:{$roundedLon}";
 
     return Cache::remember($cacheKey, 86400, function () use ($latitude, $longitude) {
-      // Format POINT untuk MariaDB/MySQL: 'POINT(lon lat)'
-      $pointText = "POINT({$longitude} {$latitude})";
+      // Bounding box (kurang lebih 1 derajat ≈ 111 km)
+      $delta = 1.0;
+      $minLat = $latitude - $delta;
+      $maxLat = $latitude + $delta;
+      $minLon = $longitude - $delta;
+      $maxLon = $longitude + $delta;
 
-      // Query raw menggunakan ST_Distance_Sphere (return meter)
-      $sql = "
-            SELECT
-                *,
-                ST_Distance_Sphere(coordinates, ST_GeomFromText(?, 4326)) AS distance
-            FROM prayer_cities
-            WHERE coordinates IS NOT NULL
-              AND ST_AsText(coordinates) != 'POINT(0 0)'
-              AND ST_Distance_Sphere(coordinates, ST_GeomFromText(?, 4326)) <= 200000
-            ORDER BY distance
-            LIMIT 1
-        ";
+      // Rumus Haversine (jarak dalam meter)
+      $haversine = "(6371 * acos(
+                cos(radians(?)) * cos(radians(latitude)) *
+                cos(radians(longitude) - radians(?)) +
+                sin(radians(?)) * sin(radians(latitude))
+            ) * 1000)";
 
-      $result = DB::select($sql, [$pointText, $pointText]);
-
-      if (!empty($result)) {
-        // Hydrate result ke model City
-        return City::hydrate($result)->first();
-      }
-
-      return null;
+      return City::whereNotNull('latitude')
+      ->whereNotNull('longitude')
+      ->whereBetween('latitude', [$minLat, $maxLat])
+      ->whereBetween('longitude', [$minLon, $maxLon])
+      ->selectRaw("*, {$haversine} AS distance", [$latitude, $longitude, $latitude])
+      ->orderBy('distance')
+      ->first();
     });
   }
 
   /**
-  * Mendapatkan model City dari defaultLocation (array bisa berisi city atau lat/lon)
+  * Mendapatkan model City dari defaultLocation (bisa city name atau lat/lon)
   */
   protected function resolveCityFromLocation($defaultLocation): ?City
   {
-    if (empty($defaultLocation)) {
-      return null;
-    }
+    if (empty($defaultLocation)) return null;
 
     if (!empty($defaultLocation['city'])) {
       $city = $this->findCityByName($defaultLocation['city']);
-      if ($city) {
-        return $city;
-      }
+      if ($city) return $city;
       $coords = $this->geocodeCity($defaultLocation['city']);
-      if ($coords) {
-        return $this->findNearestCity($coords['lat'], $coords['lon']);
-      }
+      if ($coords) return $this->findNearestCity($coords['lat'], $coords['lon']);
     }
 
     if (!empty($defaultLocation['latitude']) && !empty($defaultLocation['longitude'])) {
@@ -108,7 +94,7 @@ class PrayerTimeService
   }
 
   /**
-  * Mendapatkan jadwal shalat berdasarkan kota atau koordinat (dengan cache)
+  * Mendapatkan jadwal shalat (public API)
   */
   public function getPrayerTimes(
     $latitude = null,
@@ -116,7 +102,7 @@ class PrayerTimeService
     $city = null,
     $telegramUser = null
   ): array {
-    // Prioritaskan default_location dari user jika ada
+    // Prioritaskan default_location dari user
     if ($telegramUser && isset($telegramUser->data['default_location'])) {
       $default = $telegramUser->data['default_location'];
       if (isset($default['city']) && !empty($default['city'])) {
@@ -138,12 +124,11 @@ class PrayerTimeService
         if ($coords) {
           $cityModel = $this->findNearestCity($coords['lat'], $coords['lon']);
           if ($cityModel) {
-            Log::info("Kota '{$city}' tidak ditemukan, menggunakan kota terdekat: {$cityModel->name} berdasarkan geocoding.");
+            Log::info("Kota '{$city}' tidak ditemukan, pakai kota terdekat: {$cityModel->name}");
           }
         }
       }
       if (!$cityModel && $latitude && $longitude) {
-        Log::notice("Kota '{$city}' tidak ditemukan, mencari kota terdekat dari koordinat yang diberikan.");
         $cityModel = $this->findNearestCity($latitude, $longitude);
       }
     } elseif ($latitude && $longitude) {
@@ -175,9 +160,6 @@ class PrayerTimeService
       throw new \Exception('Jadwal shalat tidak ditemukan untuk kota ini.');
     }
 
-    $coordinates = $cityModel->coordinates;
-    $lat = $coordinates ? $coordinates->getLat() : null;
-    $lng = $coordinates ? $coordinates->getLng() : null;
     $timezoneOffset = $this->getTimezoneOffset($cityModel->timezone);
 
     return [
@@ -185,8 +167,8 @@ class PrayerTimeService
       'hijri' => $prayer->date->toHijri()->toDateString(),
       'is_ramadhan' => $prayer->date->toHijri()->month === 9,
       'city' => $prayer->city->name,
-      'latitude' => $lat,
-      'longitude' => $lng,
+      'latitude' => $cityModel->latitude,
+      'longitude' => $cityModel->longitude,
       'timezone_offset' => $timezoneOffset,
       'jadwal' => [
         'imsak' => $prayer->imsak,
@@ -203,14 +185,12 @@ class PrayerTimeService
   }
 
   /**
-  * Mendapatkan jadwal untuk hari ini berdasarkan lokasi default (digunakan oleh notifikasi)
+  * Untuk notifikasi (mengembalikan jadwal hari ini berdasarkan default location)
   */
   public function getTodayPrayerByLocation($defaultLocation): ?array
   {
     $cityModel = $this->resolveCityFromLocation($defaultLocation);
-    if (!$cityModel) {
-      return null;
-    }
+    if (!$cityModel) return null;
 
     $timezone = $cityModel->timezone ?? config('app.timezone');
     $today = Carbon::now($timezone)->toDateString();
@@ -223,19 +203,13 @@ class PrayerTimeService
       ->first();
     });
 
-    if (!$prayer) {
-      return null;
-    }
-
-    $coordinates = $cityModel->coordinates;
-    $lat = $coordinates ? $coordinates->getLat() : null;
-    $lng = $coordinates ? $coordinates->getLng() : null;
+    if (!$prayer) return null;
 
     return [
       'date' => $prayer->date->format("d-m-Y"),
       'city' => $cityModel->name,
-      'latitude' => $lat,
-      'longitude' => $lng,
+      'latitude' => $cityModel->latitude,
+      'longitude' => $cityModel->longitude,
       'timezone' => $timezone,
       'timezone_offset' => $this->getTimezoneOffset($timezone),
       'jadwal' => [
@@ -250,25 +224,19 @@ class PrayerTimeService
   }
 
   /**
-  * Cari kota berdasarkan nama (case insensitive)
+  * Cari kota berdasarkan nama (case‑insensitive)
   */
   protected function findCityByName($name): ?City
   {
-    $normalized = strtolower(trim($name));
-    // Coba exact match dengan indeks (jika collation case-insensitive)
-    $city = City::where('name', $name)->first(); // asumsi collation case-insensitive
-    if ($city) return $city;
-
-    // Coba awalan (bisa gunakan indeks)
-    $city = City::where('name', 'LIKE', $normalized . '%')->first();
-    if ($city) return $city;
-
-    // Terakhir, partial match full scan (hindari ini sebisa mungkin)
-    return City::where('name', 'LIKE', '%' . $normalized . '%')->first();
+    $city = City::whereRaw('LOWER(name) = ?', [strtolower(trim($name))])->first();
+    if (!$city) {
+      $city = City::where('name', 'LIKE', '%' . $name . '%')->first();
+    }
+    return $city;
   }
 
   /**
-  * Mendapatkan koordinat dari nama kota menggunakan geocoding (Nominatim) dengan cache
+  * Geocoding (cache)
   */
   protected function geocodeCity($cityName): ?array
   {
@@ -281,7 +249,6 @@ class PrayerTimeService
           'q' => $cityName,
           'format' => 'json',
           'limit' => 1,
-          'addressdetails' => 0,
         ]);
         if ($response->successful()) {
           $data = $response->json();
@@ -319,44 +286,32 @@ class PrayerTimeService
             ]);
             if ($response->successful()) {
               $data = $response->json();
-              if (!empty($data['timezone'])) {
-                return $data['timezone'];
-              }
+              if (!empty($data['timezone'])) return $data['timezone'];
             }
-            Log::warning('IPGeolocation error: ' . ($response->json()['message'] ?? 'Unknown'));
           } catch (\Exception $e) {
-            Log::error('IPGeolocation API error: ' . $e->getMessage());
+            Log::error($e->getMessage());
           }
         }
-        // Fallback ke RTZ server
+        // Fallback RTZ
         try {
           $response = Http::timeout(5)->get("http://tz.twitchax.com/api/v1/ned/tz/{$lon}/{$lat}");
           if ($response->successful()) {
             $data = $response->json();
-            if (isset($data[0]['identifier'])) {
-              return $data[0]['identifier'];
-            }
+            if (isset($data[0]['identifier'])) return $data[0]['identifier'];
           }
         } catch (\Exception $e) {
-          Log::warning('RTZ server error: ' . $e->getMessage());
+          Log::warning($e->getMessage());
         }
         return config("app.timezone", 'Asia/Jakarta');
       });
   }
 
-  /**
-  * Hapus cache jadwal shalat untuk kota dan tanggal tertentu
-  */
   public function clearPrayerCache(int $cityId,
     string $date): void
   {
-    $cacheKey = config("prayer.cache_prefix.prayer_times") . ":{$cityId}:{$date}";
-    Cache::forget($cacheKey);
+    Cache::forget(config("prayer.cache_prefix.prayer_times") . ":{$cityId}:{$date}");
   }
 
-  /**
-  * Hapus cache kota terdekat untuk koordinat tertentu
-  */
   public function clearNearestCityCache(float $lat,
     float $lon): void
   {
@@ -364,7 +319,6 @@ class PrayerTimeService
       2);
     $roundedLon = round($lon,
       2);
-    $cacheKey = config("prayer.cache_prefix.city") . ":{$roundedLat}:{$roundedLon}";
-    Cache::forget($cacheKey);
+    Cache::forget(config("prayer.cache_prefix.city") . ":{$roundedLat}:{$roundedLon}");
   }
 }

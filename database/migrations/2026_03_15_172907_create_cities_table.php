@@ -14,12 +14,13 @@ return new class extends Migration
       $table->string('slug')->nullable();
       $table->string('province_id');
       $table->string('province_name')->nullable();
-      $table->geography('coordinates', subtype: 'point');
+      $table->decimal('latitude', 10, 8)->nullable();
+      $table->decimal('longitude', 11, 8)->nullable();
       $table->string('timezone')->nullable(); // tambahan
       $table->timestamps();
 
+      $table->index(['latitude', 'longitude']);
       $table->index("name");
-      $table->spatialIndex('coordinates');
     });
   }
 

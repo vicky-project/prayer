@@ -75,14 +75,8 @@ class FetchPrayerData extends Command
 
         foreach ($province['cities'] as $cityData) {
           // Ambil koordinat dari data JSON
-          $lat = isset($cityData['coordinate']['latitude']) ? (float) $cityData['coordinate']['latitude'] : null;
-          $lon = isset($cityData['coordinate']['longitude']) ? (float) $cityData['coordinate']['longitude'] : null;
-
-          // Buat Point object (latitude, longitude)
-          $point = null;
-          if ($lat !== null && $lon !== null) {
-            $point = new Point(lat: $lat, lng: $lon);
-          }
+          $lat = $cityData['coordinate']['latitude'] ?? null;
+          $lon = $cityData['coordinate']['longitude'] ?? null;
 
           // Simpan atau update city (tanpa latitude/longitude terpisah)
           $city = City::updateOrCreate(
@@ -92,12 +86,13 @@ class FetchPrayerData extends Command
               'slug' => $cityData['slug'] ?? null,
               'province_id' => $provinceId,
               'province_name' => $provinceName,
-              'coordinates' => $point,
+              'latitude' => $lat,
+              'longitude' => $lon,
             ]
           );
 
           // Jika koordinat ada dan timezone belum diisi, isi timezone
-          if ($point && empty($city->timezone)) {
+          if ($lat && $lon && empty($city->timezone)) {
             $timezone = $this->prayerService->getTimezoneFromCoordinates($lat, $lon);
             $city->timezone = $timezone;
             $city->save();
