@@ -189,7 +189,7 @@
       lat = String(sett.latitude);
       lon = String(sett.longitude);
     }
-    const city = (sett.city && sett.city !== null) ? String(sett.city): '';
+    const city = (sett.default_location.city && sett.default_location.city !== null) ? String(sett.city): '';
     const notifications = sett.notifications_prayer_enabled === true;
     const datalistId = 'city-suggestions';
 
@@ -211,11 +211,11 @@
     <div class="row">
     <div class="col-md-6 mb-3">
     <label class="form-label">Latitude</label>
-    <input type="number" step="any" class="form-control" id="latitude" value="${Core.escapeHtml(lat)}" placeholder="-6.2088">
+    <input type="number" step="any" class="form-control" id="latitude" name="latitude" value="${Core.escapeHtml(lat)}" placeholder="-6.2088">
     </div>
     <div class="col-md-6 mb-3">
     <label class="form-label">Longitude</label>
-    <input type="number" step="any" class="form-control" id="longitude" value="${Core.escapeHtml(lon)}" placeholder="106.8456">
+    <input type="number" step="any" class="form-control" id="longitude" name="longitude" value="${Core.escapeHtml(lon)}" placeholder="106.8456">
     </div>
     </div>
     <div class="mb-3">
@@ -224,7 +224,7 @@
     </div>
     <hr>
     <div class="form-check form-switch mb-3">
-    <input class="form-check-input" type="checkbox" id="notifications_enabled" ${notifications ? 'checked': ''}>
+    <input class="form-check-input" type="checkbox" id="notifications_enabled" name="notifications_enabled" value="1" ${notifications ? 'checked': ''}>
     <label class="form-check-label">Aktifkan notifikasi waktu shalat</label>
     </div>
     <button type="submit" class="btn btn-primary w-100">Simpan Pengaturan</button>
