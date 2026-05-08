@@ -191,6 +191,7 @@
     }
     const city = (sett.city && sett.city !== null) ? String(sett.city): '';
     const notifications = sett.notifications_prayer_enabled === true;
+    const datalistId = 'city-suggestions';
 
     const html = `
     <div class="card shadow">
@@ -204,7 +205,8 @@
     <p class="text-muted small">Kosongkan untuk meminta lokasi setiap kali.</p>
     <div class="mb-3">
     <label class="form-label">Nama Kota</label>
-    <input type="text" class="form-control" id="city" value="${Core.escapeHtml(city)}" placeholder="Contoh: Jakarta">
+    <input type="text" class="form-control" id="city" name="city" list="${datalistId}" value="${Core.escapeHtml(city)}" placeholder="Contoh: Jakarta">
+    <datalist id="${datalistId}"></datalist>
     </div>
     <div class="row">
     <div class="col-md-6 mb-3">
@@ -235,6 +237,41 @@
     prayerDiv.style.display = 'none';
     settingsDiv.style.display = 'block';
     loadingDiv.style.display = 'none';
+
+    // Autocomplete kota
+    const cityInput = document.getElementById('city');
+    if (cityInput) {
+      let debounceTimer;
+      cityInput.addEventListener('input', function(e) {
+        clearTimeout(debounceTimer);
+        const keyword = e.target.value.trim();
+        if (keyword.length < 2) {
+          const datalist = document.getElementById(datalistId);
+          if (datalist) datalist.innerHTML = '';
+          return;
+        }
+        debounceTimer = setTimeout(async () => {
+          try {
+            const res = await Core.api.get(`/api/prayer/cities/search?q=${encodeURIComponent(keyword)}`);
+            if (res.success && res.data) {
+              const datalist = document.getElementById(datalistId);
+              if (datalist) {
+                datalist.innerHTML = '';
+                res.data.forEach(cityItem => {
+                  const option = document.createElement('option');
+                  option.value = cityItem.name;
+                  option.textContent = cityItem.province_name ? `${cityItem.name} (${cityItem.province_name})`: cityItem.name;
+                  datalist.appendChild(option);
+                });
+              }
+            }
+          } catch (err) {
+            console.warn('Autocomplete gagal:', err);
+          }
+        },
+          300);
+      });
+    }
   }
 
   window.PrayerAppUI = {

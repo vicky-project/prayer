@@ -8,6 +8,7 @@ Route::middleware('auth:sanctum')
 ->name("prayer.")
 ->group(function() {
   Route::get("settings", [PrayerController::class, "settings"])->name("settings");
+  Route::get('cities/search', [PrayerController::class, 'searchCities'])->name('cities.search');
   Route::post("times", [PrayerController::class, "getTimes"])->name("times");
   Route::post("settings", [PrayerController::class, "update"]);
 });

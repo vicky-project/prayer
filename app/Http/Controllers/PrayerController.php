@@ -8,6 +8,7 @@ use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Validator;
 use Modules\Prayer\Services\PrayerTimeService;
 use Modules\Prayer\Http\Requests\LocationRequest;
+use Modules\Prayer\Models\City;
 use Modules\Telegram\Services\TelegramService;
 use Modules\Telegram\Models\TelegramUser;
 
@@ -116,5 +117,20 @@ class PrayerController extends Controller
       \Log::error("Gagal menyimpan pengaturan", ['error' => $e->getMessage()]);
       return response()->json(["success" => false, "message" => $e->getMessage()], 500);
     }
+  }
+
+
+  public function searchCities(Request $request) {
+    $query = $request->input('q');
+    if (strlen($query) < 2) {
+      return response()->json(['success' => true, 'data' => []]);
+    }
+
+    $cities = City::where('name', 'LIKE', $query . '%')
+    ->orWhere('name', 'LIKE', '%' . $query . '%')
+    ->limit(10)
+    ->get(['name', 'province_name']);
+
+    return response()->json(['success' => true, 'data' => $cities]);
   }
 }
