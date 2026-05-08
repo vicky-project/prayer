@@ -189,7 +189,7 @@
       lat = String(sett.latitude);
       lon = String(sett.longitude);
     }
-    const city = (sett.default_location.city && sett.default_location.city !== null) ? String(sett.city): '';
+    const city = (sett.city && sett.city !== null) ? String(sett.city): '';
     const notifications = sett.notifications_prayer_enabled === true;
     const datalistId = 'city-suggestions';
 
