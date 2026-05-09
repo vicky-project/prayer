@@ -326,7 +326,7 @@
     <h4 class="mb-0"><i class="bi bi-calendar-week me-2"></i>Jadwal Shalat 7 Hari</h4>
     <button id="backToPrayerFromWeeklyBtn" class="btn btn-sm btn-outline-light"><i class="bi bi-arrow-left"></i> Kembali</button>
     </div>
-    <div class="card-body">
+    <div class="card-body px-0">
     <div class="table-responsive">
     <table id="table-range" class="table table-bordered table-striped mb-0 text-center">
     <thead>
