@@ -50,6 +50,10 @@
   .text-muted {
     color: var(--tg-theme-hint-color) !important;
   }
+  .table-responsive {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+  }
   #main-table {
     color: var(--tg-theme-text-color);
   }
@@ -110,7 +114,6 @@
   #table-range th,
   #table-range td {
     vertical-align: middle;
-    font-size: 0.85rem;
     padding: 0.5rem 0.75rem;
     white-space: nowrap;
   }
