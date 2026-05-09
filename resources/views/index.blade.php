@@ -107,17 +107,22 @@
     color: var(--tg-theme-hint-color);
     word-break: break-word;
   }
-  #weekly-view .table th,
-  #weekly-view .table td {
+  #prayer-view .table th,
+  #prayer-view .table td {
     vertical-align: middle;
-    text-align: center;
+    font-size: 0.85rem;
+    padding: 0.5rem;
   }
-  #weekly-view .table td:first-child {
-    text-align: left;
+  @media (max-width: 576px) {
+    #prayer-view .table th,
+    #prayer-view .table td {
+      font-size: 0.7rem;
+      padding: 0.3rem;
+    }
   }
-  #weekly-view .card-header {
-    background-color: #0d6efd;
-    color: white;
+  #prayer-view .table th:first-child,
+  #prayer-view .table td:first-child {
+    background-color: rgba(var(--tg-theme-button-color-rgb), 0.1);
   }
 </style>
 @endpush

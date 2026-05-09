@@ -320,6 +320,7 @@
       try {
         const state = Core.getState();
         let body = {};
+
         // Prioritaskan dari data prayer yang sedang ditampilkan
         if (state.prayer && state.prayer.city) {
           body.city = state.prayer.city;
@@ -338,17 +339,20 @@
             }
           }
         }
+
         if (!body.city && !body.latitude) {
           throw new Error('Lokasi tidak diketahui. Silakan set lokasi di pengaturan.');
         }
+
         const res = await Core.api.post('/api/prayer/times/range', body);
         if (res.success && res.data && res.data.length) {
-          UI.renderWeeklyView(res.data);
+          // Tampilkan halaman terpisah (ganti prayer-view)
+          UI.renderWeeklyTableView(res.data);
         } else {
           throw new Error(res.message || 'Data jadwal mingguan tidak tersedia');
         }
       } catch (err) {
-        console.log(err);
+        console.error(err)
         Core.showToast(err.message, 'danger');
       } finally {
         Core.hideLoading();

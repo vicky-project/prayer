@@ -295,62 +295,81 @@
     }
   }
 
-  function renderWeeklyView(weeklyData) {
-    // Hapus tampilan mingguan sebelumnya jika ada
-    const existingWeekly = document.getElementById('weekly-view');
-    if (existingWeekly) existingWeekly.remove();
+  function renderWeeklyTableView(weeklyData) {
+    const prayerDiv = document.getElementById('prayer-view');
+    const settingsDiv = document.getElementById('settings-view');
+    if (!prayerDiv) return;
 
-    let html = `
-    <div id="weekly-view" class="card mt-3">
-    <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
-    <span><i class="bi bi-calendar-week me-2"></i>Jadwal Shalat 7 Hari</span>
-    <button type="button" class="btn-close btn-close-white" id="closeWeeklyBtn" aria-label="Close"></button>
+    // Sembunyikan settings jika terbuka
+    if (settingsDiv) settingsDiv.style.display = 'none';
+
+    // Ekstrak data
+    const dates = weeklyData.map(day => day.date);
+    const hijriDates = weeklyData.map(day => day.hijri);
+    // Urutan shalat yang akan ditampilkan (abaikan imsak & terbit)
+    const prayerNames = ['subuh',
+      'dzuhur',
+      'ashar',
+      'maghrib',
+      'isya'];
+    const prayerLabels = {
+      subuh: 'Subuh',
+      dzuhur: 'Dzuhur',
+      ashar: 'Ashar',
+      maghrib: 'Maghrib',
+      isya: 'Isya'
+    };
+
+    let tableHtml = `
+    <div class="card shadow">
+    <div class="card-header d-flex justify-content-between align-items-center">
+    <h4 class="mb-0"><i class="bi bi-calendar-week me-2"></i>Jadwal Shalat 7 Hari</h4>
+    <button id="backToPrayerFromWeeklyBtn" class="btn btn-sm btn-outline-light"><i class="bi bi-arrow-left"></i> Kembali</button>
     </div>
     <div class="card-body p-0">
     <div class="table-responsive">
-    <table class="table table-sm table-striped mb-0">
-    <thead class="table-dark">
-    <tr><th>Tanggal</th><th>Subuh</th><th>Dzuhur</th><th>Ashar</th><th>Maghrib</th><th>Isya</th></tr>
-    </thead>
-    <tbody>
+    <table class="table table-bordered table-striped mb-0 text-center">
+    <thead>
+    <tr>
+    <th>Waktu Shalat</th>
     `;
-    for (let day of weeklyData) {
-      html += `
-      <tr>
-      <td>${Core.escapeHtml(day.date)}<br><small class="text-muted">${Core.escapeHtml(day.hijri)}</small></td>
-      <td>${Core.escapeHtml(day.jadwal.subuh)}</td>
-      <td>${Core.escapeHtml(day.jadwal.dzuhur)}</td>
-      <td>${Core.escapeHtml(day.jadwal.ashar)}</td>
-      <td>${Core.escapeHtml(day.jadwal.maghrib)}</td>
-      <td>${Core.escapeHtml(day.jadwal.isya)}</td>
-      </tr>
-      `;
+    // Kolom tanggal (7 hari)
+    for (let i = 0; i < dates.length; i++) {
+      tableHtml += `<th>${Core.escapeHtml(dates[i])}<br><small class="text-muted">${Core.escapeHtml(hijriDates[i])}</small></th>`;
     }
-    html += `
-    </tbody>
-    </table>
-    </div>
-    </div>
-    </div>
-    `;
-    // Append ke body card utama
-    const cardBody = document.querySelector('#prayer-view .card-body');
-    if (cardBody) {
-      cardBody.insertAdjacentHTML('beforeend', html);
+    tableHtml += `</tr></thead><tbody>`;
+
+    // Baris per shalat
+    for (let p of prayerNames) {
+      tableHtml += `<tr><th class="bg-light">${prayerLabels[p]}</th>`;
+      for (let i = 0; i < weeklyData.length; i++) {
+        const time = weeklyData[i].jadwal[p] || '-';
+        tableHtml += `<td>${Core.escapeHtml(time)}</td>`;
+      }
+      tableHtml += `</tr>`;
     }
-    // Event untuk close button
-    const closeBtn = document.getElementById('closeWeeklyBtn');
-    if (closeBtn) {
-      closeBtn.addEventListener('click', () => {
-        const weeklyDiv = document.getElementById('weekly-view');
-        if (weeklyDiv) weeklyDiv.remove();
+    tableHtml += `</tbody></table></div></div></div>`;
+
+    prayerDiv.innerHTML = tableHtml;
+    prayerDiv.style.display = 'block';
+
+    // Event listener tombol kembali
+    const backBtn = document.getElementById('backToPrayerFromWeeklyBtn');
+    if (backBtn) {
+      backBtn.addEventListener('click', () => {
+        // Kembali ke tampilan utama (prayer view)
+        Core.setState({
+          currentView: 'prayer'
+        });
+        // State akan memicu render ulang prayer view
       });
     }
   }
 
+  // Update ekspor UI
   window.PrayerAppUI = {
     renderPrayerView: renderPrayerView,
     renderSettingsView: renderSettingsView,
-    renderWeeklyView: renderWeeklyView
+    renderWeeklyTableView: renderWeeklyTableView
   };
 })(window, document);
