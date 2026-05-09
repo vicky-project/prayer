@@ -373,14 +373,6 @@
     prayerDiv.innerHTML = html;
     prayerDiv.style.display = 'block';
 
-    // Event listener dropdown
-    const select = document.getElementById('rangeDaysSelect');
-    if (select) {
-      select.addEventListener('change', (e) => {
-        const newDays = parseInt(e.target.value);
-        fetchRangePrayerTimes(newDays);
-      });
-    }
     const backBtn = document.getElementById('backToPrayerFromRangeBtn');
     if (backBtn) {
       backBtn.addEventListener('click', () => {

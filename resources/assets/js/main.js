@@ -310,6 +310,7 @@
       }
     }
 
+    // ======================== RANGE PRAYER TIMES ========================
     async function fetchRangePrayerTimes(days = 7) {
       if (isFetchingPrayer) return;
       isFetchingPrayer = true;
@@ -319,12 +320,15 @@
         let body = {
           days: days
         };
+
+        // Prioritaskan dari data prayer yang sedang ditampilkan
         if (state.prayer && state.prayer.city) {
           body.city = state.prayer.city;
         } else if (state.prayer && state.prayer.latitude && state.prayer.longitude) {
           body.latitude = state.prayer.latitude;
           body.longitude = state.prayer.longitude;
         } else {
+          // Fallback ke settings default location
           const settings = state.settings;
           if (settings && settings.default_location) {
             if (settings.default_location.city) {
@@ -335,11 +339,14 @@
             }
           }
         }
+
         if (!body.city && !body.latitude) {
           throw new Error('Lokasi tidak diketahui. Silakan set lokasi di pengaturan.');
         }
+
         const res = await Core.api.post('/api/prayer/times/range', body);
         if (res.success && res.data && res.data.length) {
+          // Panggil UI renderRangeTableView (harus sudah didefinisikan di page.js)
           UI.renderRangeTableView(res.data, days);
         } else {
           throw new Error(res.message || 'Data jadwal tidak tersedia');
@@ -402,7 +409,7 @@
             }
           })();
         } else if (target.id === 'weeklyViewBtn' || target.closest('#weeklyViewBtn')) {
-          fetchRangePrayerTimes(7);
+          fetchRangePrayerTimes(7); // default 7 hari
         }
       });
 
@@ -424,6 +431,14 @@
               reminder_minutes: reminderSelect ? parseInt(reminderSelect.value): 0
             };
             saveSettings(formData);
+          }
+        });
+
+      document.body.addEventListener('change',
+        (e) => {
+          if (e.target.id === 'rangeDaysSelect') {
+            const days = parseInt(e.target.value);
+            fetchRangePrayerTimes(days);
           }
         });
     }
