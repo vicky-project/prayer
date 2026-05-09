@@ -188,6 +188,7 @@ class PrayerTimeService
 
   /**
   * Get prayer times for a range of dates (e.g. weekly)
+  * Imsak hanya dikirim jika bulan Hijriah adalah Ramadhan
   */
   public function getPrayerTimesRange(int $cityId, string $startDate, string $endDate): array
   {
@@ -198,18 +199,23 @@ class PrayerTimeService
 
     $result = [];
     foreach ($prayers as $prayer) {
+      $isRamadhan = ($prayer->date->toHijri()->month === 9);
+      $jadwal = [
+        'subuh' => $prayer->subuh,
+        'dzuhur' => $prayer->dzuhur,
+        'ashar' => $prayer->ashar,
+        'maghrib' => $prayer->maghrib,
+        'isya' => $prayer->isya,
+      ];
+      // Hanya tambahkan imsak jika bulan Ramadhan
+      if ($isRamadhan) {
+        $jadwal['imsak'] = $prayer->imsak;
+      }
+
       $result[] = [
         'date' => $prayer->date->format('d-m-Y'),
         'hijri' => $prayer->date->toHijri()->toDateString(),
-        'jadwal' => [
-          'imsak' => $prayer->imsak,
-          'subuh' => $prayer->subuh,
-          'terbit' => $prayer->terbit,
-          'dzuhur' => $prayer->dzuhur,
-          'ashar' => $prayer->ashar,
-          'maghrib' => $prayer->maghrib,
-          'isya' => $prayer->isya,
-        ]
+        'jadwal' => $jadwal
       ];
     }
     return $result;
