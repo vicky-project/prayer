@@ -1,4 +1,4 @@
-// main.js for Prayer Times - FINAL with proper geolocation error handling
+// main.js for Prayer Times - ONLY browser geolocation with proper error handling
 (function(window, document, undefined) {
   'use strict';
 
@@ -61,7 +61,6 @@
       throw new Error(res.message || 'Gagal memuat pengaturan');
     } catch (err) {
       console.error('fetchSettings error:', err);
-      // Jangan tampilkan toast jika error karena unauthenticated (biarkan fallback geolocation)
       if (err.status !== 401) {
         Core.showToast('Gagal memuat pengaturan: ' + err.message, 'danger');
       }
@@ -134,41 +133,15 @@
     }
   }
 
-  // ----- Geolocation dengan error handling detail -----
-  function getTelegramLocation(timeoutMs = 15000) {
-    return new Promise((resolve, reject) => {
-      const tg = window.Telegram?.WebApp;
-      if (!tg || !tg.LocationManager) {
-        reject(new Error('❌ Telegram WebApp tidak tersedia. Pastikan aplikasi dibuka dari Telegram.'));
-        return;
-      }
-      const timeoutId = setTimeout(() => {
-        reject(new Error('⏱️ Timeout: Telegram tidak merespon permintaan lokasi dalam 15 detik.'));
-      }, timeoutMs);
-
-      tg.LocationManager.init(() => {
-        tg.LocationManager.getLocation((location) => {
-          clearTimeout(timeoutId);
-          if (location && typeof location.latitude === 'number' && typeof location.longitude === 'number') {
-            resolve( {
-              lat: location.latitude, lon: location.longitude
-            });
-          } else {
-            reject(new Error('🚫 Izin lokasi ditolak atau data lokasi tidak valid dari Telegram.'));
-          }
-        });
-      });
-    });
-  }
-
+  // ----- ONLY BROWSER GEOLOCATION dengan error handling user-friendly -----
   function getBrowserLocation(timeoutMs = 15000) {
     return new Promise((resolve, reject) => {
       if (!navigator.geolocation) {
-        reject(new Error('🌐 Browser ini tidak mendukung Geolocation.'));
+        reject(new Error('🌐 Browser ini tidak mendukung Geolocation. Silakan atur lokasi manual di pengaturan.'));
         return;
       }
       const timeoutId = setTimeout(() => {
-        reject(new Error('⏱️ Timeout: Browser tidak mendapatkan lokasi dalam 15 detik.'));
+        reject(new Error('⏱️ Waktu habis saat mengambil lokasi. Pastikan GPS aktif, izinkan akses lokasi, dan coba lagi.'));
       }, timeoutMs);
       navigator.geolocation.getCurrentPosition(
         (pos) => {
@@ -182,7 +155,7 @@
           let errorMsg = '';
           switch (err.code) {
             case err.PERMISSION_DENIED:
-              errorMsg = '🚫 Izin lokasi ditolak. Silakan aktifkan izin lokasi di browser/Telegram.';
+              errorMsg = '🚫 Izin lokasi ditolak. Silakan aktifkan izin lokasi di browser/Telegram, atau atur lokasi manual di pengaturan.';
               break;
             case err.POSITION_UNAVAILABLE:
               errorMsg = '📡 Lokasi tidak tersedia. Pastikan GPS aktif dan sinyal kuat.';
@@ -199,6 +172,7 @@
       });
     }
 
+    // ----- Load from geolocation (tanpa fallback ke Telegram) -----
     async function loadFromGeolocation() {
       if (isGeolocating) {
         console.log('Geolocation already in progress, skipping...');
@@ -207,34 +181,16 @@
       isGeolocating = true;
       const TIMEOUT = 15000;
       try {
-        Core.showLoading('Meminta lokasi... (maks 15 detik)');
-        let loc;
-        let lastError = null;
-        try {
-          loc = await getTelegramLocation(TIMEOUT);
-          console.log('Telegram location success:', loc);
-        } catch (eTele) {
-          console.warn('Telegram location failed:', eTele);
-          lastError = eTele.message;
-          Core.showToast('Telegram: ' + eTele.message, 'warning');
-          // Fallback ke browser
-          try {
-            loc = await getBrowserLocation(TIMEOUT);
-            console.log('Browser location success:', loc);
-          } catch (eBrowser) {
-            console.error('Browser location also failed:', eBrowser);
-            lastError = eBrowser.message;
-            throw new Error(`Lokasi tidak dapat diperoleh: ${lastError}`);
-          }
-        }
-        // Sukses mendapatkan lokasi
+        Core.showLoading('Meminta lokasi (browser)... (maks 15 detik)');
+        const loc = await getBrowserLocation(TIMEOUT);
+        console.log('Browser location success:', loc);
         await saveLocationToSettings(loc.lat, loc.lon);
         await fetchPrayerTimes(loc.lat, loc.lon);
         Core.setState({
           currentView: 'prayer'
         });
       } catch (err) {
-        console.error('loadFromGeolocation error:', err);
+        console.error('Geolocation error:', err);
         Core.setState({
           loading: false, error: err.message
         });
@@ -249,12 +205,12 @@
       }
     }
 
+    // ----- Load default location from settings -----
     async function loadDefaultLocation() {
       if (isGeolocating) return;
       Core.showLoading('Memuat pengaturan...');
       try {
         const settings = await fetchSettings();
-        // Cek apakah ada default_location yang tidak kosong
         const hasDefaultLoc = settings.default_location &&
         (settings.default_location.city ||
           (settings.default_location.latitude && settings.default_location.longitude));
@@ -292,6 +248,7 @@
       }
     }
 
+    // ----- Save settings dari form -----
     async function saveSettings(formData) {
       try {
         Core.showLoading('Menyimpan pengaturan...');
@@ -307,11 +264,9 @@
           Core.showToast('Pengaturan disimpan');
           localStorage.removeItem('prayer_settings_cache');
           await fetchSettings();
-          // Di dalam saveSettings, setelah fetchSettings() dan sebelum set currentView
           const newSettings = Core.getState().settings;
           if (newSettings.default_location && Object.keys(newSettings.default_location).length > 0 &&
             (newSettings.default_location.city || (newSettings.default_location.latitude && newSettings.default_location.longitude))) {
-            // Ada default location, gunakan itu
             if (newSettings.default_location.city) {
               await fetchPrayerTimes(null, null, newSettings.default_location.city);
             } else {
@@ -322,7 +277,6 @@
           } else if (newSettings.latitude && newSettings.longitude) {
             await fetchPrayerTimes(newSettings.latitude, newSettings.longitude);
           } else {
-            // Tidak ada lokasi sama sekali, minta ulang
             await loadFromGeolocation();
           }
           Core.setState({
@@ -356,7 +310,7 @@
       }
     }
 
-    // ----- Event Delegation (sama seperti sebelumnya) -----
+    // ----- Event Delegation (semua lokasi menggunakan browser) -----
     function setupEventDelegation() {
       document.body.addEventListener('click', (e) => {
         const target = e.target;
@@ -375,7 +329,11 @@
         } else if (target.id === 'useDefaultLocationBtn' || target.closest('#useDefaultLocationBtn')) {
           const sett = Core.getState().settings;
           if (sett.default_location) {
-            fetchPrayerTimes(sett.default_location.latitude, sett.default_location.longitude);
+            if (sett.default_location.city) {
+              fetchPrayerTimes(null, null, sett.default_location.city);
+            } else {
+              fetchPrayerTimes(sett.default_location.latitude, sett.default_location.longitude);
+            }
           } else if (sett.city) {
             fetchPrayerTimes(null, null, sett.city);
           } else if (sett.latitude && sett.longitude) {
@@ -386,7 +344,7 @@
             const statusSpan = document.getElementById('locationStatus');
             if (statusSpan) statusSpan.innerText = 'Meminta lokasi...';
             try {
-              const loc = await getTelegramLocation(10000);
+              const loc = await getBrowserLocation(10000);
               const latInput = document.getElementById('latitude');
               const lonInput = document.getElementById('longitude');
               const cityInput = document.getElementById('city');
@@ -397,21 +355,8 @@
               }
               if (statusSpan) statusSpan.innerText = 'Lokasi berhasil diambil.';
             } catch (err) {
-              try {
-                const locBrowser = await getBrowserLocation(10000);
-                const latInput = document.getElementById('latitude');
-                const lonInput = document.getElementById('longitude');
-                const cityInput = document.getElementById('city');
-                if (latInput && lonInput && cityInput) {
-                  latInput.value = locBrowser.lat;
-                  lonInput.value = locBrowser.lon;
-                  cityInput.value = '';
-                }
-                if (statusSpan) statusSpan.innerText = 'Lokasi berhasil diambil (browser).';
-              } catch (err2) {
-                if (statusSpan) statusSpan.innerText = 'Gagal mengambil lokasi.';
-                Core.showToast(err2.message, 'danger');
-              }
+              if (statusSpan) statusSpan.innerText = 'Gagal: ' + err.message;
+              Core.showToast(err.message, 'danger');
             }
           })();
         }
@@ -431,7 +376,7 @@
             latitude: latEl.value ? parseFloat(latEl.value): undefined,
             longitude: lonEl.value ? parseFloat(lonEl.value): undefined,
             notifications_enabled: notifyEl.checked,
-            reminder_minutes: parseInt(reminderSelect.value)
+            reminder_minutes: reminderSelect ? parseInt(reminderSelect.value): 0
           };
           saveSettings(formData);
         }
