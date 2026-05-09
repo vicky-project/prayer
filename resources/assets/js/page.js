@@ -192,7 +192,7 @@
       city = String(sett.city);
     }
 
-    const notifications = sett.notifications_prayer_enabled === true;
+    const notifications = sett.notifications_enabled === true;
     const reminderMinutes = sett.reminder_minutes !== undefined ? sett.reminder_minutes: 0;
     const datalistId = 'city-suggestions';
 

@@ -2,7 +2,7 @@
 
 namespace Modules\Prayer\Http\Controllers;
 
-use App\Http\Controllers\Controller;
+use Illuminate\Routing\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Validator;
@@ -85,15 +85,13 @@ class PrayerController extends Controller
     try {
       $data = $telegramUser->data ?? [];
       $prayer = $data['prayer'] ?? [];
-      $defaultLocation = $prayer['default_location'] ?? [];
+      $defaultLocation = [];
 
       $city = $request->input('city');
       $lat = $request->input('latitude');
       $lon = $request->input('longitude');
 
-      if (empty($city) && empty($lat) && empty($lon)) {
-        $defaultLocation = [];
-      } elseif (!empty($city)) {
+      if (!empty($city)) {
         $defaultLocation = ['city' => $city];
       } elseif (!empty($lat) && !empty($lon)) {
         $defaultLocation = [
