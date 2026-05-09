@@ -204,6 +204,7 @@ class PrayerTimeService
         'jadwal' => [
           'imsak' => $prayer->imsak,
           'subuh' => $prayer->subuh,
+          'terbit' => $prayer->terbit,
           'dzuhur' => $prayer->dzuhur,
           'ashar' => $prayer->ashar,
           'maghrib' => $prayer->maghrib,
