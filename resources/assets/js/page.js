@@ -359,7 +359,7 @@
     <option value="30" ${days === 30 ? 'selected': ''}>30 hari</option>
     </select>
     </div>
-    <div class="table-responsive" style="max-height: calc(100dvh - 110px); overflow-y: auto;">
+    <div class="table-responsive" style="max-height: calc(100dvh - 100px); overflow-y: auto;">
     <table id="range-table" class="table table-bordered mb-0 text-center">
     <thead class="sticky-top">
     <tr>
