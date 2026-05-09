@@ -91,7 +91,7 @@
     </div>
     <div class="text-center small text-muted mb-2">📅 ${state.prayer.date} | ${state.prayer.hijri}</div>
     <div id="countdown"></div>
-    <div class="table-responsive"><table class="table table-hover"><tbody>${rows}</tbody></table></div>
+    <div class="table-responsive"><table id="main-table" class="table table-hover"><tbody>${rows}</tbody></table></div>
     <div class="text-muted small text-center mt-2"><i class="bi bi-info-circle me-1"></i>Waktu berdasarkan lokasi terdekat</div>
     ${extraButton}
     </div>
@@ -341,7 +341,7 @@
 
     // Baris per shalat
     for (let p of prayerNames) {
-      tableHtml += `<tr><th class="bg-light">${prayerLabels[p]}</th>`;
+      tableHtml += `<tr><th class="text-bg-light">${prayerLabels[p]}</th>`;
       for (let i = 0; i < weeklyData.length; i++) {
         const time = weeklyData[i].jadwal[p] || '-';
         tableHtml += `<td>${Core.escapeHtml(time)}</td>`;

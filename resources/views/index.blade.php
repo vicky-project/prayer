@@ -50,16 +50,16 @@
   .text-muted {
     color: var(--tg-theme-hint-color) !important;
   }
-  .table {
+  #main-table {
     color: var(--tg-theme-text-color);
   }
-  .table-hover tbody tr:hover {
+  #main-table.table-hover tbody tr:hover {
     background-color: var(--tg-theme-section-separator-color);
   }
-  .table td, .table th {
+  #main-table.table td, #main-table.table th {
     border-color: var(--tg-theme-section-separator-color);
   }
-  .table-active {
+  #main-table.table-active {
     background-color: rgba(35, 150, 55, 0.6) !important;
     color: white;
   }
