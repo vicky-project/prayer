@@ -300,20 +300,23 @@
     const settingsDiv = document.getElementById('settings-view');
     if (!prayerDiv) return;
 
-    // Sembunyikan settings jika terbuka
     if (settingsDiv) settingsDiv.style.display = 'none';
 
-    // Ekstrak data
     const dates = weeklyData.map(day => day.date);
     const hijriDates = weeklyData.map(day => day.hijri);
-    // Urutan shalat yang akan ditampilkan (abaikan imsak & terbit)
-    const prayerNames = ['subuh',
+
+    // Urutan shalat: imsak, subuh, terbit, dzuhur, ashar, maghrib, isya
+    const prayerNames = ['imsak',
+      'subuh',
+      'terbit',
       'dzuhur',
       'ashar',
       'maghrib',
       'isya'];
     const prayerLabels = {
+      imsak: 'Imsak',
       subuh: 'Subuh',
+      terbit: 'Terbit',
       dzuhur: 'Dzuhur',
       ashar: 'Ashar',
       maghrib: 'Maghrib',
@@ -333,13 +336,17 @@
     <tr>
     <th>Waktu Shalat</th>
     `;
-    // Kolom tanggal (7 hari)
     for (let i = 0; i < dates.length; i++) {
-      tableHtml += `<th>${Core.escapeHtml(dates[i])}<br><small class="text-muted">${Core.escapeHtml(hijriDates[i])}</small></th>`;
+      // Deteksi apakah hari Jumat (6 hari setelah hari ini? Perhitungan berdasarkan data tanggal)
+      // Kita cek dengan parsing date (dd-mm-yyyy)
+      const parts = dates[i].split('-'); // dd-mm-yyyy
+      const dateObj = new Date(parts[2], parts[1]-1, parts[0]);
+      const isFriday = dateObj.getDay() === 5; // 5 = Jumat
+      const fridayClass = isFriday ? ' class="bg-warning text-dark"': '';
+      tableHtml += `<th${fridayClass}>${Core.escapeHtml(dates[i])}<br><small class="text-muted">${Core.escapeHtml(hijriDates[i])}</small></th>`;
     }
     tableHtml += `</tr></thead><tbody>`;
 
-    // Baris per shalat
     for (let p of prayerNames) {
       tableHtml += `<tr><th class="text-bg-light">${prayerLabels[p]}</th>`;
       for (let i = 0; i < weeklyData.length; i++) {
@@ -353,15 +360,12 @@
     prayerDiv.innerHTML = tableHtml;
     prayerDiv.style.display = 'block';
 
-    // Event listener tombol kembali
     const backBtn = document.getElementById('backToPrayerFromWeeklyBtn');
     if (backBtn) {
       backBtn.addEventListener('click', () => {
-        // Kembali ke tampilan utama (prayer view)
         Core.setState({
           currentView: 'prayer'
         });
-        // State akan memicu render ulang prayer view
       });
     }
   }

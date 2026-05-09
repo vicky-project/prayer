@@ -121,6 +121,10 @@
     max-width: max-content;
     min-width: 100%;
   }
+  #table-range th.bg-warning {
+    background-color: #ffc107 !important;
+    color: #212529;
+  }
   .table th br {
     display: block;
     margin-top: 4px;
