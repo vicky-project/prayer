@@ -438,7 +438,9 @@
         (e) => {
           if (e.target.id === 'rangeDaysSelect') {
             const days = parseInt(e.target.value);
-            fetchRangePrayerTimes(days);
+            if (typeof fetchRangePrayerTimes === 'function') {
+              fetchRangePrayerTimes(days);
+            }
           }
         });
     }

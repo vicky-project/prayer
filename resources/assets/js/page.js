@@ -302,9 +302,9 @@
     if (settingsDiv) settingsDiv.style.display = 'none';
 
     // Tentukan daftar shalat (tampilkan imsak hanya jika ada di data)
-    const sample = weeklyData[0];
+    const hasImsak = weeklyData.some(day => day.jadwal.imsak);
     const prayerNames = [];
-    if (sample.jadwal.imsak) prayerNames.push('imsak');
+    if (hasImsak) prayerNames.push('imsak');
     prayerNames.push('subuh', 'dzuhur', 'ashar', 'maghrib', 'isya');
     const prayerLabels = {
       imsak: 'Imsak',
@@ -319,50 +319,56 @@
     const isFriday = weeklyData.map(day => {
       const parts = day.date.split('-');
       if (parts.length === 3) {
-        const d = new Date(parts[2], parts[1]-1, parts[0]);
+        const d = new Date(parts[2], parts[1] - 1, parts[0]);
         return d.getDay() === 5;
       }
       return false;
     });
 
+    // Helper untuk generate baris tabel (agar tidak terlalu panjang)
+    const generateRows = () => {
+      let rows = '';
+      for (let i = 0; i < weeklyData.length; i++) {
+        const day = weeklyData[i];
+        const jumatClass = isFriday[i] ? 'class="text-warning fw-bold"': '';
+        rows += `<tr>
+        <td style="position: sticky; left: 0; background: var(--tg-theme-secondary-bg-color);" ${jumatClass}>
+        ${Core.escapeHtml(day.date)}<br><small class="text-muted">${Core.escapeHtml(day.hijri)}</small>
+        </td>
+        ${prayerNames.map(p => {
+          const time = day.jadwal[p] || '-';
+          return `<td ${jumatClass}>${Core.escapeHtml(time)}</td>`;
+        }).join('')}
+        </tr>`;
+      }
+      return rows;
+    };
+
     let html = `
     <div class="card shadow">
-    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <div class="card-header d-flex justify-content-between align-items-center">
     <h4 class="mb-0"><i class="bi bi-calendar-week me-2"></i>Jadwal Shalat</h4>
-    <div class="d-flex gap-2">
+    <button id="backToPrayerFromRangeBtn" class="btn btn-sm btn-outline-light"><i class="bi bi-arrow-left"></i> Kembali</button>
+    </div>
+    <div class="card-body p-0">
+    <div class="p-2 border-bottom d-flex justify-content-between align-items-center">
+    <span class="small">Tampilkan:</span>
     <select id="rangeDaysSelect" class="form-select form-select-sm w-auto">
     <option value="7" ${days === 7 ? 'selected': ''}>7 hari</option>
     <option value="14" ${days === 14 ? 'selected': ''}>14 hari</option>
     <option value="30" ${days === 30 ? 'selected': ''}>30 hari</option>
     </select>
-    <button id="backToPrayerFromRangeBtn" class="btn btn-sm btn-outline-light"><i class="bi bi-arrow-left"></i> Kembali</button>
     </div>
-    </div>
-    <div class="card-body p-0" style="max-height: 65vh; overflow-y: auto;">
-    <div class="table-responsive">
+    <div class="table-responsive" style="max-height: 65vh; overflow-y: auto;">
     <table id="range-table" class="table table-bordered mb-0 text-center">
-    <thead class="sticky-top bg-dark">
+    <thead class="sticky-top">
     <tr>
     <th style="position: sticky; left: 0; background: var(--tg-theme-secondary-bg-color); z-index: 3;">Tanggal</th>
     ${prayerNames.map(p => `<th>${prayerLabels[p]}</th>`).join('')}
     </tr>
     </thead>
     <tbody>
-    `;
-    for (let i = 0; i < weeklyData.length; i++) {
-      const day = weeklyData[i];
-      const jumatClass = isFriday[i] ? 'class="text-warning fw-bold"': '';
-      html += `<tr>
-      <td style="position: sticky; left: 0; background: var(--tg-theme-secondary-bg-color);" ${jumatClass}>
-      ${Core.escapeHtml(day.date)}<br><small class="text-muted">${Core.escapeHtml(day.hijri)}</small>
-      </td>`;
-      for (let p of prayerNames) {
-        const time = day.jadwal[p] || '-';
-        html += `<td ${jumatClass}>${Core.escapeHtml(time)}</td>`;
-      }
-      html += `</tr>`;
-    }
-    html += `
+    ${generateRows()}
     </tbody>
     </table>
     </div>
@@ -373,6 +379,7 @@
     prayerDiv.innerHTML = html;
     prayerDiv.style.display = 'block';
 
+    // Event listener untuk tombol kembali
     const backBtn = document.getElementById('backToPrayerFromRangeBtn');
     if (backBtn) {
       backBtn.addEventListener('click', () => {
@@ -381,6 +388,7 @@
         });
       });
     }
+    // Catatan: dropdown akan ditangani oleh event delegation di main.js (change)
   }
 
   // Update ekspor UI
