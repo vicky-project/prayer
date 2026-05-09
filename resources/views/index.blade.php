@@ -121,6 +121,11 @@
     max-width: max-content;
     min-width: 100%;
   }
+  /* Warna teks untuk kolom Jumat */
+  #table-range .jumat-column {
+    color: #ffc107 !important;
+    font-weight: bold;
+  }
   .table th br {
     display: block;
     margin-top: 4px;
