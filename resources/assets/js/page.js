@@ -75,7 +75,7 @@
     const html = `
     <div class="card shadow">
     <div class="card-header d-flex justify-content-between align-items-center">
-    <h4 class="mb-0"><i class="bi bi-moon-stars me-2"></i>Jadwal Waktu Shalat</h4>
+    <h4 class="mb-0"><i class="bi bi-moon-stars me-2"></i>Jadwal Shalat</h4>
     <div class="d-flex gap-1">
     <button id="settingsBtn" class="btn btn-sm btn-outline-light"><i class="bi bi-gear-fill"></i></button>
     <button id="refreshPrayerBtn" class="btn btn-sm btn-outline-light"><i class="bi bi-arrow-repeat"></i></button>
@@ -328,7 +328,7 @@
     </div>
     <div class="card-body p-0">
     <div class="table-responsive">
-    <table class="table table-bordered table-striped mb-0 text-center">
+    <table id="table-range" class="table table-bordered table-striped mb-0 text-center">
     <thead>
     <tr>
     <th>Waktu Shalat</th>

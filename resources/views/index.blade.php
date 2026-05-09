@@ -107,15 +107,15 @@
     color: var(--tg-theme-hint-color);
     word-break: break-word;
   }
-  #prayer-view .table th,
-  #prayer-view .table td {
+  #table-range th,
+  #table-range td {
     vertical-align: middle;
     font-size: 0.85rem;
     padding: 0.5rem;
   }
   @media (max-width: 576px) {
-    #prayer-view .table th,
-    #prayer-view .table td {
+    #table-range th,
+    #table-range td {
       font-size: 0.7rem;
       padding: 0.3rem;
     }
