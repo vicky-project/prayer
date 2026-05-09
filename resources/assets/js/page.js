@@ -328,7 +328,7 @@
     </div>
     <div class="card-body p-0">
     <div class="table-responsive">
-    <table id="table-range" class="table table-bordered table-striped mb-0 text-center">
+    <table id="table-range" class="table table-bordered table-striped mb-0 text-center" style="overflow-x: scroll;">
     <thead>
     <tr>
     <th>Waktu Shalat</th>
