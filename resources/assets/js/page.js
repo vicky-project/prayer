@@ -337,7 +337,7 @@
     <table id="table-range" class="table table-bordered mb-0 text-center">
     <thead>
     <tr>
-    <th>Waktu Shalat</th>
+    <th>Shalat</th>
     `;
     for (let i = 0; i < dates.length; i++) {
       const fridayClass = isFridayColumn[i] ? ' class="text-warning fw-bold"': '';
