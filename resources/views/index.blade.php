@@ -128,7 +128,6 @@
   @media (max-width: 576px) {
     #table-range th,
     #table-range td {
-      font-size: 0.7rem;
       padding: 0.3rem;
     }
   }
