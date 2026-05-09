@@ -342,7 +342,7 @@
       const parts = dates[i].split('-'); // dd-mm-yyyy
       const dateObj = new Date(parts[2], parts[1]-1, parts[0]);
       const isFriday = dateObj.getDay() === 5; // 5 = Jumat
-      const fridayClass = isFriday ? ' class="bg-warning text-dark"': '';
+      const fridayClass = isFriday ? ' class="text-warning fw-bold"': '';
       tableHtml += `<th${fridayClass}>${Core.escapeHtml(dates[i])}<br><small class="text-muted">${Core.escapeHtml(hijriDates[i])}</small></th>`;
     }
     tableHtml += `</tr></thead><tbody>`;
