@@ -305,14 +305,17 @@
     const dates = weeklyData.map(day => day.date);
     const hijriDates = weeklyData.map(day => day.hijri);
 
-    // Urutan shalat: imsak, subuh, terbit, dzuhur, ashar, maghrib, isya
-    const prayerNames = ['imsak',
-      'subuh',
-      'terbit',
-      'dzuhur',
-      'ashar',
-      'maghrib',
-      'isya'];
+    // Cek setiap kolom apakah merupakan hari Jumat (5 = Jumat)
+    const isFridayColumn = dates.map(date => {
+      const parts = date.split('-'); // dd-mm-yyyy
+      if (parts.length === 3) {
+        const dateObj = new Date(parts[2], parts[1] - 1, parts[0]);
+        return dateObj.getDay() === 5; // Jumat
+      }
+      return false;
+    });
+
+    const prayerNames = ['imsak', 'subuh', 'terbit', 'dzuhur', 'ashar', 'maghrib', 'isya'];
     const prayerLabels = {
       imsak: 'Imsak',
       subuh: 'Subuh',
@@ -337,12 +340,7 @@
     <th>Waktu Shalat</th>
     `;
     for (let i = 0; i < dates.length; i++) {
-      // Deteksi apakah hari Jumat (6 hari setelah hari ini? Perhitungan berdasarkan data tanggal)
-      // Kita cek dengan parsing date (dd-mm-yyyy)
-      const parts = dates[i].split('-'); // dd-mm-yyyy
-      const dateObj = new Date(parts[2], parts[1]-1, parts[0]);
-      const isFriday = dateObj.getDay() === 5; // 5 = Jumat
-      const fridayClass = isFriday ? ' class="text-warning fw-bold"': '';
+      const fridayClass = isFridayColumn[i] ? ' class="text-warning fw-bold"': '';
       tableHtml += `<th${fridayClass}>${Core.escapeHtml(dates[i])}<br><small class="text-muted">${Core.escapeHtml(hijriDates[i])}</small></th>`;
     }
     tableHtml += `</tr></thead><tbody>`;
@@ -351,7 +349,8 @@
       tableHtml += `<tr><th class="text-bg-light">${prayerLabels[p]}</th>`;
       for (let i = 0; i < weeklyData.length; i++) {
         const time = weeklyData[i].jadwal[p] || '-';
-        tableHtml += `<td>${Core.escapeHtml(time)}</td>`;
+        const fridayClass = isFridayColumn[i] ? ' class="text-warning fw-bold"': '';
+        tableHtml += `<td${fridayClass}>${Core.escapeHtml(time)}</td>`;
       }
       tableHtml += `</tr>`;
     }
