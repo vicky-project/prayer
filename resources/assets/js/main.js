@@ -310,25 +310,21 @@
       }
     }
 
-    async function fetchWeeklyPrayerTimes() {
-      if (isFetchingPrayer) {
-        console.log('Already fetching, please wait');
-        return;
-      }
+    async function fetchRangePrayerTimes(days = 7) {
+      if (isFetchingPrayer) return;
       isFetchingPrayer = true;
-      Core.showLoading('Memuat jadwal mingguan...');
+      Core.showLoading(`Memuat jadwal ${days} hari...`);
       try {
         const state = Core.getState();
-        let body = {};
-
-        // Prioritaskan dari data prayer yang sedang ditampilkan
+        let body = {
+          days: days
+        };
         if (state.prayer && state.prayer.city) {
           body.city = state.prayer.city;
         } else if (state.prayer && state.prayer.latitude && state.prayer.longitude) {
           body.latitude = state.prayer.latitude;
           body.longitude = state.prayer.longitude;
         } else {
-          // Fallback ke settings default location
           const settings = state.settings;
           if (settings && settings.default_location) {
             if (settings.default_location.city) {
@@ -339,20 +335,16 @@
             }
           }
         }
-
         if (!body.city && !body.latitude) {
           throw new Error('Lokasi tidak diketahui. Silakan set lokasi di pengaturan.');
         }
-
         const res = await Core.api.post('/api/prayer/times/range', body);
         if (res.success && res.data && res.data.length) {
-          // Tampilkan halaman terpisah (ganti prayer-view)
-          UI.renderWeeklyTableView(res.data);
+          UI.renderRangeTableView(res.data, days);
         } else {
-          throw new Error(res.message || 'Data jadwal mingguan tidak tersedia');
+          throw new Error(res.message || 'Data jadwal tidak tersedia');
         }
       } catch (err) {
-        console.error(err)
         Core.showToast(err.message, 'danger');
       } finally {
         Core.hideLoading();
@@ -410,7 +402,7 @@
             }
           })();
         } else if (target.id === 'weeklyViewBtn' || target.closest('#weeklyViewBtn')) {
-          fetchWeeklyPrayerTimes();
+          fetchRangePrayerTimes(7);
         }
       });
 

@@ -8,101 +8,100 @@
     return;
   }
 
-  // Render halaman utama jadwal shalat
-  function renderPrayerView(state) {
+  function renderRangeTableView(weeklyData, days) {
     const prayerDiv = document.getElementById('prayer-view');
     const settingsDiv = document.getElementById('settings-view');
-    if (!prayerDiv || !settingsDiv) return;
+    if (!prayerDiv) return;
+    if (settingsDiv) settingsDiv.style.display = 'none';
 
-    if (state.loading) {
-      prayerDiv.style.display = 'none';
-      settingsDiv.style.display = 'none';
-      return;
-    }
+    // Tentukan daftar shalat (tampilkan imsak hanya jika ada di data)
+    const sample = weeklyData[0];
+    const prayerNames = [];
+    if (sample.jadwal.imsak) prayerNames.push('imsak');
+    prayerNames.push('subuh', 'dzuhur', 'ashar', 'maghrib', 'isya');
+    const prayerLabels = {
+      imsak: 'Imsak',
+      subuh: 'Subuh',
+      dzuhur: 'Dzuhur',
+      ashar: 'Ashar',
+      maghrib: 'Maghrib',
+      isya: 'Isya'
+    };
 
-    if (state.error) {
-      prayerDiv.innerHTML = '<div class="error-container">' +
-      '<div class="error-message"><i class="bi bi-exclamation-triangle-fill me-2"></i>Gagal memuat data</div>' +
-      '<div class="error-detail">' + Core.escapeHtml(state.error) + '</div>' +
-      '<button class="btn btn-primary btn-sm mt-3" id="retryBtn">Muat Ulang</button></div>';
-      prayerDiv.style.display = 'block';
-      settingsDiv.style.display = 'none';
-      const retryBtn = document.getElementById('retryBtn');
-      if (retryBtn) retryBtn.onclick = () => location.reload();
-      return;
-    }
+    // Deteksi hari Jumat
+    const isFriday = weeklyData.map(day => {
+      const parts = day.date.split('-');
+      if (parts.length === 3) {
+        const d = new Date(parts[2], parts[1]-1, parts[0]);
+        return d.getDay() === 5;
+      }
+      return false;
+    });
 
-    if (!state.prayer) {
-      prayerDiv.innerHTML = '<div class="alert alert-warning">Data jadwal tidak tersedia</div>';
-      prayerDiv.style.display = 'block';
-      settingsDiv.style.display = 'none';
-      return;
-    }
-
-    const jadwal = state.prayer.jadwal;
-    const prayerOrder = ['imsak',
-      'subuh',
-      'terbit',
-      'dhuha',
-      'dzuhur',
-      'ashar',
-      'maghrib',
-      'isya'];
-    const now = Core.getCurrentCityTime();
-    const nowMinutes = now.getHours() * 60 + now.getMinutes();
-    let currentPrayer = null;
-    for (let i = 0; i < prayerOrder.length; i++) {
-      const name = prayerOrder[i];
-      const minutes = Core.timeToMinutes(jadwal[name]);
-      if (minutes <= nowMinutes) currentPrayer = name;
-      else break;
-    }
-
-    let rows = '';
-    for (let name of prayerOrder) {
-      const time = jadwal[name] || '-';
-      const isCurrent = (name === currentPrayer);
-      const rowClass = isCurrent ? 'table-active': '';
-      rows += `<tr class="${rowClass}"><th scope="row">${Core.getPrayerName(name)}</th><td class="text-end">${time}</td></tr>`;
-    }
-
-    let extraButton = '';
-    const sett = state.settings || {};
-    if (sett.default_location || sett.city || (sett.latitude && sett.longitude)) {
-      extraButton = `<button id="useDefaultLocationBtn" class="btn btn-outline-secondary w-100 mt-2"><i class="bi bi-arrow-repeat me-2"></i>Kembali ke Lokasi Default</button>`;
-    }
-
-    const html = `
+    let html = `
     <div class="card shadow">
-    <div class="card-header d-flex justify-content-between align-items-center">
-    <h4 class="mb-0"><i class="bi bi-moon-stars me-2"></i>Jadwal Shalat</h4>
-    <div class="d-flex gap-1">
-    <button id="settingsBtn" class="btn btn-sm btn-outline-light"><i class="bi bi-gear-fill"></i></button>
-    <button id="refreshPrayerBtn" class="btn btn-sm btn-outline-light"><i class="bi bi-arrow-repeat"></i></button>
-    <button id="weeklyViewBtn" class="btn btn-sm btn-outline-light" title="Jadwal Mingguan">
-    <i class="bi bi-calendar-week"></i>
-    </button>
+    <div class="card-header d-flex justify-content-between align-items-center flex-wrap gap-2">
+    <h4 class="mb-0"><i class="bi bi-calendar-week me-2"></i>Jadwal Shalat</h4>
+    <div class="d-flex gap-2">
+    <select id="rangeDaysSelect" class="form-select form-select-sm w-auto">
+    <option value="7" ${days === 7 ? 'selected': ''}>7 hari</option>
+    <option value="14" ${days === 14 ? 'selected': ''}>14 hari</option>
+    <option value="30" ${days === 30 ? 'selected': ''}>30 hari</option>
+    </select>
+    <button id="backToPrayerFromRangeBtn" class="btn btn-sm btn-outline-light"><i class="bi bi-arrow-left"></i> Kembali</button>
     </div>
     </div>
-    <div class="card-body">
-    <div class="text-center mb-2">
-    <i class="bi bi-geo-alt-fill text-primary"></i>
-    <span class="ms-2">${Core.escapeHtml(state.prayer.city || (state.prayer.latitude + ', ' + state.prayer.longitude))}</span>
+    <div class="card-body p-0" style="max-height: 65vh; overflow-y: auto;">
+    <div class="table-responsive">
+    <table id="range-table" class="table table-bordered mb-0 text-center">
+    <thead class="sticky-top bg-dark">
+    <tr>
+    <th style="position: sticky; left: 0; background: var(--tg-theme-secondary-bg-color); z-index: 3;">Tanggal</th>
+    ${prayerNames.map(p => `<th>${prayerLabels[p]}</th>`).join('')}
+    </tr>
+    </thead>
+    <tbody>
+    `;
+    for (let i = 0; i < weeklyData.length; i++) {
+      const day = weeklyData[i];
+      const jumatClass = isFriday[i] ? 'class="text-warning fw-bold"': '';
+      html += `<tr>
+      <td style="position: sticky; left: 0; background: var(--tg-theme-secondary-bg-color);" ${jumatClass}>
+      ${Core.escapeHtml(day.date)}<br><small class="text-muted">${Core.escapeHtml(day.hijri)}</small>
+      </td>`;
+      for (let p of prayerNames) {
+        const time = day.jadwal[p] || '-';
+        html += `<td ${jumatClass}>${Core.escapeHtml(time)}</td>`;
+      }
+      html += `</tr>`;
+    }
+    html += `
+    </tbody>
+    </table>
     </div>
-    <div class="text-center small text-muted mb-2">📅 ${state.prayer.date} | ${state.prayer.hijri}</div>
-    <div id="countdown"></div>
-    <div class="table-responsive"><table id="main-table" class="table table-hover"><tbody>${rows}</tbody></table></div>
-    <div class="text-muted small text-center mt-2"><i class="bi bi-info-circle me-1"></i>Waktu berdasarkan lokasi terdekat</div>
-    ${extraButton}
     </div>
     </div>
     `;
 
     prayerDiv.innerHTML = html;
     prayerDiv.style.display = 'block';
-    settingsDiv.style.display = 'none';
 
-    startCountdown(jadwal);
+    // Event listener dropdown
+    const select = document.getElementById('rangeDaysSelect');
+    if (select) {
+      select.addEventListener('change', (e) => {
+        const newDays = parseInt(e.target.value);
+        fetchRangePrayerTimes(newDays);
+      });
+    }
+    const backBtn = document.getElementById('backToPrayerFromRangeBtn');
+    if (backBtn) {
+      backBtn.addEventListener('click', () => {
+        Core.setState({
+          currentView: 'prayer'
+        });
+      });
+    }
   }
 
   function startCountdown(jadwal) {
@@ -373,6 +372,6 @@
   window.PrayerAppUI = {
     renderPrayerView: renderPrayerView,
     renderSettingsView: renderSettingsView,
-    renderWeeklyTableView: renderWeeklyTableView
+    renderRangeTableView: renderRangeTableView
   };
 })(window, document);

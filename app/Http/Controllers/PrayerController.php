@@ -49,13 +49,15 @@ class PrayerController extends Controller
   }
 
   public function getRange(Request $request) {
-    $telegramUser = $request->user();
+    $telegramUser = $request->user('sanctum');
     $city = $request->input('city');
     $lat = $request->input('latitude');
     $lon = $request->input('longitude');
+    $days = (int) $request->input('days', 7);
+    $days = min(max($days, 1), 30);
 
     try {
-      // Cari kota berdasarkan input atau default user
+      // Cari cityModel (sama seperti di getTimes)
       $cityModel = null;
       if ($city) {
         $cityModel = $this->prayerService->findCityByName($city);
@@ -75,8 +77,8 @@ class PrayerController extends Controller
         return response()->json(['success' => false, 'message' => 'Kota tidak ditemukan'], 404);
       }
 
-      $startDate = $request->input('start_date', Carbon::today()->toDateString());
-      $endDate = $request->input('end_date', Carbon::today()->addDays(6)->toDateString());
+      $startDate = Carbon::today()->toDateString();
+      $endDate = Carbon::today()->addDays($days - 1)->toDateString();
 
       $data = $this->prayerService->getPrayerTimesRange($cityModel->id, $startDate, $endDate);
 

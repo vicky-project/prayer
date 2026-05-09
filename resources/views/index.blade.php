@@ -111,39 +111,25 @@
     color: var(--tg-theme-hint-color);
     word-break: break-word;
   }
-  /* Styling untuk tabel jadwal mingguan */
-  #table-range th,
-  #table-range td {
-    vertical-align: middle;
-    padding: 0.5rem 0.75rem;
-    white-space: nowrap;
-  }
-  #table-range.table {
-    max-width: max-content;
-    min-width: 100%;
-  }
-  .table th br {
-    display: block;
-    margin-top: 4px;
-  }
-  @media (max-width: 576px) {
-    #table-range th,
-    #table-range td {
-      padding: 0.3rem;
-    }
-  }
-
-  /* Sticky kolom pertama (Waktu Shalat) */
-  #table-range thead th:first-child,
-  #table-range tbody th:first-child {
+  /* Sticky header dan kolom pertama */
+  #range-table thead th {
     position: sticky;
-    left: 0;
+    top: 0;
     background-color: var(--tg-theme-secondary-bg-color);
     z-index: 2;
-    border-right: 2px solid var(--tg-theme-section-separator-color);
   }
-  #table-range thead th:first-child {
+  #range-table thead th:first-child {
     z-index: 3;
+  }
+  /* Gaya untuk sel tanggal */
+  #range-table tbody td:first-child {
+    font-weight: 500;
+    background-color: var(--tg-theme-bg-color);
+  }
+  /* Warna teks untuk hari Jumat */
+  #range-table .text-warning {
+    color: #ffc107 !important;
+    font-weight: bold;
   }
 </style>
 @endpush
