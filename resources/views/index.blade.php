@@ -120,10 +120,6 @@
       padding: 0.3rem;
     }
   }
-  #prayer-view .table th:first-child,
-  #prayer-view .table td:first-child {
-    background-color: rgba(var(--tg-theme-button-color-rgb), 0.1);
-  }
 </style>
 @endpush
 
