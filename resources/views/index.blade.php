@@ -140,6 +140,7 @@
     left: 0;
     background-color: var(--tg-theme-secondary-bg-color);
     z-index: 2;
+    border-right: 2px solid var(--tg-theme-section-separator-color);
   }
   #table-range thead th:first-child {
     z-index: 3;
