@@ -207,17 +207,17 @@
     <h5>Lokasi Default</h5>
     <p class="text-muted small">Kosongkan untuk meminta lokasi setiap kali.</p>
     <div class="mb-3">
-    <label class="form-label">Nama Kota</label>
+    <label for="city" class="form-label">Nama Kota</label>
     <input type="text" class="form-control" id="city" name="city" list="${datalistId}" value="${Core.escapeHtml(city)}" placeholder="Contoh: Jakarta">
     <datalist id="${datalistId}"></datalist>
     </div>
     <div class="row">
     <div class="col-md-6 mb-3">
-    <label class="form-label">Latitude</label>
+    <label for="latitude" class="form-label">Latitude</label>
     <input type="number" step="any" class="form-control" id="latitude" value="${Core.escapeHtml(lat)}" placeholder="-6.2088">
     </div>
     <div class="col-md-6 mb-3">
-    <label class="form-label">Longitude</label>
+    <label for="longitude" class="form-label">Longitude</label>
     <input type="number" step="any" class="form-control" id="longitude" value="${Core.escapeHtml(lon)}" placeholder="106.8456">
     </div>
     </div>
@@ -228,10 +228,10 @@
     <hr>
     <div class="form-check form-switch mb-3">
     <input class="form-check-input" type="checkbox" id="notifications_enabled" ${notifications ? 'checked': ''}>
-    <label class="form-check-label">Aktifkan notifikasi waktu shalat</label>
+    <label for="notifications_enabled" class="form-check-label">Aktifkan notifikasi waktu shalat</label>
     </div>
     <div class="mb-3">
-    <label class="form-label">⏰ Pengingat Sebelum Adzan</label>
+    <label for="reminder_minutes" class="form-label">⏰ Pengingat Sebelum Adzan</label>
     <select class="form-select" id="reminder_minutes">
     <option value="0">Tepat waktu (0 menit)</option>
     <option value="5">5 menit sebelum</option>
