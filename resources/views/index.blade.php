@@ -111,6 +111,7 @@
     color: var(--tg-theme-hint-color);
     word-break: break-word;
   }
+  /* Styling untuk tabel jadwal mingguan */
   #table-range th,
   #table-range td {
     vertical-align: middle;
@@ -121,11 +122,6 @@
     max-width: max-content;
     min-width: 100%;
   }
-  /* Warna teks untuk kolom Jumat */
-  #table-range .jumat-column {
-    color: #ffc107 !important;
-    font-weight: bold;
-  }
   .table th br {
     display: block;
     margin-top: 4px;
@@ -135,6 +131,18 @@
     #table-range td {
       padding: 0.3rem;
     }
+  }
+
+  /* Sticky kolom pertama (Waktu Shalat) */
+  #table-range thead th:first-child,
+  #table-range tbody th:first-child {
+    position: sticky;
+    left: 0;
+    background-color: var(--tg-theme-secondary-bg-color);
+    z-index: 2;
+  }
+  #table-range thead th:first-child {
+    z-index: 3;
   }
 </style>
 @endpush
