@@ -41,7 +41,7 @@ class PrayerTimeService
   /**
   * Mencari kota terdekat menggunakan rumus Haversine + bounding box
   */
-  protected function findNearestCity($latitude, $longitude): ?City
+  public function findNearestCity($latitude, $longitude): ?City
   {
     $roundedLat = round($latitude, 2);
     $roundedLon = round($longitude, 2);
@@ -256,7 +256,7 @@ class PrayerTimeService
   /**
   * Cari kota berdasarkan nama (case‑insensitive)
   */
-  protected function findCityByName($name): ?City
+  public function findCityByName($name): ?City
   {
     $city = City::whereRaw('LOWER(name) = ?', [strtolower(trim($name))])->first();
     if (!$city) {
