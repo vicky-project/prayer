@@ -334,7 +334,7 @@
     </div>
     <div class="card-body px-0">
     <div class="table-responsive">
-    <table id="table-range" class="table table-bordered table-striped mb-0 text-center">
+    <table id="table-range" class="table table-bordered mb-0 text-center">
     <thead>
     <tr>
     <th>Waktu Shalat</th>
