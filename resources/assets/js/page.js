@@ -346,7 +346,7 @@
     tableHtml += `</tr></thead><tbody>`;
 
     for (let p of prayerNames) {
-      tableHtml += `<tr><th class="text-bg-light">${prayerLabels[p]}</th>`;
+      tableHtml += `<tr><th class="text-bg-secondary">${prayerLabels[p]}</th>`;
       for (let i = 0; i < weeklyData.length; i++) {
         const time = weeklyData[i].jadwal[p] || '-';
         const fridayClass = isFridayColumn[i] ? ' class="text-warning fw-bold"': '';
