@@ -78,7 +78,10 @@
     <h4 class="mb-0"><i class="bi bi-moon-stars me-2"></i>Jadwal Waktu Shalat</h4>
     <div class="d-flex gap-1">
     <button id="settingsBtn" class="btn btn-sm btn-outline-light"><i class="bi bi-gear-fill"></i></button>
-    <button id="refreshPrayerBtn" class="btn btn-sm btn-outline-light ms-2"><i class="bi bi-arrow-repeat"></i></button>
+    <button id="refreshPrayerBtn" class="btn btn-sm btn-outline-light"><i class="bi bi-arrow-repeat"></i></button>
+    <button id="weeklyViewBtn" class="btn btn-sm btn-outline-light" title="Jadwal Mingguan">
+    <i class="bi bi-calendar-week"></i>
+    </button>
     </div>
     </div>
     <div class="card-body">
@@ -292,8 +295,62 @@
     }
   }
 
+  function renderWeeklyView(weeklyData) {
+    // Hapus tampilan mingguan sebelumnya jika ada
+    const existingWeekly = document.getElementById('weekly-view');
+    if (existingWeekly) existingWeekly.remove();
+
+    let html = `
+    <div id="weekly-view" class="card mt-3">
+    <div class="card-header bg-info text-white d-flex justify-content-between align-items-center">
+    <span><i class="bi bi-calendar-week me-2"></i>Jadwal Shalat 7 Hari</span>
+    <button type="button" class="btn-close btn-close-white" id="closeWeeklyBtn" aria-label="Close"></button>
+    </div>
+    <div class="card-body p-0">
+    <div class="table-responsive">
+    <table class="table table-sm table-striped mb-0">
+    <thead class="table-dark">
+    <tr><th>Tanggal</th><th>Subuh</th><th>Dzuhur</th><th>Ashar</th><th>Maghrib</th><th>Isya</th></tr>
+    </thead>
+    <tbody>
+    `;
+    for (let day of weeklyData) {
+      html += `
+      <tr>
+      <td>${Core.escapeHtml(day.date)}<br><small class="text-muted">${Core.escapeHtml(day.hijri)}</small></td>
+      <td>${Core.escapeHtml(day.jadwal.subuh)}</td>
+      <td>${Core.escapeHtml(day.jadwal.dzuhur)}</td>
+      <td>${Core.escapeHtml(day.jadwal.ashar)}</td>
+      <td>${Core.escapeHtml(day.jadwal.maghrib)}</td>
+      <td>${Core.escapeHtml(day.jadwal.isya)}</td>
+      </tr>
+      `;
+    }
+    html += `
+    </tbody>
+    </table>
+    </div>
+    </div>
+    </div>
+    `;
+    // Append ke body card utama
+    const cardBody = document.querySelector('#prayer-view .card-body');
+    if (cardBody) {
+      cardBody.insertAdjacentHTML('beforeend', html);
+    }
+    // Event untuk close button
+    const closeBtn = document.getElementById('closeWeeklyBtn');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => {
+        const weeklyDiv = document.getElementById('weekly-view');
+        if (weeklyDiv) weeklyDiv.remove();
+      });
+    }
+  }
+
   window.PrayerAppUI = {
     renderPrayerView: renderPrayerView,
-    renderSettingsView: renderSettingsView
+    renderSettingsView: renderSettingsView,
+    renderWeeklyView: renderWeeklyView
   };
 })(window, document);

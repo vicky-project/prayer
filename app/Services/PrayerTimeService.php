@@ -187,6 +187,34 @@ class PrayerTimeService
   }
 
   /**
+  * Get prayer times for a range of dates (e.g. weekly)
+  */
+  public function getPrayerTimesRange(int $cityId, string $startDate, string $endDate): array
+  {
+    $prayers = Prayer::where('city_id', $cityId)
+    ->whereBetween('date', [$startDate, $endDate])
+    ->orderBy('date')
+    ->get();
+
+    $result = [];
+    foreach ($prayers as $prayer) {
+      $result[] = [
+        'date' => $prayer->date->format('d-m-Y'),
+        'hijri' => $prayer->date->toHijri()->toDateString(),
+        'jadwal' => [
+          'imsak' => $prayer->imsak,
+          'subuh' => $prayer->subuh,
+          'dzuhur' => $prayer->dzuhur,
+          'ashar' => $prayer->ashar,
+          'maghrib' => $prayer->maghrib,
+          'isya' => $prayer->isya,
+        ]
+      ];
+    }
+    return $result;
+  }
+
+  /**
   * Untuk notifikasi (mengembalikan jadwal hari ini berdasarkan default location)
   */
   public function getTodayPrayerByLocation($defaultLocation): ?array

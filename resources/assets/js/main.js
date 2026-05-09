@@ -310,6 +310,52 @@
       }
     }
 
+    async function fetchWeeklyPrayerTimes() {
+      if (isFetchingPrayer) {
+        console.log('Already fetching, please wait');
+        return;
+      }
+      isFetchingPrayer = true;
+      Core.showLoading('Memuat jadwal mingguan...');
+      try {
+        const state = Core.getState();
+        let body = {};
+        // Prioritaskan dari data prayer yang sedang ditampilkan
+        if (state.prayer && state.prayer.city) {
+          body.city = state.prayer.city;
+        } else if (state.prayer && state.prayer.latitude && state.prayer.longitude) {
+          body.latitude = state.prayer.latitude;
+          body.longitude = state.prayer.longitude;
+        } else {
+          // Fallback ke settings default location
+          const settings = state.settings;
+          if (settings && settings.default_location) {
+            if (settings.default_location.city) {
+              body.city = settings.default_location.city;
+            } else if (settings.default_location.latitude && settings.default_location.longitude) {
+              body.latitude = settings.default_location.latitude;
+              body.longitude = settings.default_location.longitude;
+            }
+          }
+        }
+        if (!body.city && !body.latitude) {
+          throw new Error('Lokasi tidak diketahui. Silakan set lokasi di pengaturan.');
+        }
+        const res = await Core.api.post('/api/prayer/times/range', body);
+        if (res.success && res.data && res.data.length) {
+          UI.renderWeeklyView(res.data);
+        } else {
+          throw new Error(res.message || 'Data jadwal mingguan tidak tersedia');
+        }
+      } catch (err) {
+        console.log(err);
+        Core.showToast(err.message, 'danger');
+      } finally {
+        Core.hideLoading();
+        isFetchingPrayer = false;
+      }
+    }
+
     // ----- Event Delegation (semua lokasi menggunakan browser) -----
     function setupEventDelegation() {
       document.body.addEventListener('click', (e) => {
@@ -359,28 +405,31 @@
               Core.showToast(err.message, 'danger');
             }
           })();
+        } else if (target.id === 'weeklyViewBtn' || target.closest('#weeklyViewBtn')) {
+          fetchWeeklyPrayerTimes();
         }
       });
 
-      document.body.addEventListener('submit', (e) => {
-        if (e.target && e.target.id === 'settingsForm') {
-          e.preventDefault();
-          const cityEl = document.getElementById('city');
-          const latEl = document.getElementById('latitude');
-          const lonEl = document.getElementById('longitude');
-          const notifyEl = document.getElementById('notifications_enabled');
-          const reminderSelect = document.getElementById('reminder_minutes');
-          if (!cityEl || !latEl || !lonEl || !notifyEl) return;
-          const formData = {
-            city: cityEl.value || undefined,
-            latitude: latEl.value ? parseFloat(latEl.value): undefined,
-            longitude: lonEl.value ? parseFloat(lonEl.value): undefined,
-            notifications_enabled: notifyEl.checked,
-            reminder_minutes: reminderSelect ? parseInt(reminderSelect.value): 0
-          };
-          saveSettings(formData);
-        }
-      });
+      document.body.addEventListener('submit',
+        (e) => {
+          if (e.target && e.target.id === 'settingsForm') {
+            e.preventDefault();
+            const cityEl = document.getElementById('city');
+            const latEl = document.getElementById('latitude');
+            const lonEl = document.getElementById('longitude');
+            const notifyEl = document.getElementById('notifications_enabled');
+            const reminderSelect = document.getElementById('reminder_minutes');
+            if (!cityEl || !latEl || !lonEl || !notifyEl) return;
+            const formData = {
+              city: cityEl.value || undefined,
+              latitude: latEl.value ? parseFloat(latEl.value): undefined,
+              longitude: lonEl.value ? parseFloat(lonEl.value): undefined,
+              notifications_enabled: notifyEl.checked,
+              reminder_minutes: reminderSelect ? parseInt(reminderSelect.value): 0
+            };
+            saveSettings(formData);
+          }
+        });
     }
 
     function onStateChange(state) {

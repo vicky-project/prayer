@@ -2,6 +2,7 @@
 
 namespace Modules\Prayer\Http\Controllers;
 
+use Carbon\Carbon;
 use Illuminate\Routing\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -44,6 +45,57 @@ class PrayerController extends Controller
       ]);
 
       return response()->json(["success" => false, "message" => $e->getMessage()], 500);
+    }
+  }
+
+  public function getRange(Request $request) {
+    $telegramUser = $request->user();
+    $city = $request->input('city');
+    $lat = $request->input('latitude');
+    $lon = $request->input('longitude');
+
+    try {
+      // Cari kota berdasarkan input atau default user
+      $cityModel = null;
+      if ($city) {
+        $cityModel = $this->prayerService->findCityByName($city);
+      } elseif ($lat && $lon) {
+        $cityModel = $this->prayerService->findNearestCity($lat, $lon);
+      } elseif ($telegramUser) {
+        $prayerSettings = $telegramUser->data['prayer'] ?? [];
+        $default = $prayerSettings['default_location'] ?? null;
+        if ($default && isset($default['city'])) {
+          $cityModel = $this->prayerService->findCityByName($default['city']);
+        } elseif ($default && isset($default['latitude'], $default['longitude'])) {
+          $cityModel = $this->prayerService->findNearestCity($default['latitude'], $default['longitude']);
+        }
+      }
+
+      if (!$cityModel) {
+        return response()->json(['success' => false, 'message' => 'Kota tidak ditemukan'], 404);
+      }
+
+      $startDate = $request->input('start_date', Carbon::today()->toDateString());
+      $endDate = $request->input('end_date', Carbon::today()->addDays(6)->toDateString());
+
+      $data = $this->prayerService->getPrayerTimesRange($cityModel->id, $startDate, $endDate);
+
+      return response()->json(['success' => true, 'data' => $data]);
+    } catch(\Exception $e) {
+      \Log::error("Failed to get prayer times range", [
+        'message' => $e->getMessage(),
+        'city' => $city,
+        'latitude' => $lat,
+        'longitude' => $lon,
+        'start_date' => $startDate,
+        'end_date' => $endDate,
+        'trace' => $e->getTrace()
+      ]);
+
+      return response()->json([
+        'success' => false,
+        'message' => $e->getMessage()
+      ], 500);
     }
   }
 

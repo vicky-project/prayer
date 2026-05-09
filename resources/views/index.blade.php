@@ -107,6 +107,18 @@
     color: var(--tg-theme-hint-color);
     word-break: break-word;
   }
+  #weekly-view .table th,
+  #weekly-view .table td {
+    vertical-align: middle;
+    text-align: center;
+  }
+  #weekly-view .table td:first-child {
+    text-align: left;
+  }
+  #weekly-view .card-header {
+    background-color: #0d6efd;
+    color: white;
+  }
 </style>
 @endpush
 
