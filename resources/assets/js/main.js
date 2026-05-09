@@ -251,8 +251,8 @@
 
     async function loadDefaultLocation() {
       if (isGeolocating) return;
+      Core.showLoading('Memuat pengaturan...');
       try {
-        Core.showLoading('Memuat pengaturan...');
         const settings = await fetchSettings();
         // Cek apakah ada default_location yang tidak kosong
         const hasDefaultLoc = settings.default_location &&
@@ -450,14 +450,12 @@
     }
 
     function init() {
-      const loadingDiv = document.getElementById('loading-view');
       const prayerDiv = document.getElementById('prayer-view');
       const settingsDiv = document.getElementById('settings-view');
-      if (!loadingDiv || !prayerDiv || !settingsDiv) {
+      if (!prayerDiv || !settingsDiv) {
         console.error('Required elements missing');
         return;
       }
-      loadingDiv.style.display = 'flex';
       prayerDiv.style.display = 'none';
       settingsDiv.style.display = 'none';
 

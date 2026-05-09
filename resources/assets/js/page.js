@@ -12,13 +12,11 @@
   function renderPrayerView(state) {
     const prayerDiv = document.getElementById('prayer-view');
     const settingsDiv = document.getElementById('settings-view');
-    const loadingDiv = document.getElementById('loading-view');
-    if (!prayerDiv || !settingsDiv || !loadingDiv) return;
+    if (!prayerDiv || !settingsDiv) return;
 
     if (state.loading) {
       prayerDiv.style.display = 'none';
       settingsDiv.style.display = 'none';
-      loadingDiv.style.display = 'flex';
       return;
     }
 
@@ -29,7 +27,6 @@
       '<button class="btn btn-primary btn-sm mt-3" id="retryBtn">Muat Ulang</button></div>';
       prayerDiv.style.display = 'block';
       settingsDiv.style.display = 'none';
-      loadingDiv.style.display = 'none';
       const retryBtn = document.getElementById('retryBtn');
       if (retryBtn) retryBtn.onclick = () => location.reload();
       return;
@@ -39,7 +36,6 @@
       prayerDiv.innerHTML = '<div class="alert alert-warning">Data jadwal tidak tersedia</div>';
       prayerDiv.style.display = 'block';
       settingsDiv.style.display = 'none';
-      loadingDiv.style.display = 'none';
       return;
     }
 
@@ -102,7 +98,6 @@
     prayerDiv.innerHTML = html;
     prayerDiv.style.display = 'block';
     settingsDiv.style.display = 'none';
-    loadingDiv.style.display = 'none';
 
     startCountdown(jadwal);
   }
@@ -176,8 +171,7 @@
   function renderSettingsView(state) {
     const prayerDiv = document.getElementById('prayer-view');
     const settingsDiv = document.getElementById('settings-view');
-    const loadingDiv = document.getElementById('loading-view');
-    if (!prayerDiv || !settingsDiv || !loadingDiv) return;
+    if (!prayerDiv || !settingsDiv) return;
 
     const sett = state.settings || {};
     let lat = '',
@@ -258,7 +252,6 @@
     settingsDiv.innerHTML = html;
     prayerDiv.style.display = 'none';
     settingsDiv.style.display = 'block';
-    loadingDiv.style.display = 'none';
 
     const reminderSelect = document.getElementById('reminder_minutes');
     if (reminderSelect) reminderSelect.value = reminderMinutes;

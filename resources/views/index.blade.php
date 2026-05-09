@@ -5,12 +5,6 @@
 @section('content')
 <div class="container py-0" style="max-width:600px; margin:0 auto;">
   <div id="prayer-app">
-    <div id="loading-view" class="text-center py-5">
-      <div class="spinner-border text-primary" role="status"></div>
-      <p class="mt-2 text-muted">
-        Memuat jadwal shalat...
-      </p>
-    </div>
     <div id="prayer-view" style="display:none;"></div>
     <div id="settings-view" style="display:none;"></div>
   </div>
