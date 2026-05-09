@@ -111,7 +111,16 @@
   #table-range td {
     vertical-align: middle;
     font-size: 0.85rem;
-    padding: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    white-space: nowrap;
+  }
+  #table-range.table {
+    max-width: max-content;
+    min-width: 100%;
+  }
+  .table th br {
+    display: block;
+    margin-top: 4px;
   }
   @media (max-width: 576px) {
     #table-range th,
