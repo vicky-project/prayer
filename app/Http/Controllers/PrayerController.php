@@ -30,11 +30,13 @@ class PrayerController extends Controller
   public function getTimes(LocationRequest $request) {
     try {
       $telegramUser = $request->user();
+      $ignoreDefault = $request->boolean('ignore_default', false);
       $times = $this->prayerService->getPrayerTimes(
         $request->input('latitude'),
         $request->input('longitude'),
         $request->input('city'),
-        $telegramUser
+        $telegramUser,
+        $ignoreDefault
       );
 
       return response()->json(["success" => true, "data" => $times, "message" => "Jadwal shalat berhasil diambil"]);

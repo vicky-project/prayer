@@ -98,10 +98,11 @@ class PrayerTimeService
     $latitude = null,
     $longitude = null,
     $city = null,
-    $telegramUser = null
+    $telegramUser = null,
+    $ignoreDefault = false
   ): array {
     // Prioritaskan default_location dari user (struktur data baru: data['prayer']['default_location'])
-    if ($telegramUser) {
+    if (!$ignoreDefault && $telegramUser) {
       $userData = $telegramUser->data ?? [];
       $prayerSettings = $userData['prayer'] ?? [];
       if (isset($prayerSettings['default_location'])) {
