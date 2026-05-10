@@ -435,7 +435,7 @@
           const [hours,
             minutes] = jadwal[name].split(':').map(Number);
           const prayerMinutes = hours * 60 + minutes;
-          console.log(nowMinutes, prayerMinutes);
+          console.log(nowMinutes, prayerMinutes, hours, minutes);
           if (prayerMinutes > nowMinutes) {
             nextPrayer = name;
             break;
@@ -450,7 +450,7 @@
       <div class="card mt-2">
       <div class="card-header">
       <div class="fw-bold">${Core.escapeHtml(prayerData.city)}</div>
-      <div class="small text-muted">${Core.escapeHtml(prayerData.date)} (${Core.escapeHtml(prayerData.hijri)})</div>
+      <div class="small">${Core.escapeHtml(prayerData.date)} (${Core.escapeHtml(prayerData.hijri)})</div>
       </div>
       <div class="card-body p-0">
       <table class="table table-sm mb-0">
