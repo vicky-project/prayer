@@ -435,12 +435,15 @@
           const [hours,
             minutes] = jadwal[name].split(':').map(Number);
           const prayerMinutes = hours * 60 + minutes;
+          console.log(nowMinutes, prayerMinutes);
           if (prayerMinutes > nowMinutes) {
             nextPrayer = name;
             break;
           }
         }
       }
+
+      console.log(nextPrayer);
 
       // Bangun HTML tabel dengan class active pada baris shalat berikutnya
       let html = `
