@@ -88,6 +88,10 @@
     overflow-x: auto !important;
     -webkit-overflow-scrolling: touch;
   }
+  .table-active {
+    background-color: rgba(35, 150, 55, 0.6) !important;
+    color: white;
+  }
   #main-table {
     color: var(--tg-theme-text-color);
   }
