@@ -8,6 +8,40 @@
     <div id="prayer-view" style="display:none;"></div>
     <div id="settings-view" style="display:none;"></div>
   </div>
+
+  <!-- Modal Cari Kota -->
+  <div class="modal fade" id="searchPrayerModal" data-bs-backdrop="static" data-bs-keyboard="false" tabindex="-1" aria-labelledby="searchPrayerModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="searchPrayerModalLabel"><i class="bi bi-search"></i> Cari Jadwal Shalat</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Nama Kota</label>
+            <input type="text" class="form-control" id="searchCityInput" placeholder="Contoh: Jakarta, ID" autocomplete="off">
+            <datalist id="searchCitySuggestions"></datalist>
+            <div class="invalid-feedback">
+              Minimal 2 karakter
+            </div>
+          </div>
+          <div id="searchResultArea">
+            <!-- Hasil pencarian akan ditampilkan di sini -->
+          </div>
+          <div id="searchLoadingSpinner" class="text-center d-none">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="mt-2 text-muted">
+              Memuat jadwal...
+            </p>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Tutup</button>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 @endsection
 

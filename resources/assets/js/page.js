@@ -77,7 +77,8 @@
     <div class="card-header d-flex justify-content-between align-items-center">
     <h4 class="mb-0"><i class="bi bi-moon-stars me-2"></i>Jadwal Shalat</h4>
     <div class="d-flex gap-1">
-    <button id="settingsBtn" class="btn btn-sm btn-outline-light"><i class="bi bi-gear-fill"></i></button>
+    <button id="searchCityBtn" class="btn btn-sm btn-outline-light" title="Cari Jadwal Kota Lain"><i class="bi bi-search"></i></button>
+    <button id="settingsBtn" class="btn btn-sm btn-outline-light" title="Pengaturan"><i class="bi bi-gear-fill"></i></button>
     <button id="refreshPrayerBtn" class="btn btn-sm btn-outline-light"><i class="bi bi-arrow-repeat"></i></button>
     <button id="weeklyViewBtn" class="btn btn-sm btn-outline-light" title="Jadwal Mingguan">
     <i class="bi bi-calendar-week"></i>

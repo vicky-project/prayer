@@ -11,6 +11,8 @@
 
   let isFetchingPrayer = false;
   let isGeolocating = false;
+  // Variabel untuk menyimpan AbortController
+  let searchAbortController = null;
 
   // Helper fetch dengan timeout
   async function fetchWithTimeout(promise, timeoutMs = 15000) {
@@ -359,59 +361,234 @@
       }
     }
 
+
+    // Fungsi untuk melakukan pencarian
+    async function performCitySearch(city) {
+      const resultArea = document.getElementById('searchResultArea');
+      const loadingSpinner = document.getElementById('searchLoadingSpinner');
+      if (!resultArea || !loadingSpinner) return;
+
+      // Batalkan request sebelumnya jika ada
+      if (searchAbortController) {
+        searchAbortController.abort();
+      }
+      searchAbortController = new AbortController();
+
+      try {
+        resultArea.innerHTML = '';
+        loadingSpinner.classList.remove('d-none');
+
+        // Gunakan fetch langsung dengan token (karena Core.api tidak support signal)
+        const token = localStorage.getItem('telegram_token') || tgApp.getToken();
+        const response = await fetch(BASE_URL + '/api/prayer/times', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            city: city
+          }),
+          signal: searchAbortController.signal
+        });
+
+        if (!response.ok) throw new Error('Network error');
+        const data = await response.json();
+        if (data.success) {
+          displaySearchResult(data.data);
+        } else {
+          throw new Error(data.message || 'Gagal memuat jadwal');
+        }
+      } catch (err) {
+        if (err.name === 'AbortError') {
+          console.log('Pencarian dibatalkan');
+        } else {
+          resultArea.innerHTML = `<div class="alert alert-danger">${Core.escapeHtml(err.message)}</div>`;
+        }
+      } finally {
+        loadingSpinner.classList.add('d-none');
+        searchAbortController = null;
+      }
+    }
+
+    // Fungsi menampilkan hasil pencarian di modal
+    function displaySearchResult(prayerData) {
+      const resultArea = document.getElementById('searchResultArea');
+      if (!resultArea) return;
+
+      const jadwal = prayerData.jadwal;
+      const prayerOrder = ['imsak',
+        'subuh',
+        'terbit',
+        'dhuha',
+        'dzuhur',
+        'ashar',
+        'maghrib',
+        'isya'];
+      let html = `
+      <div class="card mt-2">
+      <div class="card-header">
+      <strong>${Core.escapeHtml(prayerData.city)}</strong> - ${Core.escapeHtml(prayerData.date)} (${Core.escapeHtml(prayerData.hijri)})
+      </div>
+      <div class="card-body p-0">
+      <table class="table table-sm mb-0">
+      <tbody>
+      `;
+      for (let name of prayerOrder) {
+        if (jadwal[name]) {
+          html += `<tr><th>${Core.getPrayerName(name)}</th><td class="text-end">${Core.escapeHtml(jadwal[name])}</td></tr>`;
+        }
+      }
+      html += `
+      </tbody>
+      </table>
+      </div>
+      </div>
+      `;
+      resultArea.innerHTML = html;
+    }
+
+    // Fungsi untuk menampilkan modal dan menginisialisasi autocomplete
+    function showSearchCityModal() {
+      const modalEl = document.getElementById('searchPrayerModal');
+      if (!modalEl) return;
+
+      // Inisialisasi modal dengan backdrop static (tidak bisa tutup klik luar)
+      const modal = new bootstrap.Modal(modalEl, {
+        backdrop: 'static', keyboard: false
+      });
+      modal.show();
+
+      // Bersihkan konten sebelumnya
+      const cityInput = document.getElementById('searchCityInput');
+      const resultArea = document.getElementById('searchResultArea');
+      const suggestionsDatalist = document.getElementById('searchCitySuggestions');
+      if (cityInput) cityInput.value = '';
+      if (resultArea) resultArea.innerHTML = '';
+      if (suggestionsDatalist) suggestionsDatalist.innerHTML = '';
+
+      // Setup autocomplete
+      if (cityInput && suggestionsDatalist) {
+        let debounceTimer;
+        const handleInput = (e) => {
+          clearTimeout(debounceTimer);
+          const keyword = e.target.value.trim();
+          if (keyword.length < 2) {
+            suggestionsDatalist.innerHTML = '';
+            return;
+          }
+          debounceTimer = setTimeout(async () => {
+            try {
+              const res = await Core.api.get(`/api/prayer/cities/search?q=${encodeURIComponent(keyword)}`);
+              if (res.success && res.data) {
+                suggestionsDatalist.innerHTML = '';
+                res.data.forEach(cityItem => {
+                  const option = document.createElement('option');
+                  option.value = cityItem.value;
+                  option.textContent = cityItem.label;
+                  suggestionsDatalist.appendChild(option);
+                });
+              }
+            } catch (err) {
+              console.warn('Autocomplete gagal:', err);
+            }
+          },
+            300);
+        };
+        cityInput.addEventListener('input',
+          handleInput);
+        // Simpan listener untuk dibersihkan saat modal ditutup (opsional)
+        cityInput._handleInput = handleInput;
+
+        // Saat user memilih dari datalist (change event), lakukan pencarian otomatis
+        cityInput.addEventListener('change',
+          async (e) => {
+            const selectedCity = e.target.value;
+            if (selectedCity && selectedCity.length > 0) {
+              await performCitySearch(selectedCity);
+            }
+          });
+      }
+
+      // Reset saat modal ditutup (bersihkan state)
+      modalEl.addEventListener('hidden.bs.modal',
+        () => {
+          // Batalkan request jika masih berjalan
+          if (searchAbortController) {
+            searchAbortController.abort();
+            searchAbortController = null;
+          }
+          // Hapus event listener input untuk mencegah memory leak
+          if (cityInput && cityInput._handleInput) {
+            cityInput.removeEventListener('input', cityInput._handleInput);
+            delete cityInput._handleInput;
+          }
+          // Bersihkan datalist dan hasil
+          if (suggestionsDatalist) suggestionsDatalist.innerHTML = '';
+          if (resultArea) resultArea.innerHTML = '';
+        },
+        {
+          once: true
+        });
+    }
+
     // ----- Event Delegation (semua lokasi menggunakan browser) -----
     function setupEventDelegation() {
-      document.body.addEventListener('click', (e) => {
-        const target = e.target;
-        if (target.id === 'settingsBtn' || target.closest('#settingsBtn')) {
-          Core.setState({
-            currentView: 'settings'
-          });
-          UI.renderSettingsView(Core.getState());
-        } else if (target.id === 'refreshPrayerBtn' || target.closest('#refreshPrayerBtn')) {
-          refreshPrayer();
-        } else if (target.id === 'backToPrayerBtn' || target.closest('#backToPrayerBtn')) {
-          Core.setState({
-            currentView: 'prayer'
-          });
-          UI.renderPrayerView(Core.getState());
-        } else if (target.id === 'useDefaultLocationBtn' || target.closest('#useDefaultLocationBtn')) {
-          const sett = Core.getState().settings;
-          if (sett.default_location) {
-            if (sett.default_location.city) {
-              fetchPrayerTimes(null, null, sett.default_location.city);
-            } else {
-              fetchPrayerTimes(sett.default_location.latitude, sett.default_location.longitude);
-            }
-          } else if (sett.city) {
-            fetchPrayerTimes(null, null, sett.city);
-          } else if (sett.latitude && sett.longitude) {
-            fetchPrayerTimes(sett.latitude, sett.longitude);
-          }
-        } else if (target.id === 'autoLocationBtn' || target.closest('#autoLocationBtn')) {
-          (async () => {
-            const statusSpan = document.getElementById('locationStatus');
-            if (statusSpan) statusSpan.innerText = 'Meminta lokasi...';
-            try {
-              const loc = await getBrowserLocation(10000);
-              const latInput = document.getElementById('latitude');
-              const lonInput = document.getElementById('longitude');
-              const cityInput = document.getElementById('city');
-              if (latInput && lonInput && cityInput) {
-                latInput.value = loc.lat;
-                lonInput.value = loc.lon;
-                cityInput.value = '';
+      document.body.addEventListener('click',
+        (e) => {
+          const target = e.target;
+          if (target.id === 'settingsBtn' || target.closest('#settingsBtn')) {
+            Core.setState({
+              currentView: 'settings'
+            });
+            UI.renderSettingsView(Core.getState());
+          } else if (target.id === 'refreshPrayerBtn' || target.closest('#refreshPrayerBtn')) {
+            refreshPrayer();
+          } else if (target.id === 'backToPrayerBtn' || target.closest('#backToPrayerBtn')) {
+            Core.setState({
+              currentView: 'prayer'
+            });
+            UI.renderPrayerView(Core.getState());
+          } else if (target.id === 'useDefaultLocationBtn' || target.closest('#useDefaultLocationBtn')) {
+            const sett = Core.getState().settings;
+            if (sett.default_location) {
+              if (sett.default_location.city) {
+                fetchPrayerTimes(null, null, sett.default_location.city);
+              } else {
+                fetchPrayerTimes(sett.default_location.latitude, sett.default_location.longitude);
               }
-              if (statusSpan) statusSpan.innerText = 'Lokasi berhasil diambil.';
-            } catch (err) {
-              if (statusSpan) statusSpan.innerText = 'Gagal: ' + err.message;
-              Core.showToast(err.message, 'danger');
+            } else if (sett.city) {
+              fetchPrayerTimes(null, null, sett.city);
+            } else if (sett.latitude && sett.longitude) {
+              fetchPrayerTimes(sett.latitude, sett.longitude);
             }
-          })();
-        } else if (target.id === 'weeklyViewBtn' || target.closest('#weeklyViewBtn')) {
-          fetchRangePrayerTimes(7); // default 7 hari
-        }
-      });
+          } else if (target.id === 'autoLocationBtn' || target.closest('#autoLocationBtn')) {
+            (async () => {
+              const statusSpan = document.getElementById('locationStatus');
+              if (statusSpan) statusSpan.innerText = 'Meminta lokasi...';
+              try {
+                const loc = await getBrowserLocation(10000);
+                const latInput = document.getElementById('latitude');
+                const lonInput = document.getElementById('longitude');
+                const cityInput = document.getElementById('city');
+                if (latInput && lonInput && cityInput) {
+                  latInput.value = loc.lat;
+                  lonInput.value = loc.lon;
+                  cityInput.value = '';
+                }
+                if (statusSpan) statusSpan.innerText = 'Lokasi berhasil diambil.';
+              } catch (err) {
+                if (statusSpan) statusSpan.innerText = 'Gagal: ' + err.message;
+                Core.showToast(err.message, 'danger');
+              }
+            })();
+          } else if (target.id === 'weeklyViewBtn' || target.closest('#weeklyViewBtn')) {
+            fetchRangePrayerTimes(7); // default 7 hari
+          } else if (target.id === 'searchCityBtn' || target.closest('#searchCityBtn')) {
+            showSearchCityModal();
+          }
+        });
 
       document.body.addEventListener('submit',
         (e) => {
