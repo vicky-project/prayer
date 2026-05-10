@@ -172,6 +172,7 @@ class PrayerTimeService
       'city' => $prayer->city->name,
       'latitude' => $cityModel->latitude,
       'longitude' => $cityModel->longitude,
+      'timezone' => $timezone,
       'timezone_offset' => $timezoneOffset,
       'jadwal' => [
         'imsak' => $prayer->imsak,
@@ -310,7 +311,7 @@ class PrayerTimeService
   public function getTimezoneFromCoordinates($lat,
     $lon): ?string
   {
-    $cacheKey = config("prayer.cache_prefix.timezone") . ":{$lat}:{$lon}";
+    $cacheKey = config("prayer.cache_prefix.timezone") . md5(":{$lat}:{$lon}");
     return Cache::remember($cacheKey,
       86400,
       function () use ($lat, $lon) {
