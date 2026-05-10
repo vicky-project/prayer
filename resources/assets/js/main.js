@@ -425,8 +425,11 @@
         'isya'];
 
       // Hitung waktu sekarang di kota tersebut
-      const nowUTC = new Date();
-      const nowLocal = new Date(nowUTC.getTime() + (timezoneOffset * 60 * 1000));
+      const nowLocal = new Date();
+      const targetOffset = timezoneOffset; // dalam menit, misal 480
+      const browserOffset = nowLocal.getTimezoneOffset();
+      const diff = targetOffset - browserOffset;
+      nowLocal.setMinutes(nowLocal.getMinutes() + diff);
       const nowMinutes = nowLocal.getHours() * 60 + nowLocal.getMinutes();
 
       // Cari shalat berikutnya (waktu > sekarang)
