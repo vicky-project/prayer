@@ -325,7 +325,13 @@ class PrayerTimeService
             ]);
             if ($response->successful()) {
               $data = $response->json();
-              if (!empty($data['timezone'])) return $data['timezone'];
+              if (!empty($data['timezone'])) {
+                Log::debug("Using timezone: ". $data['timezone'], [
+                  'lat' => $lat,
+                  'lon' => $lon
+                ]);
+                return $data['timezone'];
+              }
             }
           } catch (\Exception $e) {
             Log::error($e->getMessage());
