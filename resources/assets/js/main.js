@@ -413,7 +413,7 @@
       if (!resultArea) return;
 
       const jadwal = prayerData.jadwal;
-      const timezone = prayerData.timezone || 'Asia/Jakarta'; // fallback
+      const timezone = prayerData.timezone || 'Asia/Jakarta';
       const prayerOrder = ['imsak',
         'subuh',
         'terbit',
@@ -423,15 +423,24 @@
         'maghrib',
         'isya'];
 
-      // Hitung waktu sekarang di timezone kota menggunakan Intl
+      // Format waktu saat ini di timezone kota
       const now = new Date();
-      const formatter = new Intl.DateTimeFormat('en-US', {
+      const timeFormatter = new Intl.DateTimeFormat('id-ID', {
+        timeZone: timezone,
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: false
+      });
+      const currentTimeStr = timeFormatter.format(now);
+
+      // Hitung waktu sekarang dalam menit untuk menentukan shalat berikutnya
+      const parts = new Intl.DateTimeFormat('en-US', {
         timeZone: timezone,
         hour: 'numeric',
         minute: 'numeric',
         hour12: false
-      });
-      const parts = formatter.formatToParts(now);
+      }).formatToParts(now);
       let hours = 0,
       minutes = 0;
       for (let part of parts) {
@@ -454,18 +463,18 @@
         }
       }
 
-      // Bangun HTML tabel dengan class active pada baris shalat berikutnya
+      // Bangun HTML
       let html = `
       <div class="card mt-2">
       <div class="card-header">
       <div class="fw-bold">${Core.escapeHtml(prayerData.city)}</div>
-      <div class="small">${Core.escapeHtml(prayerData.date)} (${Core.escapeHtml(prayerData.hijri)})</div>
+      <div class="small text-muted">${Core.escapeHtml(prayerData.date)} (${Core.escapeHtml(prayerData.hijri)})</div>
+      <div class="small mt-1">🕐 Waktu setempat: ${Core.escapeHtml(currentTimeStr)}</div>
       </div>
       <div class="card-body p-0">
       <table class="table table-sm mb-0">
       <tbody>
       `;
-
       for (let name of prayerOrder) {
         if (jadwal[name]) {
           const isActive = (name === nextPrayer);
@@ -473,14 +482,12 @@
           html += `<tr ${rowClass}><th>${Core.getPrayerName(name)}</th><td class="text-end">${Core.escapeHtml(jadwal[name])}</td></tr>`;
         }
       }
-
       html += `
       </tbody>
       </table>
       </div>
       </div>
       `;
-
       resultArea.innerHTML = html;
     }
 
