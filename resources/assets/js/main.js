@@ -413,8 +413,7 @@
       if (!resultArea) return;
 
       const jadwal = prayerData.jadwal;
-      const timezoneOffset = prayerData.timezone_offset || 0;
-      console.log("timezone offset: "+ timezoneOffset);
+      const timezone = prayerData.timezone || 'Asia/Jakarta'; // fallback
       const prayerOrder = ['imsak',
         'subuh',
         'terbit',
@@ -424,30 +423,36 @@
         'maghrib',
         'isya'];
 
-      // Hitung waktu sekarang di kota tersebut
-      const nowLocal = new Date();
-      const targetOffset = timezoneOffset; // dalam menit, misal 480
-      const browserOffset = nowLocal.getTimezoneOffset();
-      const diff = targetOffset - browserOffset;
-      nowLocal.setMinutes(nowLocal.getMinutes() + diff);
-      const nowMinutes = nowLocal.getHours() * 60 + nowLocal.getMinutes();
+      // Hitung waktu sekarang di timezone kota menggunakan Intl
+      const now = new Date();
+      const formatter = new Intl.DateTimeFormat('en-US', {
+        timeZone: timezone,
+        hour: 'numeric',
+        minute: 'numeric',
+        hour12: false
+      });
+      const parts = formatter.formatToParts(now);
+      let hours = 0,
+      minutes = 0;
+      for (let part of parts) {
+        if (part.type === 'hour') hours = parseInt(part.value);
+        if (part.type === 'minute') minutes = parseInt(part.value);
+      }
+      const nowMinutes = hours * 60 + minutes;
 
-      // Cari shalat berikutnya (waktu > sekarang)
+      // Cari shalat berikutnya
       let nextPrayer = null;
       for (let name of prayerOrder) {
         if (jadwal[name]) {
-          const [hours,
-            minutes] = jadwal[name].split(':').map(Number);
-          const prayerMinutes = hours * 60 + minutes;
-          console.log(nowMinutes, prayerMinutes, hours, minutes);
+          const [h,
+            m] = jadwal[name].split(':').map(Number);
+          const prayerMinutes = h * 60 + m;
           if (prayerMinutes > nowMinutes) {
             nextPrayer = name;
             break;
           }
         }
       }
-
-      console.log(nextPrayer);
 
       // Bangun HTML tabel dengan class active pada baris shalat berikutnya
       let html = `
