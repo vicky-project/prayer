@@ -311,19 +311,20 @@ class PrayerTimeService
   public function getTimezoneFromCoordinates($lat,
     $lon): ?string
   {
+    try {
+      $response = Http::timeout(5)->get("http://tz.twitchax.com/api/v1/ned/tz/{$lon}/{$lat}");
+      if ($response->successful()) {
+        $data = $response->json();
+        if (isset($data[0]['identifier'])) return $data[0]['identifier'];
+      }
+    } catch (\Exception $e) {
+      Log::warning($e->getMessage());
+    }
+
     $cacheKey = config("prayer.cache_prefix.timezone") . md5(":{$lat}:{$lon}");
     return Cache::remember($cacheKey,
       86400,
       function () use ($lat, $lon) {
-        try {
-          $response = Http::timeout(5)->get("http://tz.twitchax.com/api/v1/ned/tz/{$lon}/{$lat}");
-          if ($response->successful()) {
-            $data = $response->json();
-            if (isset($data[0]['identifier'])) return $data[0]['identifier'];
-          }
-        } catch (\Exception $e) {
-          Log::warning($e->getMessage());
-        }
         // Fallback IPGeolocation
         $apiKey = config("prayer.ipgeolocation.api_key");
         if ($apiKey) {
