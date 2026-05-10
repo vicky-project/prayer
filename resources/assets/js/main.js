@@ -75,7 +75,6 @@
 
   async function fetchPrayerTimes(lat, lon, city) {
     if (isFetchingPrayer) {
-      console.log('Fetch prayer times already in progress, skipping...');
       return;
     }
     isFetchingPrayer = true;
@@ -120,9 +119,6 @@
         notifications_enabled: currentSettings.notifications_prayer_enabled === true
       }), 10000);
       if (res.success) {
-        console.log('Location auto-saved:', {
-          lat, lon
-        });
         localStorage.removeItem('prayer_settings_cache');
         await fetchSettings();
         return true;
@@ -177,7 +173,6 @@
     // ----- Load from geolocation (tanpa fallback ke Telegram) -----
     async function loadFromGeolocation() {
       if (isGeolocating) {
-        console.log('Geolocation already in progress, skipping...');
         return;
       }
       isGeolocating = true;
@@ -185,7 +180,6 @@
       try {
         Core.showLoading('Meminta lokasi (browser)... (maks 15 detik)');
         const loc = await getBrowserLocation(TIMEOUT);
-        console.log('Browser location success:', loc);
         await saveLocationToSettings(loc.lat, loc.lon);
         await fetchPrayerTimes(loc.lat, loc.lon);
         Core.setState({

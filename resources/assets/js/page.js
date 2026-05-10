@@ -326,15 +326,34 @@
       return false;
     });
 
+    // Di dalam renderRangeTableView, sebelum generateRows
+    const getDayName = (dateStr) => {
+      const parts = dateStr.split('-'); // dd-mm-yyyy
+      if (parts.length === 3) {
+        const d = new Date(parts[2], parts[1] - 1, parts[0]);
+        const days = ['Minggu',
+          'Senin',
+          'Selasa',
+          'Rabu',
+          'Kamis',
+          'Jumat',
+          'Sabtu'];
+        return days[d.getDay()];
+      }
+      return '';
+    };
+
     // Helper untuk generate baris tabel (agar tidak terlalu panjang)
     const generateRows = () => {
       let rows = '';
       for (let i = 0; i < weeklyData.length; i++) {
         const day = weeklyData[i];
         const jumatClass = isFriday[i] ? 'class="text-warning fw-bold"': '';
+        const dayName = getDayName(day.date);
         rows += `<tr>
         <td style="position: sticky; left: 0; background: var(--tg-theme-secondary-bg-color);" ${jumatClass}>
-        ${Core.escapeHtml(day.date)}<br><small class="text-muted">${Core.escapeHtml(day.hijri)}</small>
+        ${Core.escapeHtml(day.date)}<br>
+        <small class="text-muted">${dayName} | ${Core.escapeHtml(day.hijri)}</small>
         </td>
         ${prayerNames.map(p => {
           const time = day.jadwal[p] || '-';
