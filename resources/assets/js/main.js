@@ -414,6 +414,7 @@
 
       const jadwal = prayerData.jadwal;
       const timezoneOffset = prayerData.timezone_offset || 0;
+      console.log("timezone offset: "+ timezoneOffset);
       const prayerOrder = ['imsak',
         'subuh',
         'terbit',
