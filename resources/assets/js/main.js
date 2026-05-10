@@ -413,6 +413,7 @@
       if (!resultArea) return;
 
       const jadwal = prayerData.jadwal;
+      const timezoneOffset = prayerData.timezone_offset || 0;
       const prayerOrder = ['imsak',
         'subuh',
         'terbit',
@@ -421,27 +422,53 @@
         'ashar',
         'maghrib',
         'isya'];
+
+      // Hitung waktu sekarang di kota tersebut
+      const nowUTC = new Date();
+      const nowLocal = new Date(nowUTC.getTime() + (timezoneOffset * 60 * 1000));
+      const nowMinutes = nowLocal.getHours() * 60 + nowLocal.getMinutes();
+
+      // Cari shalat berikutnya (waktu > sekarang)
+      let nextPrayer = null;
+      for (let name of prayerOrder) {
+        if (jadwal[name]) {
+          const [hours,
+            minutes] = jadwal[name].split(':').map(Number);
+          const prayerMinutes = hours * 60 + minutes;
+          if (prayerMinutes > nowMinutes) {
+            nextPrayer = name;
+            break;
+          }
+        }
+      }
+
+      // Bangun HTML tabel dengan class active pada baris shalat berikutnya
       let html = `
       <div class="card mt-2">
       <div class="card-header">
       <div class="fw-bold">${Core.escapeHtml(prayerData.city)}</div>
-      <div class="small">${Core.escapeHtml(prayerData.date)} (${Core.escapeHtml(prayerData.hijri)})</div>
+      <div class="small text-muted">${Core.escapeHtml(prayerData.date)} (${Core.escapeHtml(prayerData.hijri)})</div>
       </div>
       <div class="card-body p-0">
       <table class="table table-sm mb-0">
       <tbody>
       `;
+
       for (let name of prayerOrder) {
         if (jadwal[name]) {
-          html += `<tr><th>${Core.getPrayerName(name)}</th><td class="text-end">${Core.escapeHtml(jadwal[name])}</td></tr>`;
+          const isActive = (name === nextPrayer);
+          const rowClass = isActive ? 'class="table-active"': '';
+          html += `<tr ${rowClass}><th>${Core.getPrayerName(name)}</th><td class="text-end">${Core.escapeHtml(jadwal[name])}</td></tr>`;
         }
       }
+
       html += `
       </tbody>
       </table>
       </div>
       </div>
       `;
+
       resultArea.innerHTML = html;
     }
 
