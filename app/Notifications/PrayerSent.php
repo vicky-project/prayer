@@ -1,5 +1,4 @@
 <?php
-
 namespace Modules\Prayer\Notifications;
 
 use Illuminate\Notifications\Notification;
@@ -9,7 +8,8 @@ class PrayerSent extends Notification
   public function __construct(
     protected string $city,
     protected string $name,
-    protected string $time
+    protected string $time,
+    protected bool $isFriday = false
   ) {}
 
   public function via($notifiable) {
@@ -38,13 +38,20 @@ class PrayerSent extends Notification
       'isya' => 'Isya',
     ];
     $displayName = $names[$this->name] ?? $this->name;
-
     $displayName = $displayName === "imsak" ? "Imsak" : "Shalat ". ucfirst($displayName);
 
-    $message = "🕌 *Waktu {$displayName} telah tiba*\n" .
-    "📍 {$this->city}\n" .
-    "⏰ {$this->time} \n\n" .
-    "Semoga ibadah kita diterima Allah SWT.";
+    // Khusus Jumat untuk dzuhur
+    if ($this->isFriday && $this->name === 'dzuhur') {
+      $message = "🕌 *Waktu Shalat Jumat telah tiba*\n" .
+      "📍 {$this->city}\n" .
+      "⏰ {$this->time} \n\n" .
+      "Semoga ibadah kita diterima Allah SWT.";
+    } else {
+      $message = "🕌 *Waktu {$displayName} telah tiba*\n" .
+      "📍 {$this->city}\n" .
+      "⏰ {$this->time} \n\n" .
+      "Semoga ibadah kita diterima Allah SWT.";
+    }
 
     return [
       "text" => $message,

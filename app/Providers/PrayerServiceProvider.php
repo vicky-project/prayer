@@ -86,6 +86,9 @@ class PrayerServiceProvider extends ServiceProvider
     ->make("config")
     ->set("app.timezone",
       config("prayer.timezone", 'Asia/Jakarta'));
+    $this->app
+    ->make('config')
+    ->set('laravel-spatial.with_wkt_options', false);
   }
 
   protected function registerHooks($hookService): void
