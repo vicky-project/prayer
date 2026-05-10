@@ -125,7 +125,6 @@
       }
       throw new Error(res.message || 'Gagal menyimpan lokasi');
     } catch (err) {
-      console.warn('Auto-save location failed:', err);
       Core.showToast('Gagal menyimpan lokasi otomatis: ' + err.message, 'warning');
       return false;
     }
@@ -397,7 +396,7 @@
         }
       } catch (err) {
         if (err.name === 'AbortError') {
-          console.log('Pencarian dibatalkan');
+          Core.sho('Pencarian dibatalkan', 'warning');
         } else {
           resultArea.innerHTML = `<div class="alert alert-danger">${Core.escapeHtml(err.message)}</div>`;
         }

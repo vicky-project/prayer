@@ -173,10 +173,6 @@
 @endpush
 
 @push('scripts')
-<script src="//cdn.jsdelivr.net/npm/eruda"></script>
-<script>
-  eruda.init(); // Ikon Eruda akan muncul
-</script>
 <script>
   const BASE_URL = '{{ rtrim(config("app.url"), "/") }}';
   {!! file_get_contents(module_path('prayer', 'resources/assets/js/core.js')); !!}
