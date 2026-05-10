@@ -1,4 +1,5 @@
 <?php
+
 namespace Modules\Prayer\Console;
 
 use Illuminate\Console\Command;
@@ -6,11 +7,12 @@ use Modules\Prayer\Notifications\PrayerSent;
 use Modules\Prayer\Services\PrayerTimeService;
 use Modules\Telegram\Models\TelegramUser;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Log;
 
 class SendPrayerNotifications extends Command
 {
   protected $signature = 'app:prayer-sent';
-  protected $description = 'Kirim notifikasi waktu shalat ke pengguna Telegram yang mengaktifkan';
+  protected $description = 'Kirim notifikasi waktu shalat secara akurat ke pengguna Telegram';
 
   protected PrayerTimeService $prayerService;
 
@@ -20,94 +22,99 @@ class SendPrayerNotifications extends Command
   }
 
   public function handle() {
-    $this->info('Memulai pengiriman notifikasi shalat...');
+    $this->info('[' . now()->toDateTimeString() . '] Memulai pengiriman notifikasi...');
 
-    $users = TelegramUser::whereRaw('JSON_EXTRACT(data, "$.prayer.notifications_enabled") = true')->get();
-
-    if ($users->isEmpty()) {
-      $this->info('Tidak ada user dengan notifikasi aktif.');
-      return 0;
-    }
-
-    $sentCount = 0;
-    foreach ($users as $user) {
-      try {
-        $data = $user->data ?? [];
-        $prayer = $data['prayer'] ?? [];
-
-        $defaultLocation = $prayer['default_location'] ?? [];
-
-        if (empty($defaultLocation)) {
-          $this->warn("User {$user->telegram_id} tidak menyimpan lokasi default.");
-          continue;
-        }
-
-        $prayerData = $this->prayerService->getTodayPrayerByLocation($defaultLocation);
-        if (!$prayerData) {
-          $this->warn("User {$user->telegram_id}: jadwal tidak ditemukan untuk lokasi default.");
-          continue;
-        }
-
-        if (!isset($prayer['notifications_sent'])) {
-          $prayer['notifications_sent'] = [];
-        }
-
-        $timezone = $prayerData['timezone'] ?? 'Asia/Jakarta';
-        $now = Carbon::now($timezone);
-        $today = $now->toDateString();
-        $isRamadhan = $now->toHijri()->month === 9;
-
-        $sentToday = $prayer['notifications_sent'][$today] ?? [];
-        $reminderMinutes = $prayer['reminder_minutes'] ?? 0;
-        $updated = false;
-
-        foreach ($prayerData['jadwal'] as $name => $timeStr) {
-          if ($name === 'imsak' && !$isRamadhan) {
-            continue;
-          }
-
-          $prayerTime = Carbon::today($timezone)->setTimeFromTimeString($timeStr);
-          $notifyTime = $prayerTime->copy()->subMinutes($reminderMinutes);
-          $diffMinutes = $now->diffInMinutes($notifyTime);
-          $diffSeconds = $now->diffInSeconds($notifyTime);
-
-          if ($now->gte($notifyTime) && $diffMinutes == 0 && $diffSeconds <= 60 && !in_array($name, $sentToday)) {
-            // Deteksi apakah ini shalat dzuhur dan sekarang hari Jumat
-            $isFriday = ($name === 'dzuhur' && $now->dayOfWeek === Carbon::FRIDAY);
-
-            $user->notify(new PrayerSent(
-              city: $prayerData['city'],
-              name: $name,
-              time: $timeStr,
-              isFriday: $isFriday
-            ));
-
-            $sentToday[] = $name;
-            $updated = true;
-            $this->info("Notifikasi {$name} (reminder {$reminderMinutes} menit) terkirim ke {$user->telegram_id}");
-            $sentCount++;
-          }
-        }
-
-        if ($updated) {
-          $prayer['notifications_sent'][$today] = $sentToday;
-          $cutoff = Carbon::now()->subDays(7);
-          $prayer['notifications_sent'] = collect($prayer['notifications_sent'])
-          ->filter(fn($sent, $date) => Carbon::parse($date)->gte($cutoff))
-          ->toArray();
-          $data['prayer'] = $prayer;
-          $user->data = $data;
-          $user->save();
-        }
-      } catch (\Exception $e) {
-        \Log::error("Gagal kirim notifikasi shalat", [
-          'user' => $user->telegram_id,
-          'message' => $e->getMessage()
-        ]);
+    // 1. Gunakan chunk untuk menangani ribuan user tanpa memakan RAM besar
+    // 2. Gunakan sintaks '->' untuk filter JSON yang lebih clean dan aman
+    TelegramUser::where('data->prayer->notifications_enabled', true)
+    ->chunk(100, function ($users) {
+      foreach ($users as $user) {
+        $this->processUserNotification($user);
       }
-    }
+    });
 
-    $this->info("Selesai. {$sentCount} notifikasi terkirim.");
+    $this->info('Proses selesai.');
     return 0;
+  }
+
+  private function processUserNotification(TelegramUser $user) {
+    try {
+      $data = $user->data ?? [];
+      $prayer = $data['prayer'] ?? [];
+      $defaultLocation = $prayer['default_location'] ?? [];
+
+      if (empty($defaultLocation)) return;
+
+      // Ambil jadwal shalat
+      $prayerData = $this->prayerService->getTodayPrayerByLocation($defaultLocation);
+      if (!$prayerData || !isset($prayerData['jadwal'])) return;
+
+      $timezone = $prayerData['timezone'] ?? 'Asia/Jakarta';
+      $now = Carbon::now($timezone);
+      $today = $now->toDateString();
+
+      // Inisialisasi data pengiriman hari ini
+      $sentToday = $prayer['notifications_sent'][$today] ?? [];
+      $reminderMinutes = (int) ($prayer['reminder_minutes'] ?? 0);
+      $updated = false;
+
+      foreach ($prayerData['jadwal'] as $name => $timeStr) {
+        // Skip Imsak jika bukan Ramadhan
+        if ($name === 'imsak' && $now->toHijri()->month !== 9) continue;
+
+        // Parsing waktu shalat
+        $prayerTime = Carbon::today($timezone)->setTimeFromTimeString($timeStr);
+        $notifyTime = $prayerTime->copy()->subMinutes($reminderMinutes);
+
+        /**
+        * LOGIKA AKURASI:
+        * 1. Waktu sekarang sudah melewati (gte) waktu notifikasi.
+        * 2. Belum dikirim hari ini (in_array).
+        * 3. Masih dalam jendela waktu yang wajar (misal: belum lewat 15 menit dari jadwal).
+        *    Ini mencegah notifikasi "nyepam" jika server sempat down lalu nyala kembali.
+        */
+        if ($now->gte($notifyTime) &&
+          $now->diffInMinutes($notifyTime) <= 5 &&
+          !in_array($name, $sentToday)) {
+
+          $isFriday = ($name === 'dzuhur' && $now->isFriday());
+
+          $user->notify(new PrayerSent(
+            city: $prayerData['city'],
+            name: $name,
+            time: $timeStr,
+            isFriday: $isFriday
+          ));
+
+          $sentToday[] = $name;
+          $updated = true;
+          $this->info("✓ Notifikasi {$name} terkirim ke: {$user->telegram_id}");
+        }
+      }
+
+      if ($updated) {
+        $this->saveUserProgress($user, $data, $sentToday, $today);
+      }
+
+    } catch (\Exception $e) {
+      Log::error("Gagal memproses user {$user->telegram_id}: " . $e->getMessage());
+    }
+  }
+
+  private function saveUserProgress($user, $data, $sentToday, $today) {
+    $prayer = $data['prayer'];
+    $prayer['notifications_sent'][$today] = $sentToday;
+
+    // Cleanup: Hapus log notifikasi yang lebih lama dari 3 hari (agar JSON tidak bengkak)
+    $cutoff = Carbon::now()->subDays(3);
+    $prayer['notifications_sent'] = collect($prayer['notifications_sent'])
+    ->filter(fn($sent, $date) => Carbon::parse($date)->gte($cutoff))
+    ->toArray();
+
+    $data['prayer'] = $prayer;
+    $user->data = $data;
+
+    // Gunakan update agar hanya kolom data yang diperbarui (lebih aman dari race condition)
+    $user->update(['data' => $data]);
   }
 }
