@@ -363,33 +363,56 @@
     const {
       Calendar
     } = window.VanillaCalendarPro;
+
+    // Tentukan tanggal pertama dan terakhir bulan ini (dari data atau dari tanggal sistem)
+    const today = new Date();
+    const currentMonth = today.getMonth() + 1;
+    const currentYear = today.getFullYear();
+    const firstDayOfMonth = `${currentYear}-${String(currentMonth).padStart(2, '0')}-01`;
+    const lastDayOfMonth = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${new Date(currentYear, currentMonth, 0).getDate()}`;
+
+    // Popup tooltip untuk setiap tanggal
     const popups = {};
     monthlyData.forEach(day => {
       const d = convertToYYYYMMDD(day.date);
-      if (d) popups[d] = {
-        modifier: 'has-prayer-time',
-        html: `<div class="prayer-tooltip"><i class="bi bi-moon-stars"></i> Subuh: ${day.jadwal.subuh || '-'}</div>`
-      };
+      if (d) {
+        popups[d] = {
+          modifier: 'has-prayer-time',
+          html: `<div class="prayer-tooltip"><i class="bi bi-moon-stars"></i> Subuh: ${day.jadwal.subuh || '-'}</div>`
+        };
+      }
     });
+
     const calendar = new Calendar(container,
       {
         type: 'default',
         selectionDatesMode: 'single',
-        selectedMonth: new Date().getMonth(),
-        selectedYear: new Date().getFullYear(),
-        displayDatesOutside: false,
-        popups,
+        selectedMonth: currentMonth,
+        selectedYear: currentYear,
+        popups: popups,
+        displayDateMin: firstDayOfMonth,
+        // batas tanggal minimum (awal bulan)
+        displayDateMax: lastDayOfMonth,
+        // batas tanggal maksimum (akhir bulan)
         onClickDate: (self, e) => {
           const fullDate = e.target.closest('[data-vc-date]')?.getAttribute('data-vc-date');
           const dayData = monthlyData.find(d => convertToYYYYMMDD(d.date) === fullDate);
-          if (dayData) showDailySchedule(dayData);
-          else showNoDataMessage(fullDate);
-        }
+          if (dayData) {
+            showDailySchedule(dayData);
+          } else {
+            showNoDataMessage(fullDate);
+          }
+        },
+        CSSClasses: ['custom-calendar']
       });
     calendar.init();
+
+    // Sembunyikan tombol navigasi bulan
     container.querySelectorAll('.vanilla-calendar-arrow').forEach(btn => btn.style.display = 'none');
-    const today = convertToYYYYMMDD(getTodayDate());
-    const todayData = monthlyData.find(d => convertToYYYYMMDD(d.date) === today);
+
+    // Tampilkan jadwal hari ini secara default
+    const todayStr = convertToYYYYMMDD(getTodayDate());
+    const todayData = monthlyData.find(d => convertToYYYYMMDD(d.date) === todayStr);
     showDailySchedule(todayData || monthlyData[0]);
   }
 
