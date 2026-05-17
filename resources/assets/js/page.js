@@ -409,7 +409,7 @@
       {
         type: 'default',
         selectionDatesMode: 'single',
-        selectedMonth: new Date().getMonth() + 1,
+        selectedMonth: new Date().getMonth(),
         selectedYear: new Date().getFullYear(),
         popups: popups,
         onClickDate: (self, event) => {
