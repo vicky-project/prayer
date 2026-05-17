@@ -366,7 +366,7 @@
 
     // Tentukan tanggal pertama dan terakhir bulan ini (dari data atau dari tanggal sistem)
     const today = new Date();
-    const currentMonth = today.getMonth();
+    const currentMonth = today.getMonth() + 1;
     const currentYear = today.getFullYear();
     const firstDayOfMonth = `${currentYear}-${String(currentMonth).padStart(2, '0')}-01`;
     const lastDayOfMonth = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${new Date(currentYear, currentMonth, 0).getDate()}`;
@@ -387,7 +387,7 @@
       {
         type: 'default',
         selectionDatesMode: 'single',
-        selectedMonth: currentMonth,
+        selectedMonth: currentMonth - 1,
         selectedYear: currentYear,
         popups: popups,
         displayDateMin: firstDayOfMonth,
