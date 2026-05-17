@@ -391,9 +391,9 @@
         selectedYear: currentYear,
         popups: popups,
         displayDateMin: firstDayOfMonth,
-        // batas tanggal minimum (awal bulan)
         displayDateMax: lastDayOfMonth,
-        // batas tanggal maksimum (akhir bulan)
+        selectionMonthsMode: false,
+        selectionYearsMode: false,
         onClickDate: (self, e) => {
           const fullDate = e.target.closest('[data-vc-date]')?.getAttribute('data-vc-date');
           const dayData = monthlyData.find(d => convertToYYYYMMDD(d.date) === fullDate);
