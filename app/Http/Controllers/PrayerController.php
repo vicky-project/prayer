@@ -6,6 +6,7 @@ use Carbon\Carbon;
 use Illuminate\Routing\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Modules\Prayer\Http\Requests\LocationRequest;
 use Modules\Prayer\Services\PrayerTimeService;
 use Modules\Prayer\Models\City;
 use Modules\Telegram\Models\TelegramUser;
