@@ -63,7 +63,7 @@
       const time = jadwal[name] || '-';
       const isCurrent = (name === currentPrayer);
       const rowClass = isCurrent ? 'table-active': '';
-      rows += `<tr class="${rowClass}"><th scope="row">${Core.getPrayerName(name)}</th><td class="text-end">${time}</td></tr>`;
+      rows += `<tr class="${rowClass}"><th scope="row">${Core.getPrayerName(name)}</th><td class="text-end">${time} </td></tr>`;
     }
 
     let extraButton = '';
@@ -80,9 +80,7 @@
     <button id="searchCityBtn" class="btn btn-sm btn-outline-light" title="Cari Jadwal Kota Lain"><i class="bi bi-search"></i></button>
     <button id="settingsBtn" class="btn btn-sm btn-outline-light" title="Pengaturan"><i class="bi bi-gear-fill"></i></button>
     <button id="refreshPrayerBtn" class="btn btn-sm btn-outline-light"><i class="bi bi-arrow-repeat"></i></button>
-    <button id="weeklyViewBtn" class="btn btn-sm btn-outline-light" title="Jadwal Mingguan">
-    <i class="bi bi-calendar-week"></i>
-    </button>
+    <button id="weeklyViewBtn" class="btn btn-sm btn-outline-light" title="Jadwal Mingguan"><i class="bi bi-calendar-week"></i></button>
     </div>
     </div>
     <div class="card-body">
@@ -188,7 +186,6 @@
       lon = String(sett.longitude);
     }
 
-    // PERBAIKAN: Ambil kota dari default_location atau legacy city
     let city = '';
     if (sett.default_location && sett.default_location.city) {
       city = String(sett.default_location.city);
@@ -260,7 +257,7 @@
     const reminderSelect = document.getElementById('reminder_minutes');
     if (reminderSelect) reminderSelect.value = reminderMinutes;
 
-    // Autocomplete kota (sama seperti sebelumnya)
+    // Autocomplete kota
     const cityInput = document.getElementById('city');
     if (cityInput) {
       let debounceTimer;
@@ -296,125 +293,197 @@
     }
   }
 
-  function renderRangeTableView(weeklyData, days) {
+  // ==================== KALENDER JADWAL SHALAT ====================
+  async function renderCalendarView() {
     const prayerDiv = document.getElementById('prayer-view');
     const settingsDiv = document.getElementById('settings-view');
     if (!prayerDiv) return;
     if (settingsDiv) settingsDiv.style.display = 'none';
 
-    // Tentukan daftar shalat (tampilkan imsak hanya jika ada di data)
-    const hasImsak = weeklyData.some(day => day.jadwal.imsak);
-    const prayerNames = [];
-    if (hasImsak) prayerNames.push('imsak');
-    prayerNames.push('subuh', 'dzuhur', 'ashar', 'maghrib', 'isya');
-    const prayerLabels = {
-      imsak: 'Imsak',
-      subuh: 'Subuh',
-      dzuhur: 'Dzuhur',
-      ashar: 'Ashar',
-      maghrib: 'Maghrib',
-      isya: 'Isya'
+    const days = 30;
+    const state = Core.getState();
+    let body = {
+      days: days
     };
-
-    // Deteksi hari Jumat
-    const isFriday = weeklyData.map(day => {
-      const parts = day.date.split('-');
-      if (parts.length === 3) {
-        const d = new Date(parts[2], parts[1] - 1, parts[0]);
-        return d.getDay() === 5;
+    if (state.prayer && state.prayer.city) {
+      body.city = state.prayer.city;
+    } else if (state.prayer && state.prayer.latitude && state.prayer.longitude) {
+      body.latitude = state.prayer.latitude;
+      body.longitude = state.prayer.longitude;
+    } else {
+      const settings = state.settings;
+      if (settings && settings.default_location) {
+        if (settings.default_location.city) {
+          body.city = settings.default_location.city;
+        } else if (settings.default_location.latitude && settings.default_location.longitude) {
+          body.latitude = settings.default_location.latitude;
+          body.longitude = settings.default_location.longitude;
+        }
       }
-      return false;
+    }
+
+    try {
+      Core.showLoading('Memuat data kalender...');
+      const res = await Core.api.post('/api/prayer/times/range', body);
+      if (!res.success || !res.data || res.data.length === 0) {
+        throw new Error(res.message || 'Data jadwal tidak tersedia');
+      }
+      const monthlyData = res.data;
+
+      let html = `
+      <div class="card shadow">
+      <div class="card-header d-flex justify-content-between align-items-center">
+      <h4 class="mb-0"><i class="bi bi-calendar-week me-2"></i>Jadwal Shalat - Kalender</h4>
+      <button id="backToPrayerFromCalendarBtn" class="btn btn-sm btn-outline-light">
+      <i class="bi bi-arrow-left"></i> Kembali
+      </button>
+      </div>
+      <div class="card-body">
+      <div class="calendar-wrapper">
+      <div id="prayer-calendar" class="custom-calendar"></div>
+      </div>
+      <div id="daily-schedule" class="schedule-card mt-3">
+      <h6><i class="bi bi-moon-stars"></i> Jadwal Shalat</h6>
+      <div id="schedule-content" class="text-center text-muted">
+      Pilih tanggal untuk melihat jadwal
+      </div>
+      </div>
+      </div>
+      </div>
+      `;
+      prayerDiv.innerHTML = html;
+      prayerDiv.style.display = 'block';
+
+      setTimeout(() => {
+        initPrayerCalendar(monthlyData);
+      }, 50);
+
+      const backBtn = document.getElementById('backToPrayerFromCalendarBtn');
+      if (backBtn) {
+        backBtn.addEventListener('click', () => {
+          Core.setState({
+            currentView: 'prayer'
+          });
+        });
+      }
+    } catch (err) {
+      prayerDiv.innerHTML = `
+      <div class="alert alert-danger">
+      <i class="bi bi-exclamation-triangle"></i> ${Core.escapeHtml(err.message)}
+      <button class="btn btn-outline-primary btn-sm mt-2" onclick="location.reload()">
+      Coba Lagi
+      </button>
+      </div>
+      `;
+      prayerDiv.style.display = 'block';
+    } finally {
+      Core.hideLoading();
+    }
+  }
+
+  function initPrayerCalendar(monthlyData) {
+    const calendarContainer = document.getElementById('prayer-calendar');
+    if (!calendarContainer) return;
+
+    if (!window.VanillaCalendarPro) {
+      console.error('VanillaCalendarPro tidak ditemukan');
+      return;
+    }
+
+    const {
+      Calendar
+    } = window.VanillaCalendarPro;
+
+    const popups = {};
+    monthlyData.forEach(day => {
+      const dateStr = convertToYYYYMMDD(day.date);
+      if (!dateStr) return;
+      const subuhTime = day.jadwal.subuh || '-';
+      popups[dateStr] = {
+        modifier: 'has-prayer-time',
+        html: `<div class="prayer-tooltip"><i class="bi bi-moon-stars"></i> Subuh: ${subuhTime}</div>`
+      };
     });
 
-    // Di dalam renderRangeTableView, sebelum generateRows
-    const getDayName = (dateStr) => {
-      const parts = dateStr.split('-'); // dd-mm-yyyy
-      if (parts.length === 3) {
-        const d = new Date(parts[2], parts[1] - 1, parts[0]);
-        const days = ['Minggu',
-          'Senin',
-          'Selasa',
-          'Rabu',
-          'Kamis',
-          'Jumat',
-          'Sabtu'];
-        return days[d.getDay()];
-      }
-      return '';
-    };
-
-    // Helper untuk generate baris tabel (agar tidak terlalu panjang)
-    const generateRows = () => {
-      let rows = '';
-      for (let i = 0; i < weeklyData.length; i++) {
-        const day = weeklyData[i];
-        const jumatClass = isFriday[i] ? 'class="text-warning fw-bold"': '';
-        const dayName = getDayName(day.date);
-        rows += `<tr>
-        <td style="position: sticky; left: 0; background: var(--tg-theme-secondary-bg-color);" ${jumatClass}>
-        ${Core.escapeHtml(day.date)}<br>
-        <small class="text-muted">${dayName} | ${Core.escapeHtml(day.hijri)}</small>
-        </td>
-        ${prayerNames.map(p => {
-          const time = day.jadwal[p] || '-';
-          return `<td ${jumatClass}>${Core.escapeHtml(time)}</td>`;
-        }).join('')}
-        </tr>`;
-      }
-      return rows;
-    };
-
-    let html = `
-    <div class="card shadow">
-    <div class="card-header d-flex justify-content-between align-items-center">
-    <h4 class="mb-0"><i class="bi bi-calendar-week me-2"></i>Jadwal Shalat</h4>
-    <button id="backToPrayerFromRangeBtn" class="btn btn-sm btn-outline-light"><i class="bi bi-arrow-left"></i> Kembali</button>
-    </div>
-    <div class="card-body p-0">
-    <div class="p-2 border-bottom d-flex justify-content-between align-items-center">
-    <span class="small">Tampilkan:</span>
-    <select id="rangeDaysSelect" class="form-select form-select-sm w-auto">
-    <option value="7" ${days === 7 ? 'selected': ''}>7 hari</option>
-    <option value="14" ${days === 14 ? 'selected': ''}>14 hari</option>
-    <option value="30" ${days === 30 ? 'selected': ''}>30 hari</option>
-    </select>
-    </div>
-    <div class="table-responsive" style="max-height: calc(100dvh - 100px); overflow-y: auto;">
-    <table id="range-table" class="table table-bordered mb-0 text-center">
-    <thead class="sticky-top">
-    <tr>
-    <th style="position: sticky; left: 0; background: var(--tg-theme-secondary-bg-color); z-index: 3;">Tanggal</th>
-    ${prayerNames.map(p => `<th>${prayerLabels[p]}</th>`).join('')}
-    </tr>
-    </thead>
-    <tbody>
-    ${generateRows()}
-    </tbody>
-    </table>
-    </div>
-    </div>
-    </div>
-    `;
-
-    prayerDiv.innerHTML = html;
-    prayerDiv.style.display = 'block';
-
-    // Event listener untuk tombol kembali
-    const backBtn = document.getElementById('backToPrayerFromRangeBtn');
-    if (backBtn) {
-      backBtn.addEventListener('click', () => {
-        Core.setState({
-          currentView: 'prayer'
-        });
+    const calendar = new Calendar(calendarContainer,
+      {
+        type: 'default',
+        selectionDatesMode: 'single',
+        selectedMonth: new Date().getMonth() + 1,
+        selectedYear: new Date().getFullYear(),
+        popups: popups,
+        onClickDate: (self, event) => {
+          const dateEl = event.target.closest('[data-vc-date]');
+          if (!dateEl) return;
+          const fullDate = dateEl.getAttribute('data-vc-date');
+          if (!fullDate) return;
+          const dayData = monthlyData.find(d => convertToYYYYMMDD(d.date) === fullDate);
+          if (!dayData) return;
+          showDailySchedule(dayData);
+        },
+        CSSClasses: ['custom-calendar']
       });
+    calendar.init();
+
+    const todayStr = convertToYYYYMMDD(getTodayDate());
+    const todayData = monthlyData.find(d => convertToYYYYMMDD(d.date) === todayStr);
+    if (todayData) {
+      showDailySchedule(todayData);
+    } else if (monthlyData.length > 0) {
+      showDailySchedule(monthlyData[0]);
     }
-    // Catatan: dropdown akan ditangani oleh event delegation di main.js (change)
+  }
+
+  function showDailySchedule(prayerData) {
+    const scheduleContainer = document.getElementById('schedule-content');
+    if (!scheduleContainer) return;
+    const jadwal = prayerData.jadwal;
+    const prayerOrder = ['imsak',
+      'subuh',
+      'terbit',
+      'dhuha',
+      'dzuhur',
+      'ashar',
+      'maghrib',
+      'isya'];
+    let tableHtml = '<table class="schedule-table">';
+    for (let name of prayerOrder) {
+      if (jadwal[name]) {
+        tableHtml += `
+        <tr>
+        <th style="width: 40%">${Core.getPrayerName(name)}</th>
+        <td>${Core.escapeHtml(jadwal[name])}</td>
+        </tr>
+        `;
+      }
+    }
+    tableHtml += '</table>';
+    scheduleContainer.innerHTML = `
+    <div class="fw-bold mb-2">${Core.escapeHtml(prayerData.date)} (${Core.escapeHtml(prayerData.hijri)})</div>
+    ${tableHtml}
+    `;
+  }
+
+  function convertToYYYYMMDD(dateStr) {
+    const parts = dateStr.split('-');
+    if (parts.length !== 3) return null;
+    return `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+  }
+
+  function getTodayDate() {
+    const today = new Date();
+    const dd = String(today.getDate()).padStart(2, '0');
+    const mm = String(today.getMonth() + 1).padStart(2, '0');
+    const yyyy = today.getFullYear();
+    return `${dd}-${mm}-${yyyy}`;
   }
 
   // Update ekspor UI
   window.PrayerAppUI = {
     renderPrayerView: renderPrayerView,
     renderSettingsView: renderSettingsView,
-    renderRangeTableView: renderRangeTableView
+    renderRangeTableView: renderRangeTableView,
+    // jika masih diperlukan
+    renderCalendarView: renderCalendarView
   };
 })(window, document);

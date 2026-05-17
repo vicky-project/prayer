@@ -11,10 +11,8 @@
 
   let isFetchingPrayer = false;
   let isGeolocating = false;
-  // Variabel untuk menyimpan AbortController
   let searchAbortController = null;
 
-  // Helper fetch dengan timeout
   async function fetchWithTimeout(promise, timeoutMs = 15000) {
     let timeoutId;
     const timeoutPromise = new Promise((_, reject) => {
@@ -30,7 +28,6 @@
     }
   }
 
-  // ----- API calls -----
   async function fetchSettings() {
     const cached = localStorage.getItem('prayer_settings_cache');
     if (cached) {
@@ -74,9 +71,7 @@
   }
 
   async function fetchPrayerTimes(lat, lon, city) {
-    if (isFetchingPrayer) {
-      return;
-    }
+    if (isFetchingPrayer) return;
     isFetchingPrayer = true;
 
     try {
@@ -130,7 +125,6 @@
     }
   }
 
-  // ----- ONLY BROWSER GEOLOCATION dengan error handling user-friendly -----
   function getBrowserLocation(timeoutMs = 15000) {
     return new Promise((resolve, reject) => {
       if (!navigator.geolocation) {
@@ -169,11 +163,8 @@
       });
     }
 
-    // ----- Load from geolocation (tanpa fallback ke Telegram) -----
     async function loadFromGeolocation() {
-      if (isGeolocating) {
-        return;
-      }
+      if (isGeolocating) return;
       isGeolocating = true;
       const TIMEOUT = 15000;
       try {
@@ -190,7 +181,6 @@
           loading: false, error: err.message
         });
         Core.showToast(err.message, 'danger');
-        // Jika gagal, arahkan ke halaman settings agar user bisa input manual
         Core.setState({
           currentView: 'settings', error: null
         });
@@ -200,7 +190,6 @@
       }
     }
 
-    // ----- Load default location from settings -----
     async function loadDefaultLocation() {
       if (isGeolocating) return;
       Core.showLoading('Memuat pengaturan...');
@@ -243,7 +232,6 @@
       }
     }
 
-    // ----- Save settings dari form -----
     async function saveSettings(formData) {
       try {
         Core.showLoading('Menyimpan pengaturan...');
@@ -305,7 +293,6 @@
       }
     }
 
-    // ======================== RANGE PRAYER TIMES ========================
     async function fetchRangePrayerTimes(days = 7) {
       if (isFetchingPrayer) return;
       isFetchingPrayer = true;
@@ -316,14 +303,12 @@
           days: days
         };
 
-        // Prioritaskan dari data prayer yang sedang ditampilkan
         if (state.prayer && state.prayer.city) {
           body.city = state.prayer.city;
         } else if (state.prayer && state.prayer.latitude && state.prayer.longitude) {
           body.latitude = state.prayer.latitude;
           body.longitude = state.prayer.longitude;
         } else {
-          // Fallback ke settings default location
           const settings = state.settings;
           if (settings && settings.default_location) {
             if (settings.default_location.city) {
@@ -341,7 +326,6 @@
 
         const res = await Core.api.post('/api/prayer/times/range', body);
         if (res.success && res.data && res.data.length) {
-          // Panggil UI renderRangeTableView (harus sudah didefinisikan di page.js)
           UI.renderRangeTableView(res.data, days);
         } else {
           throw new Error(res.message || 'Data jadwal tidak tersedia');
@@ -354,14 +338,11 @@
       }
     }
 
-
-    // Fungsi untuk melakukan pencarian
     async function performCitySearch(city) {
       const resultArea = document.getElementById('searchResultArea');
       const loadingSpinner = document.getElementById('searchLoadingSpinner');
       if (!resultArea || !loadingSpinner) return;
 
-      // Batalkan request sebelumnya jika ada
       if (searchAbortController) {
         searchAbortController.abort();
       }
@@ -371,7 +352,6 @@
         resultArea.innerHTML = '';
         loadingSpinner.classList.remove('d-none');
 
-        // Gunakan fetch langsung dengan token (karena Core.api tidak support signal)
         const token = localStorage.getItem('telegram_token') || tgApp.getToken();
         const response = await fetch(BASE_URL + '/api/prayer/times', {
           method: 'POST',
@@ -381,8 +361,7 @@
             'Authorization': `Bearer ${token}`
           },
           body: JSON.stringify({
-            city: city,
-            ignore_default: true
+            city: city, ignore_default: true
           }),
           signal: searchAbortController.signal
         });
@@ -396,7 +375,7 @@
         }
       } catch (err) {
         if (err.name === 'AbortError') {
-          Core.sho('Pencarian dibatalkan', 'warning');
+          Core.showToast('Pencarian dibatalkan', 'warning');
         } else {
           resultArea.innerHTML = `<div class="alert alert-danger">${Core.escapeHtml(err.message)}</div>`;
         }
@@ -406,7 +385,6 @@
       }
     }
 
-    // Fungsi menampilkan hasil pencarian di modal
     function displaySearchResult(prayerData) {
       const resultArea = document.getElementById('searchResultArea');
       if (!resultArea) return;
@@ -422,7 +400,6 @@
         'maghrib',
         'isya'];
 
-      // Format waktu saat ini di timezone kota
       const now = new Date();
       const timeFormatter = new Intl.DateTimeFormat('id-ID', {
         timeZone: timezone,
@@ -433,7 +410,6 @@
       });
       const currentTimeStr = timeFormatter.format(now);
 
-      // Hitung waktu sekarang dalam menit untuk menentukan shalat berikutnya
       const parts = new Intl.DateTimeFormat('en-US', {
         timeZone: timezone,
         hour: 'numeric',
@@ -448,7 +424,6 @@
       }
       const nowMinutes = hours * 60 + minutes;
 
-      // Cari shalat berikutnya
       let nextPrayer = null;
       for (let name of prayerOrder) {
         if (jadwal[name]) {
@@ -462,7 +437,6 @@
         }
       }
 
-      // Bangun HTML
       let html = `
       <div class="card mt-2">
       <div class="card-header">
@@ -490,18 +464,15 @@
       resultArea.innerHTML = html;
     }
 
-    // Fungsi untuk menampilkan modal dan menginisialisasi autocomplete
     function showSearchCityModal() {
       const modalEl = document.getElementById('searchPrayerModal');
       if (!modalEl) return;
 
-      // Inisialisasi modal dengan backdrop static (tidak bisa tutup klik luar)
       const modal = new bootstrap.Modal(modalEl, {
         backdrop: 'static', keyboard: false
       });
       modal.show();
 
-      // Bersihkan konten sebelumnya
       const cityInput = document.getElementById('searchCityInput');
       const resultArea = document.getElementById('searchResultArea');
       const suggestionsDatalist = document.getElementById('searchCitySuggestions');
@@ -509,7 +480,6 @@
       if (resultArea) resultArea.innerHTML = '';
       if (suggestionsDatalist) suggestionsDatalist.innerHTML = '';
 
-      // Setup autocomplete
       if (cityInput && suggestionsDatalist) {
         let debounceTimer;
         const handleInput = (e) => {
@@ -539,10 +509,8 @@
         };
         cityInput.addEventListener('input',
           handleInput);
-        // Simpan listener untuk dibersihkan saat modal ditutup (opsional)
         cityInput._handleInput = handleInput;
 
-        // Saat user memilih dari datalist (change event), lakukan pencarian otomatis
         cityInput.addEventListener('change',
           async (e) => {
             const selectedCity = e.target.value;
@@ -552,20 +520,16 @@
           });
       }
 
-      // Reset saat modal ditutup (bersihkan state)
       modalEl.addEventListener('hidden.bs.modal',
         () => {
-          // Batalkan request jika masih berjalan
           if (searchAbortController) {
             searchAbortController.abort();
             searchAbortController = null;
           }
-          // Hapus event listener input untuk mencegah memory leak
           if (cityInput && cityInput._handleInput) {
             cityInput.removeEventListener('input', cityInput._handleInput);
             delete cityInput._handleInput;
           }
-          // Bersihkan datalist dan hasil
           if (suggestionsDatalist) suggestionsDatalist.innerHTML = '';
           if (resultArea) resultArea.innerHTML = '';
         },
@@ -574,7 +538,6 @@
         });
     }
 
-    // ----- Event Delegation (semua lokasi menggunakan browser) -----
     function setupEventDelegation() {
       document.body.addEventListener('click',
         (e) => {
@@ -625,7 +588,7 @@
               }
             })();
           } else if (target.id === 'weeklyViewBtn' || target.closest('#weeklyViewBtn')) {
-            fetchRangePrayerTimes(7); // default 7 hari
+            UI.renderCalendarView();
           } else if (target.id === 'searchCityBtn' || target.closest('#searchCityBtn')) {
             showSearchCityModal();
           }
