@@ -366,7 +366,7 @@
 
     // Tentukan tanggal pertama dan terakhir bulan ini (dari data atau dari tanggal sistem)
     const today = new Date();
-    const currentMonth = today.getMonth() + 1;
+    const currentMonth = today.getMonth();
     const currentYear = today.getFullYear();
     const firstDayOfMonth = `${currentYear}-${String(currentMonth).padStart(2, '0')}-01`;
     const lastDayOfMonth = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${new Date(currentYear, currentMonth, 0).getDate()}`;
@@ -408,7 +408,7 @@
     calendar.init();
 
     // Sembunyikan tombol navigasi bulan
-    container.querySelectorAll('.vanilla-calendar-arrow').forEach(btn => btn.style.display = 'none');
+    //container.querySelectorAll('.vanilla-calendar-arrow').forEach(btn => btn.style.display = 'none');
 
     // Tampilkan jadwal hari ini secara default
     const todayStr = convertToYYYYMMDD(getTodayDate());
