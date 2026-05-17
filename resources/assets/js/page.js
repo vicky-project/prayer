@@ -387,6 +387,7 @@
       {
         type: 'default',
         selectionDatesMode: 'single',
+        firstDayOfWeek: 0,
         selectedMonth: currentMonth - 1,
         selectedYear: currentYear,
         popups: popups,
