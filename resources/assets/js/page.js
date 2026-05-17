@@ -407,9 +407,6 @@
       });
     calendar.init();
 
-    // Sembunyikan tombol navigasi bulan
-    //container.querySelectorAll('.vanilla-calendar-arrow').forEach(btn => btn.style.display = 'none');
-
     // Tampilkan jadwal hari ini secara default
     const todayStr = convertToYYYYMMDD(getTodayDate());
     const todayData = monthlyData.find(d => convertToYYYYMMDD(d.date) === todayStr);
