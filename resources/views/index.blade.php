@@ -46,6 +46,7 @@
 @endsection
 
 @push('styles')
+<link href="https://cdn.jsdelivr.net/npm/vanilla-calendar-pro/styles/index.css" rel="stylesheet">
 <style>
   body {
     background-color: var(--tg-theme-bg-color) !important;
@@ -169,10 +170,31 @@
     color: #ffc107 !important;
     font-weight: bold;
   }
+  .custom-calendar {
+    --vc-bg-color: var(--tg-theme-bg-color);
+    --vc-color: var(--tg-theme-text-color);
+    --vc-border-color: var(--tg-theme-section-separator-color);
+    --vc-hover-bg-color: var(--tg-theme-secondary-bg-color);
+    --vc-active-bg-color: var(--tg-theme-button-color);
+    --vc-active-color: var(--tg-theme-button-text-color);
+  }
+  .schedule-card {
+    background: var(--tg-theme-secondary-bg-color);
+    border-radius: 12px;
+    padding: 1rem;
+  }
+  .schedule-table {
+    width: 100%;
+  }
+  .schedule-table td {
+    padding: 0.5rem;
+    border-bottom: 1px solid var(--tg-theme-section-separator-color);
+  }
 </style>
 @endpush
 
 @push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/vanilla-calendar-pro/index.js" defer></script>
 <script>
   const BASE_URL = '{{ rtrim(config("app.url"), "/") }}';
   {!! file_get_contents(module_path('prayer', 'resources/assets/js/core.js')); !!}

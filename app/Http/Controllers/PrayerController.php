@@ -5,28 +5,20 @@ namespace Modules\Prayer\Http\Controllers;
 use Carbon\Carbon;
 use Illuminate\Routing\Controller;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Validator;
-use Modules\Prayer\Services\PrayerTimeService;
 use Modules\Prayer\Http\Requests\LocationRequest;
+use Modules\Prayer\Services\PrayerTimeService;
 use Modules\Prayer\Models\City;
-use Modules\Telegram\Services\TelegramService;
 use Modules\Telegram\Models\TelegramUser;
 
 class PrayerController extends Controller
 {
   public function __construct(protected PrayerTimeService $prayerService) {}
 
-  /**
-  * Display a listing of the resource.
-  */
   public function index(Request $request) {
     return view('prayer::index');
   }
 
-  /**
-  * Get prayer times.
-  */
   public function getTimes(LocationRequest $request) {
     try {
       $telegramUser = $request->user();
@@ -40,7 +32,7 @@ class PrayerController extends Controller
       );
 
       return response()->json(["success" => true, "data" => $times, "message" => "Jadwal shalat berhasil diambil"]);
-    } catch(\Exception $e) {
+    } catch (\Exception $e) {
       \Log::error("Failed to fetch prayer api", [
         "message" => $e->getMessage(),
         "trace" => $e->getTraceAsString()
@@ -55,37 +47,49 @@ class PrayerController extends Controller
     $city = $request->input('city');
     $lat = $request->input('latitude');
     $lon = $request->input('longitude');
-    $days = (int) $request->input('days', 7);
-    $days = min(max($days, 1), 30);
 
-    try {
-      // Cari cityModel (sama seperti di getTimes)
-      $cityModel = null;
-      if ($city) {
-        $cityModel = $this->prayerService->findCityByName($city);
-      } elseif ($lat && $lon) {
-        $cityModel = $this->prayerService->findNearestCity($lat, $lon);
-      } elseif ($telegramUser) {
-        $prayerSettings = $telegramUser->data['prayer'] ?? [];
-        $default = $prayerSettings['default_location'] ?? null;
-        if ($default && isset($default['city'])) {
-          $cityModel = $this->prayerService->findCityByName($default['city']);
-        } elseif ($default && isset($default['latitude'], $default['longitude'])) {
-          $cityModel = $this->prayerService->findNearestCity($default['latitude'], $default['longitude']);
-        }
+    // Cari cityModel
+    $cityModel = null;
+    if ($city) {
+      $cityModel = $this->prayerService->findCityByName($city);
+    } elseif ($lat && $lon) {
+      $cityModel = $this->prayerService->findNearestCity($lat, $lon);
+    } elseif ($telegramUser) {
+      $prayerSettings = $telegramUser->data['prayer'] ?? [];
+      $default = $prayerSettings['default_location'] ?? null;
+      if ($default && isset($default['city'])) {
+        $cityModel = $this->prayerService->findCityByName($default['city']);
+      } elseif ($default && isset($default['latitude'], $default['longitude'])) {
+        $cityModel = $this->prayerService->findNearestCity($default['latitude'], $default['longitude']);
       }
+    }
 
-      if (!$cityModel) {
-        return response()->json(['success' => false, 'message' => 'Kota tidak ditemukan'], 404);
+    if (!$cityModel) {
+      return response()->json(['success' => false, 'message' => 'Kota tidak ditemukan'], 404);
+    }
+
+    // Cek apakah ada start_date dan end_date
+    $startDateInput = $request->input('start_date');
+    $endDateInput = $request->input('end_date');
+
+    if ($startDateInput && $endDateInput) {
+      try {
+        $startDate = Carbon::createFromFormat('d-m-Y', $startDateInput)->toDateString();
+        $endDate = Carbon::createFromFormat('d-m-Y', $endDateInput)->toDateString();
+      } catch (\Exception $e) {
+        return response()->json(['success' => false, 'message' => 'Format tanggal tidak valid, gunakan dd-mm-yyyy'], 400);
       }
-
+    } else {
+      $days = (int) $request->input('days', 7);
+      $days = min(max($days, 1), 30);
       $startDate = Carbon::today()->toDateString();
       $endDate = Carbon::today()->addDays($days - 1)->toDateString();
+    }
 
+    try {
       $data = $this->prayerService->getPrayerTimesRange($cityModel->id, $startDate, $endDate);
-
       return response()->json(['success' => true, 'data' => $data]);
-    } catch(\Exception $e) {
+    } catch (\Exception $e) {
       \Log::error("Failed to get prayer times range", [
         'message' => $e->getMessage(),
         'city' => $city,
@@ -95,28 +99,17 @@ class PrayerController extends Controller
         'end_date' => $endDate,
         'trace' => $e->getTrace()
       ]);
-
-      return response()->json([
-        'success' => false,
-        'message' => $e->getMessage()
-      ], 500);
+      return response()->json(['success' => false, 'message' => $e->getMessage()], 500);
     }
   }
 
-  /**
-  * Store a newly created resource in storage.
-  */
   public function settings(Request $request) {
     $telegramUser = $request->user();
-
     abort_if(!$telegramUser, 401, 'Unauthenticated');
 
     return response()->json(['success' => true, 'data' => $telegramUser->data['prayer'] ?? []]);
   }
 
-  /**
-  * Update the specified resource in storage.
-  */
   public function update(Request $request) {
     $telegramUser = $request->user();
     if (!$telegramUser) {
@@ -169,12 +162,11 @@ class PrayerController extends Controller
         'message' => 'Pengaturan berhasil disimpan.',
         'data' => $data
       ]);
-    } catch(\Exception $e) {
+    } catch (\Exception $e) {
       \Log::error("Gagal menyimpan pengaturan", ['error' => $e->getMessage()]);
       return response()->json(["success" => false, "message" => $e->getMessage()], 500);
     }
   }
-
 
   public function searchCities(Request $request) {
     $query = $request->input('q');
