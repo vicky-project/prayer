@@ -482,8 +482,6 @@
   window.PrayerAppUI = {
     renderPrayerView: renderPrayerView,
     renderSettingsView: renderSettingsView,
-    renderRangeTableView: renderRangeTableView,
-    // jika masih diperlukan
     renderCalendarView: renderCalendarView
   };
 })(window, document);
