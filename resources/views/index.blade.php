@@ -194,10 +194,6 @@
 @endpush
 
 @push('scripts')
-<script src="//cdn.jsdelivr.net/npm/eruda"></script>
-<script>
-  eruda.init();
-</script>
 <script src="https://cdn.jsdelivr.net/npm/vanilla-calendar-pro/index.js" defer></script>
 <script>
   const BASE_URL = '{{ rtrim(config("app.url"), "/") }}';
