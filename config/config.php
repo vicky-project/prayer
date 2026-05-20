@@ -24,5 +24,7 @@ return [
     "timezone" => "timezone",
     "prayer_times" => "prayer_times",
     "geocode" => "geocode_"
+    'provinces' => 'prayer_provinces',
+    'cities_by_province' => 'prayer_cities_by_province'
   ]
 ];

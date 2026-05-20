@@ -322,35 +322,76 @@ class PrayerTimeService
     }
 
     $cacheKey = config("prayer.cache_prefix.timezone") . md5(":{$lat}:{$lon}");
+    return Cache::remember($cacheKey, 86400, function () use ($lat, $lon) {
+      $apiKey = config("prayer.ipgeolocation.api_key");
+      if ($apiKey) {
+        try {
+          $response = Http::timeout(5)->get('https://api.ipgeolocation.io/timezone', [
+            'lat' => $lat,
+            'lon' => $lon,
+            'apiKey' => $apiKey
+          ]);
+          if ($response->successful()) {
+            $data = $response->json();
+            if (!empty($data['timezone'])) {
+              Log::debug("Using timezone: " . $data['timezone'], compact('lat', 'lon'));
+              return $data['timezone'];
+            }
+          }
+        } catch (\Exception $e) {
+          Log::error($e->getMessage());
+        }
+      }
+      return config("app.timezone", 'Asia/Jakarta');
+    });
+  }
+
+  // ==================== METHOD UNTUK TELEGRAM BOT ====================
+
+  /**
+  * Mendapatkan daftar semua provinsi (Collection)
+  */
+  public function getProvinces(): \Illuminate\Support\Collection
+  {
+    $cacheKey = config('prayer.cache_prefix.provinces',
+      'prayer_provinces');
     return Cache::remember($cacheKey,
       86400,
-      function () use ($lat, $lon) {
-        // Fallback IPGeolocation
-        $apiKey = config("prayer.ipgeolocation.api_key");
-        if ($apiKey) {
-          try {
-            $response = Http::timeout(5)->get('https://api.ipgeolocation.io/timezone', [
-              'lat' => $lat,
-              'lon' => $lon,
-              'apiKey' => $apiKey
-            ]);
-            if ($response->successful()) {
-              $data = $response->json();
-              if (!empty($data['timezone'])) {
-                Log::debug("Using timezone: ". $data['timezone'], [
-                  'lat' => $lat,
-                  'lon' => $lon
-                ]);
-                return $data['timezone'];
-              }
-            }
-          } catch (\Exception $e) {
-            Log::error($e->getMessage());
-          }
-        }
-        return config("app.timezone", 'Asia/Jakarta');
+      function () {
+        return City::whereNotNull('province_id')
+        ->whereNotNull('province_name')
+        ->select('province_id', 'province_name')
+        ->distinct()
+        ->orderBy('province_name')
+        ->get();
       });
   }
+
+  /**
+  * Mendapatkan daftar kota berdasarkan province_id (Collection)
+  */
+  public function getCitiesByProvinceId(string $provinceId): \Illuminate\Support\Collection
+  {
+    $cacheKey = config('prayer.cache_prefix.cities_by_province',
+      'prayer_cities_by_province') . ':' . $provinceId;
+    return Cache::remember($cacheKey,
+      86400,
+      function () use ($provinceId) {
+        return City::where('province_id', $provinceId)
+        ->orderBy('name')
+        ->get(['id', 'name']);
+      });
+  }
+
+  /**
+  * Mendapatkan model City berdasarkan ID
+  */
+  public function getCityById(int $cityId): ?City
+  {
+    return City::find($cityId);
+  }
+
+  // ==================== PEMBERSIHAN CACHE ====================
 
   public function clearPrayerCache(int $cityId,
     string $date): void
@@ -366,5 +407,17 @@ class PrayerTimeService
     $roundedLon = round($lon,
       2);
     Cache::forget(config("prayer.cache_prefix.city") . ":{$roundedLat}:{$roundedLon}");
+  }
+
+  public function clearProvincesCache(): void
+  {
+    Cache::forget(config('prayer.cache_prefix.provinces', 'prayer_provinces'));
+  }
+
+  public function clearCitiesByProvinceCache(string $provinceId): void
+  {
+    $cacheKey = config('prayer.cache_prefix.cities_by_province',
+      'prayer_cities_by_province') . ':' . $provinceId;
+    Cache::forget($cacheKey);
   }
 }

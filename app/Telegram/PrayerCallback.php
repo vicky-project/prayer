@@ -155,7 +155,7 @@ class PrayerCallback extends BaseCallbackHandler
   private function getPrayerByCityId(int $id): array
   {
     $city = $this->prayerService->getCityById($id);
-    $prayer = $this->prayerService->getPrayerTimes($city->latitude, $city->longitude, $city->name);
+    $prayer = $this->prayerService->getPrayerTimes($city->latitude, $city->longitude, $city->name, null, true);
 
     // Informasi kota dan tanggal
     $message = "*{$prayer['city']}*\n";
