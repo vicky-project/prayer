@@ -39,7 +39,6 @@ class PrayerCommand extends BaseCommandHandler
   ): array {
     try {
       $keyboard = $this->prepareKeyboard();
-      Log::debug($keyboard);
       return [
         "status" => "prayertimes_sent",
         "send_message" => [
