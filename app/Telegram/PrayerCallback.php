@@ -126,7 +126,7 @@ class PrayerCallback extends BaseCallbackHandler
     ];
   }
 
-  private function getCitiesByProvinceId(int $id): array
+  private function getCitiesByProvinceId($id): array
   {
     $cities = $this->prayerService->getCitiesByProvinceId($id);
     $buttons = $cities->map(function($city) {
@@ -153,9 +153,9 @@ class PrayerCallback extends BaseCallbackHandler
     ];
   }
 
-  private function getPrayerByCityId(int $id): array
+  private function getPrayerByCityId($id): array
   {
-    $city = $this->prayerService->getCityById($id);
+    $city = $this->prayerService->getCityById((int) $id);
     $prayer = $this->prayerService->getPrayerTimes($city->latitude, $city->longitude, $city->name, null, true);
 
     // Informasi kota dan tanggal
