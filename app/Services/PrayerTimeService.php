@@ -360,7 +360,7 @@ class PrayerTimeService
       function () {
         return City::whereNotNull('province_id')
         ->whereNotNull('province_name')
-        ->select('id', 'province_id', 'province_name')
+        ->select('province_id', 'province_name')
         ->distinct()
         ->orderBy('province_name')
         ->get();
