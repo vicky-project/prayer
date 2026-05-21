@@ -101,6 +101,7 @@ class PrayerCallback extends BaseCallbackHandler
   private function getAllProvince(): array
   {
     $provinces = $this->prayerService->getProvinces();
+    Log::debug($provinces);
     $buttons = $provinces->map(function($province) {
       return [
         "text" => $province->province_name,
