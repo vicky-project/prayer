@@ -116,7 +116,7 @@ class PrayerCallback extends BaseCallbackHandler
     ->setEntity("prayer")
     ->grid($buttons, 2);
 
-    Log::debug($keyboard);
+    Log::debug('keyboard', [$keyboard]);
     return [
       "status" => "provinces_sent",
       "edit_message" => [
