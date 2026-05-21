@@ -106,7 +106,7 @@ class PrayerCallback extends BaseCallbackHandler
         "text" => $province->province_name,
         "callback_data" => [
           "action" => "cities",
-          "value" => $province->id
+          "value" => $province->province_id
         ]
       ];
     })->toArray();
@@ -116,6 +116,7 @@ class PrayerCallback extends BaseCallbackHandler
     ->setEntity("prayer")
     ->grid($buttons, 2);
 
+    Log::debug('keyboard', [$keyboard]);
     return [
       "status" => "provinces_sent",
       "edit_message" => [
@@ -125,7 +126,7 @@ class PrayerCallback extends BaseCallbackHandler
     ];
   }
 
-  private function getCitiesByProvinceId(int $id): array
+  private function getCitiesByProvinceId($id): array
   {
     $cities = $this->prayerService->getCitiesByProvinceId($id);
     $buttons = $cities->map(function($city) {
@@ -152,9 +153,9 @@ class PrayerCallback extends BaseCallbackHandler
     ];
   }
 
-  private function getPrayerByCityId(int $id): array
+  private function getPrayerByCityId($id): array
   {
-    $city = $this->prayerService->getCityById($id);
+    $city = $this->prayerService->getCityById((int) $id);
     $prayer = $this->prayerService->getPrayerTimes($city->latitude, $city->longitude, $city->name, null, true);
 
     // Informasi kota dan tanggal
