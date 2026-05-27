@@ -39,7 +39,8 @@ class PrayerTimeService
   }
 
   /**
-  * Mencari kota terdekat menggunakan rumus Haversine + bounding box
+  * Mencari kota terdekat menggunakan rumus Haversine + bounding box.
+  * Cache hanya menyimpan ID kota, bukan objek.
   */
   public function findNearestCity($latitude, $longitude): ?City
   {
@@ -47,7 +48,7 @@ class PrayerTimeService
     $roundedLon = round($longitude, 2);
     $cacheKey = config("prayer.cache_prefix.city") . ":{$roundedLat}:{$roundedLon}";
 
-    return Cache::remember($cacheKey, 86400, function () use ($latitude, $longitude) {
+    $cityId = Cache::remember($cacheKey, 86400, function () use ($latitude, $longitude) {
       $delta = 1.0;
       $minLat = $latitude - $delta;
       $maxLat = $latitude + $delta;
@@ -55,19 +56,24 @@ class PrayerTimeService
       $maxLon = $longitude + $delta;
 
       $haversine = "(6371 * acos(
-                cos(radians(?)) * cos(radians(latitude)) *
-                cos(radians(longitude) - radians(?)) +
-                sin(radians(?)) * sin(radians(latitude))
-            ) * 1000)";
+                        cos(radians(?)) * cos(radians(latitude)) *
+                        cos(radians(longitude) - radians(?)) +
+                        sin(radians(?)) * sin(radians(latitude))
+                    ) * 1000)";
 
-      return City::whereNotNull('latitude')
+      $city = City::whereNotNull('latitude')
       ->whereNotNull('longitude')
       ->whereBetween('latitude', [$minLat, $maxLat])
       ->whereBetween('longitude', [$minLon, $maxLon])
       ->selectRaw("*, {$haversine} AS distance", [$latitude, $longitude, $latitude])
       ->orderBy('distance')
       ->first();
+
+      return $city?->id; // simpan hanya ID
     });
+
+    // Ambil ulang model dari database berdasarkan ID yang di-cache
+    return $cityId ? City::find($cityId) : null;
   }
 
   /**
@@ -149,15 +155,20 @@ class PrayerTimeService
     $cacheKey = config("prayer.cache_prefix.prayer_times") . ":{$cityModel->id}:{$today}";
     $ttl = $this->getTtlUntilEndOfDay($timezone);
 
-    $prayer = Cache::remember($cacheKey, $ttl, function () use ($cityModel, $today) {
-      return Prayer::where('city_id', $cityModel->id)
+    // Cache hanya menyimpan ID prayer (atau null)
+    $prayerId = Cache::remember($cacheKey, $ttl, function () use ($cityModel, $today) {
+      $prayer = Prayer::where('city_id', $cityModel->id)
       ->where('date', $today)
       ->first();
+      if (!$prayer) {
+        // Fallback: ambil prayer terbaru untuk kota tersebut
+        $prayer = Prayer::where('city_id', $cityModel->id)->first();
+      }
+      return $prayer?->id;
     });
 
-    if (!$prayer) {
-      $prayer = Prayer::where('city_id', $cityModel->id)->first();
-    }
+    // Ambil model Prayer dari ID
+    $prayer = $prayerId ? Prayer::find($prayerId) : null;
 
     if (!$prayer) {
       throw new \Exception('Jadwal shalat tidak ditemukan untuk kota ini.');
@@ -209,7 +220,6 @@ class PrayerTimeService
         'maghrib' => $prayer->maghrib,
         'isya' => $prayer->isya,
       ];
-      // Hanya tambahkan imsak jika bulan Ramadhan
       if ($isRamadhan) {
         $jadwal['imsak'] = $prayer->imsak;
       }
@@ -236,11 +246,15 @@ class PrayerTimeService
     $cacheKey = config("prayer.cache_prefix.prayer_times") . ":{$cityModel->id}:{$today}";
     $ttl = $this->getTtlUntilEndOfDay($timezone);
 
-    $prayer = Cache::remember($cacheKey, $ttl, function () use ($cityModel, $today) {
-      return Prayer::where('city_id', $cityModel->id)
+    // Cache simpan ID saja
+    $prayerId = Cache::remember($cacheKey, $ttl, function () use ($cityModel, $today) {
+      $prayer = Prayer::where('city_id', $cityModel->id)
       ->where('date', $today)
       ->first();
+      return $prayer?->id;
     });
+
+    $prayer = $prayerId ? Prayer::find($prayerId) : null;
 
     if (!$prayer) return null;
 
